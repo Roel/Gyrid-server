@@ -1,4 +1,10 @@
 #!/usr/bin/python
+#-*- coding: utf-8 -*-
+#
+# This file belongs to Gyrid Server.
+#
+# Copyright (C) 2011  Roel Huybrechts
+# All rights reserved.
 
 from OpenSSL import SSL
 
