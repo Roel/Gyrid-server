@@ -1,0 +1,34 @@
+#!/usr/bin/python
+
+import time
+
+import olof.core
+
+class Plugin(olof.core.Plugin):
+    def __init__(self, server):
+        olof.core.Plugin.__init__(self, server)
+        self.connection_log = open('logs/connections.log', 'a')
+        self.mess_log = open('logs/messages.log', 'a')
+        self.scan_log = open('logs/scan.log', 'a')
+        self.rssi_log = open('logs/rssi.log', 'a')
+
+    def connectionMade(self, hostname, ip, port):
+        self.log(self.connection_log, time.time(),
+            "Connection made with %s (%s:%s)" % (hostname, ip, port))
+
+    def connectionLost(self, hostname, ip, port):
+        self.log(self.connection_log, time.time(),
+            "Connection lost with %s (%s:%s)" % (hostname, ip, port))
+
+    def dataFeedCell(self, hostname, timestamp, sensor_mac, mac, deviceclass,
+            move):
+        self.log(self.scan_log, timestamp, ','.join([hostname, mac, deviceclass,
+            move]))
+
+    def dataFeedRssi(self, hostname, timestamp, sensor_mac, mac, rssi):
+        self.log(self.rssi_log, timestamp, ','.join([hostname, mac, rssi]))
+
+    def log(self, log, timestamp, str):
+        t = time.strftime("%Y%m%d-%H%M%S-%Z", time.localtime(float(timestamp)))
+        log.write("%s,%s\n" % (t, str))
+        log.flush()
