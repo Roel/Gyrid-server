@@ -103,13 +103,14 @@ class ContentResource(resource.Resource):
                     prettydate(int(float(s.conn_time))))
             elif s.conn_ip == None:
                 html += '<img src="static/icons/network-ip.png">No connection.<span class="time"><b>disconnected</b> %s</span>' % prettydate(int(float(s.conn_time)))
-            for sens in s.sensors.values():
-                html += '<div class="sensor"><img src="static/icons/bluetooth.png">%s' % sens.mac
-                if sens.last_inquiry != None:
-                    html += '<span class="time"><b>last inquiry</b> %s</span>' % prettydate(int(float(sens.last_inquiry)))
-                if sens.last_data != None:
-                    html += '<span class="time"><b>last data</b> %s</span>' % prettydate(int(float(sens.last_data)))
-                html += '</div>'
+            if s.conn_ip != None:
+                for sens in s.sensors.values():
+                    html += '<div class="sensor"><img src="static/icons/bluetooth.png">%s' % sens.mac
+                    if sens.last_inquiry != None:
+                        html += '<span class="time"><b>last inquiry</b> %s</span>' % prettydate(int(float(sens.last_inquiry)))
+                    if sens.last_data != None:
+                        html += '<span class="time"><b>last data</b> %s</span>' % prettydate(int(float(sens.last_data)))
+                    html += '</div>'
             html += '</div></div>'
         return html
 
