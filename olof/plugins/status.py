@@ -51,7 +51,7 @@ class Scanner(object):
 
         self.conn_ip = None
         self.conn_port = None
-        self.conn_uptime = None
+        self.conn_time = None
         self.location = None
 
 class Sensor(object):
@@ -145,6 +145,12 @@ class Plugin(olof.core.Plugin):
         self.locations = {}
         self.uptime = int(time.time())
 
+        f = open("olof/plugins/status/data/locations.txt", "r")
+        for line in f:
+            line = line.strip().split(',')
+            self.locations[line[0]] = line[1]
+        f.close()
+
         reactor.listenTCP(8080, tserver.Site(self.root))
 
     def getScanner(self, hostname):
@@ -167,12 +173,6 @@ class Plugin(olof.core.Plugin):
         return sens
 
     def connectionMade(self, hostname, ip, port):
-        f = open("olof/plugins/status/data/locations.txt", "r")
-        for line in f:
-            line = line.strip().split(',')
-            self.locations[line[0]] = line[1]
-        f.close()
-
         s = self.getScanner(hostname)
         s.conn_ip = ip
         s.conn_port = port
