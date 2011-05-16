@@ -52,6 +52,7 @@ class Scanner(object):
         self.conn_ip = None
         self.conn_port = None
         self.conn_uptime = None
+        self.location = None
 
 class Sensor(object):
     def __init__(self, mac):
@@ -85,7 +86,10 @@ class ContentResource(resource.Resource):
         html = '<div id="title">Gyrid Server status panel</div><div id="updated">%s</div>' % time.strftime('%H:%M:%S')
         html += '<div style="clear: both;"></div>'
         for s in self.plugin.scanners.values():
-            html += '<div class="scanner"><h3>%s</h3>' % s.hostname
+            html += '<div class="scanner"><div class="scanner_name"><h3>%s</h3></div>' % s.hostname
+            if s.location != None:
+                html += '<div class="scanner_location">%s <img src="static/icons/marker.png"></div>' % s.location
+            html += '<div style="clear: both;"></div>'
             html += '<div class="scanner_content">'
             if s.conn_ip and s.conn_port:
                 html += '<img src="static/icons/network-ip.png">%s - %s<span class="time"><b>connected</b> %s</span>' % (s.conn_ip, s.conn_port,
@@ -130,12 +134,15 @@ class Plugin(olof.core.Plugin):
         self.root.putChild("content", self.content)
 
         self.scanners = {}
+        self.locations = {}
 
         reactor.listenTCP(8080, tserver.Site(self.root))
 
     def getScanner(self, hostname):
         if not hostname in self.scanners:
             s = Scanner(hostname)
+            if hostname in self.locations:
+                s.location = self.locations[hostname]
             self.scanners[hostname] = s
         else:
             s = self.scanners[hostname]
@@ -151,10 +158,18 @@ class Plugin(olof.core.Plugin):
         return sens
 
     def connectionMade(self, hostname, ip, port):
+        f = open("olof/plugins/status/data/locations.txt", "r")
+        for line in f:
+            line = line.strip().split(',')
+            self.locations[line[0]] = line[1]
+        f.close()
+
         s = self.getScanner(hostname)
         s.conn_ip = ip
         s.conn_port = port
         s.conn_time = int(time.time())
+        if hostname in self.locations:
+            s.location = self.locations[hostname]
 
     def connectionLost(self, hostname, ip, port):
         s = self.getScanner(hostname)
