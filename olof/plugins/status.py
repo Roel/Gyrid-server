@@ -191,7 +191,8 @@ class Plugin(olof.core.Plugin):
     def stateFeed(self, hostname, timestamp, sensor_mac, info):
         if info == 'new_inquiry':
             sens = self.getSensor(hostname, sensor_mac)
-            sens.last_inquiry = timestamp
+            if sens.last_inquiry == None or timestamp > sens.last_inquiry:
+                sens.last_inquiry = timestamp
 
     def dataFeedCell(self, hostname, timestamp, sensor_mac, mac, deviceclass,
             move):
@@ -199,4 +200,5 @@ class Plugin(olof.core.Plugin):
 
     def dataFeedRssi(self, hostname, timestamp, sensor_mac, mac, rssi):
         sens = self.getSensor(hostname, sensor_mac)
-        sens.last_data = timestamp
+        if sens.last_data == None or timestamp > sens.last_data:
+            sens.last_data = timestamp

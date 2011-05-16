@@ -81,7 +81,7 @@ class GyridServerProtocol(LineReceiver):
             elif len(ll) == 3 and ll[1] == 'enable_keepalive':
                 l = task.LoopingCall(self.keepalive)
                 l.start(self.factory.timeout, now=False)
-                self.sendLine('MSG,cache,clear')
+                self.sendLine('MSG,cache,push')
         else:
             self.sendLine('ACK,%s' % self.checksum(line))
 
