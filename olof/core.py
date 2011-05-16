@@ -13,8 +13,9 @@ class Plugin(object):
     """
     Class that can interact with the Gyrid network component.
     """
-    def __init__(self, server):
+    def __init__(self, server, name):
         self.server = server
+        self.name = name
         self.output = self.server.output
 
     def connectionMade(self, hostname, ip, port):

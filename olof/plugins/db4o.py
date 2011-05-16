@@ -34,7 +34,7 @@ class InetClientFactory(ReconnectingClientFactory):
 
 class Plugin(olof.core.Plugin):
     def __init__(self, server):
-        olof.core.Plugin.__init__(self, server)
+        olof.core.Plugin.__init__(self, server, "Db4o")
         self.host = 'localhost'
         self.port = 5000
         self.mac_dc = {}

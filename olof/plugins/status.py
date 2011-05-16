@@ -85,6 +85,13 @@ class ContentResource(resource.Resource):
     def render_POST(self, request):
         html = '<div id="title">Gyrid Server status panel</div><div id="updated">%s</div>' % time.strftime('%H:%M:%S')
         html += '<div style="clear: both;"></div>'
+
+        html += '<div class="scanner"><div class="scanner_name"><h3>Server</h3></div>'
+        html += '<div style="clear: both;"></div>'
+        html += '<div class="scanner_content"><div class="sensor"><img src="static/icons/clock-arrow.png">Started<span class="time">%s</span></div>' % prettydate(self.plugin.uptime)
+        html += '<div class="sensor"><img src="static/icons/puzzle.png">Plugins<span class="time">%s</span></div>' % ", ".join(sorted([p.name for p in self.plugin.server.plugins]))
+        html += '</div></div>'
+
         for s in self.plugin.scanners.values():
             html += '<div class="scanner"><div class="scanner_name"><h3>%s</h3></div>' % s.hostname
             if s.location != None:
@@ -123,7 +130,7 @@ class Plugin(olof.core.Plugin):
     Class that can interact with the Gyrid network component.
     """
     def __init__(self, server):
-        olof.core.Plugin.__init__(self, server)
+        olof.core.Plugin.__init__(self, server, "Status panel")
         self.root = RootResource()
         self.root.putChild("", self.root)
 
@@ -135,6 +142,7 @@ class Plugin(olof.core.Plugin):
 
         self.scanners = {}
         self.locations = {}
+        self.uptime = int(time.time())
 
         reactor.listenTCP(8080, tserver.Site(self.root))
 

@@ -22,7 +22,7 @@ class Plugin(olof.core.Plugin):
     Class that can interact with the Gyrid network component.
     """
     def __init__(self, server):
-        olof.core.Plugin.__init__(self, server)
+        olof.core.Plugin.__init__(self, server, "Debug")
 
     def connectionMade(self, hostname, ip, port):
         self.output("Connection made with %s (%s:%s)" % (hostname, ip, port))

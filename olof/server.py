@@ -73,7 +73,7 @@ class GyridServerProtocol(LineReceiver):
             if ll[1] == 'hostname':
                 self.hostname = ll[2]
                 for p in self.factory.server.plugins:
-                    p.connectionMade(self.hostname, 
+                    p.connectionMade(self.hostname,
                         self.transport.getPeer().host,
                         self.transport.getPeer().port)
             elif len(ll) == 2 and ll[1] == 'keepalive':
