@@ -81,6 +81,59 @@ class ContentResource(resource.Resource):
         resource.Resource.__init__(self)
         self.plugin = plugin
 
+    def render_server(self):
+        html = '<div class="scanner"><div class="scanner_name"><h3>Server</h3></div><div class="scanner_location"></div>'
+        html += '<div style="clear: both;"></div>'
+        html += '<div class="scanner_content"><div class="sensor"><img src="static/icons/clock-arrow.png">Started<span class="time">%s</span></div>' % prettydate(self.plugin.uptime)
+        html += '<div class="sensor"><img src="static/icons/puzzle.png">Plugins<span class="time">%s</span></div>' % ", ".join(sorted([p.name for p in self.plugin.server.plugins]))
+        html += '</div></div>'
+        return html
+
+    def render_scanner(self, s):
+
+        def render_location():
+            html = '<div class="scanner_location">'
+            if s.location != None and s.location_link == None:
+                html += '%s<img src="static/icons/marker.png">' % s.location
+            elif s.location != None:
+                html += '<a href="%s">%s</a><img src="static/icons/marker.png">' % (s.location_link, s.location)
+            html += '</div>'
+            return html
+
+        def render_net():
+            html = '<img src="static/icons/network-ip.png">'
+            if s.conn_ip and s.conn_port:
+                html += '%s - %s<span class="time"><b>connected</b> %s</span>' % (s.conn_ip, s.conn_port,
+                    prettydate(int(float(s.conn_time))))
+            elif s.conn_ip == None:
+                html += 'No connection.<span class="time"><b>disconnected</b> %s</span>' % prettydate(int(float(s.conn_time)))
+            return html
+
+        def render_sensor(sens):
+            html = '<div class="sensor"><img src="static/icons/bluetooth.png">%s' % sens.mac
+            if sens.last_inquiry != None:
+                html += '<span class="time"><b>last inquiry</b> %s</span>' % prettydate(int(float(sens.last_inquiry)))
+            if sens.last_data != None:
+                html += '<span class="time"><b>last data</b> %s</span>' % prettydate(int(float(sens.last_data)))
+            if sens.datalines > 0:
+                html += '<span class="time"><b>datalines</b> %i</span>' % sens.datalines
+            html += '</div>'
+            return html
+
+        html = '<div class="scanner"><div class="scanner_name"><h3>%s</h3></div>' % s.hostname
+        html += render_location()
+        html += '<div style="clear: both;"></div>'
+
+        html += '<div class="scanner_content">'
+        html += render_net()
+
+        if s.conn_ip != None:
+            for sens in s.sensors.values():
+                html += render_sensor(sens)
+
+        html += '</div></div>'
+        return html
+
     def render_GET(self, request):
         return self.render_POST(request)
 
@@ -88,36 +141,11 @@ class ContentResource(resource.Resource):
         html = '<div id="title">Gyrid Server status panel</div><div id="updated">%s</div>' % time.strftime('%H:%M:%S')
         html += '<div style="clear: both;"></div>'
 
-        html += '<div class="scanner"><div class="scanner_name"><h3>Server</h3></div>'
-        html += '<div style="clear: both;"></div>'
-        html += '<div class="scanner_content"><div class="sensor"><img src="static/icons/clock-arrow.png">Started<span class="time">%s</span></div>' % prettydate(self.plugin.uptime)
-        html += '<div class="sensor"><img src="static/icons/puzzle.png">Plugins<span class="time">%s</span></div>' % ", ".join(sorted([p.name for p in self.plugin.server.plugins]))
-        html += '</div></div>'
+        html += self.render_server()
 
         for s in self.plugin.scanners.values():
-            html += '<div class="scanner"><div class="scanner_name"><h3>%s</h3></div>' % s.hostname
-            if s.location != None and s.location_link == None:
-                html += '<div class="scanner_location">%s <img src="static/icons/marker.png"></div>' % s.location
-            elif s.location != None and s.location_link != None:
-                html += '<div class="scanner_location"><a href="%s">%s</a> <img src="static/icons/marker.png"></div>' % (s.location_link, s.location)
-            html += '<div style="clear: both;"></div>'
-            html += '<div class="scanner_content">'
-            if s.conn_ip and s.conn_port:
-                html += '<img src="static/icons/network-ip.png">%s - %s<span class="time"><b>connected</b> %s</span>' % (s.conn_ip, s.conn_port,
-                    prettydate(int(float(s.conn_time))))
-            elif s.conn_ip == None:
-                html += '<img src="static/icons/network-ip.png">No connection.<span class="time"><b>disconnected</b> %s</span>' % prettydate(int(float(s.conn_time)))
-            if s.conn_ip != None:
-                for sens in s.sensors.values():
-                    html += '<div class="sensor"><img src="static/icons/bluetooth.png">%s' % sens.mac
-                    if sens.last_inquiry != None:
-                        html += '<span class="time"><b>last inquiry</b> %s</span>' % prettydate(int(float(sens.last_inquiry)))
-                    if sens.last_data != None:
-                        html += '<span class="time"><b>last data</b> %s</span>' % prettydate(int(float(sens.last_data)))
-                    if sens.datalines > 0:
-                        html += '<span class="time"><b>datalines</b> %i</span>' % sens.datalines
-                    html += '</div>'
-            html += '</div></div>'
+            html += self.render_scanner(s)
+
         return html
 
 class StaticResource(File):
