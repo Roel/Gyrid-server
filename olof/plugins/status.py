@@ -59,6 +59,7 @@ class Sensor(object):
         self.mac = mac
         self.last_inquiry = None
         self.last_data = None
+        self.datalines = 0
 
 class RootResource(resource.Resource):
     def __init__(self):
@@ -110,6 +111,8 @@ class ContentResource(resource.Resource):
                         html += '<span class="time"><b>last inquiry</b> %s</span>' % prettydate(int(float(sens.last_inquiry)))
                     if sens.last_data != None:
                         html += '<span class="time"><b>last data</b> %s</span>' % prettydate(int(float(sens.last_data)))
+                    if sens.datalines > 0:
+                        html += '<span class="time"><b>datalines</b> %i</span>' % sens.datalines
                     html += '</div>'
             html += '</div></div>'
         return html
@@ -201,5 +204,6 @@ class Plugin(olof.core.Plugin):
 
     def dataFeedRssi(self, hostname, timestamp, sensor_mac, mac, rssi):
         sens = self.getSensor(hostname, sensor_mac)
+        sens.datalines += 1
         if sens.last_data == None or timestamp > sens.last_data:
             sens.last_data = timestamp
