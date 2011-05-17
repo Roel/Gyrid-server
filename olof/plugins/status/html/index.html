@@ -23,12 +23,14 @@
 
                 success: function(data){
                     $("#content").html(data);
+                    $("#footer").show();
                     setTimeout('getContent()', 10000);
                 },
 
                 error: function(data){
                     $("#content").html(
                         '<p id="title">Failed to connect to Gyrid Server</p>');
+                    $("#footer").hide();
                     setTimeout('getContent()', 10000);
                 },
             });
@@ -41,8 +43,11 @@
 </head>
 
 <body>
-    <p id="header"><img src="static/header.png"/></p>
+    <div><p id="header"><img src="static/header.png"/></p></div>
+
     <div id="content"></div>
+
+    <div><p id="footer">© 2011 Roel Huybrechts. Icons by <a href="http://p.yusukekamiyamane.com/">Yusuke Kamiyamane</a>.</p></div>
 </body>
 
 </html>
