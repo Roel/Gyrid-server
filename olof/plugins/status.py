@@ -53,6 +53,7 @@ class Scanner(object):
         self.conn_port = None
         self.conn_time = None
         self.location = None
+        self.location_link = None
 
 class Sensor(object):
     def __init__(self, mac):
@@ -95,8 +96,10 @@ class ContentResource(resource.Resource):
 
         for s in self.plugin.scanners.values():
             html += '<div class="scanner"><div class="scanner_name"><h3>%s</h3></div>' % s.hostname
-            if s.location != None:
+            if s.location != None and s.location_link == None:
                 html += '<div class="scanner_location">%s <img src="static/icons/marker.png"></div>' % s.location
+            elif s.location != None and s.location_link != None:
+                html += '<div class="scanner_location"><a href="%s">%s</a> <img src="static/icons/marker.png"></div>' % (s.location_link, s.location)
             html += '<div style="clear: both;"></div>'
             html += '<div class="scanner_content">'
             if s.conn_ip and s.conn_port:
@@ -151,7 +154,9 @@ class Plugin(olof.core.Plugin):
         f = open("olof/plugins/status/data/locations.txt", "r")
         for line in f:
             line = line.strip().split(',')
-            self.locations[line[0]] = line[1]
+            self.locations[line[0]] = [line[1]]
+            if len(line) >= 4:
+                self.locations[line[0]].extend(line[2:4])
         f.close()
 
         reactor.listenTCP(8080, tserver.Site(self.root))
@@ -160,7 +165,10 @@ class Plugin(olof.core.Plugin):
         if not hostname in self.scanners:
             s = Scanner(hostname)
             if hostname in self.locations:
-                s.location = self.locations[hostname]
+                s.location = self.locations[hostname][0]
+                if len(self.locations[hostname]) >= 3:
+                    s.location_link = "http://www.openstreetmap.org/?mlat=%s&mlon=%s&zoom=15&layers=M" % (
+                        self.locations[hostname][1], self.locations[hostname][2])
             self.scanners[hostname] = s
         else:
             s = self.scanners[hostname]
@@ -180,8 +188,6 @@ class Plugin(olof.core.Plugin):
         s.conn_ip = ip
         s.conn_port = port
         s.conn_time = int(time.time())
-        if hostname in self.locations:
-            s.location = self.locations[hostname]
 
     def connectionLost(self, hostname, ip, port):
         s = self.getScanner(hostname)
