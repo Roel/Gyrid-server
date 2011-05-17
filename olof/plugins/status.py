@@ -82,17 +82,17 @@ class ContentResource(resource.Resource):
         self.plugin = plugin
 
     def render_server(self):
-        html = '<div class="scanner"><div class="scanner_name"><h3>Server</h3></div><div class="scanner_location"></div>'
+        html = '<div class="block"><div class="block_title"><h3>Server</h3></div><div class="block_topright"></div>'
         html += '<div style="clear: both;"></div>'
-        html += '<div class="scanner_content"><div class="sensor"><img src="static/icons/clock-arrow.png">Started<span class="time">%s</span></div>' % prettydate(self.plugin.uptime)
-        html += '<div class="sensor"><img src="static/icons/puzzle.png">Plugins<span class="time">%s</span></div>' % ", ".join(sorted([p.name for p in self.plugin.server.plugins]))
+        html += '<div class="block_content"><div class="block_data"><img src="static/icons/clock-arrow.png">Started<span class="block_data_attr">%s</span></div>' % prettydate(self.plugin.uptime)
+        html += '<div class="block_data"><img src="static/icons/puzzle.png">Plugins<span class="block_data_attr">%s</span></div>' % ", ".join(sorted([p.name for p in self.plugin.server.plugins]))
         html += '</div></div>'
         return html
 
     def render_scanner(self, s):
 
         def render_location():
-            html = '<div class="scanner_location">'
+            html = '<div class="block_topright">'
             if s.location != None and s.location_link == None:
                 html += '%s<img src="static/icons/marker.png">' % s.location
             elif s.location != None:
@@ -103,28 +103,28 @@ class ContentResource(resource.Resource):
         def render_net():
             html = '<img src="static/icons/network-ip.png">'
             if s.conn_ip and s.conn_port:
-                html += '%s - %s<span class="time"><b>connected</b> %s</span>' % (s.conn_ip, s.conn_port,
+                html += '%s - %s<span class="block_data_attr"><b>connected</b> %s</span>' % (s.conn_ip, s.conn_port,
                     prettydate(int(float(s.conn_time))))
             elif s.conn_ip == None:
-                html += 'No connection.<span class="time"><b>disconnected</b> %s</span>' % prettydate(int(float(s.conn_time)))
+                html += 'No connection.<span class="block_data_attr"><b>disconnected</b> %s</span>' % prettydate(int(float(s.conn_time)))
             return html
 
         def render_sensor(sens):
-            html = '<div class="sensor"><img src="static/icons/bluetooth.png">%s' % sens.mac
+            html = '<div class="block_data"><img src="static/icons/bluetooth.png">%s' % sens.mac
             if sens.last_inquiry != None:
-                html += '<span class="time"><b>last inquiry</b> %s</span>' % prettydate(int(float(sens.last_inquiry)))
+                html += '<span class="block_data_attr"><b>last inquiry</b> %s</span>' % prettydate(int(float(sens.last_inquiry)))
             if sens.last_data != None:
-                html += '<span class="time"><b>last data</b> %s</span>' % prettydate(int(float(sens.last_data)))
+                html += '<span class="block_data_attr"><b>last data</b> %s</span>' % prettydate(int(float(sens.last_data)))
             if sens.datalines > 0:
-                html += '<span class="time"><b>datalines</b> %i</span>' % sens.datalines
+                html += '<span class="block_data_attr"><b>datalines</b> %i</span>' % sens.datalines
             html += '</div>'
             return html
 
-        html = '<div class="scanner"><div class="scanner_name"><h3>%s</h3></div>' % s.hostname
+        html = '<div class="block"><div class="block_title"><h3>%s</h3></div>' % s.hostname
         html += render_location()
         html += '<div style="clear: both;"></div>'
 
-        html += '<div class="scanner_content">'
+        html += '<div class="block_content">'
         html += render_net()
 
         if s.conn_ip != None:
