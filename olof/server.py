@@ -55,9 +55,10 @@ class GyridServerProtocol(LineReceiver):
         LineReceiver.sendLine(self, data)
 
     def connectionLost(self, reason):
-        for p in self.factory.server.plugins:
-            p.connectionLost(self.hostname, self.transport.getPeer().host,
-                self.transport.getPeer().port)
+        if self.hostname != None:
+            for p in self.factory.server.plugins:
+                p.connectionLost(self.hostname, self.transport.getPeer().host,
+                    self.transport.getPeer().port)
 
     def checksum(self, data):
         return hex(abs(zlib.crc32(data)))[2:]
@@ -93,19 +94,20 @@ class GyridServerProtocol(LineReceiver):
         else:
             self.sendLine('ACK,%s' % self.checksum(line))
 
-            if len(ll) == 4 and ll[0] == 'STATE':
-                for p in self.factory.server.plugins:
-                    p.stateFeed(self.hostname, ll[2], ll[1], ll[3])
-            elif len(ll) == 5:
-                for p in self.factory.server.plugins:
-                    p.dataFeedCell(self.hostname, ll[1], ll[0], ll[2], ll[3],
-                        ll[4])
-            elif len(ll) == 4:
-                for p in self.factory.server.plugins:
-                    p.dataFeedRssi(self.hostname, ll[1], ll[0], ll[2], ll[3])
-            elif len(ll) == 3 and ll[0] == 'INFO':
-                for p in self.factory.server.plugins:
-                    p.infoFeed(self.hostname, ll[1], ll[2])
+            if self.hostname != None:
+                if len(ll) == 4 and ll[0] == 'STATE':
+                    for p in self.factory.server.plugins:
+                        p.stateFeed(self.hostname, ll[2], ll[1], ll[3])
+                elif len(ll) == 5:
+                    for p in self.factory.server.plugins:
+                        p.dataFeedCell(self.hostname, ll[1], ll[0], ll[2], ll[3],
+                            ll[4])
+                elif len(ll) == 4:
+                    for p in self.factory.server.plugins:
+                        p.dataFeedRssi(self.hostname, ll[1], ll[0], ll[2], ll[3])
+                elif len(ll) == 3 and ll[0] == 'INFO':
+                    for p in self.factory.server.plugins:
+                        p.infoFeed(self.hostname, ll[1], ll[2])
 
 
 class GyridServerFactory(Factory):
