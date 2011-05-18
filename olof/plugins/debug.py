@@ -34,7 +34,10 @@ class Plugin(olof.core.Plugin):
         self.output("%s info: %s" % (hostname, info))
 
     def uptime(self, hostname, up1, up2):
-        self.output("debug: %s" % ','.join([hostname, up1, up2]))
+        self.output("debug: uptime: %s" % ','.join([hostname, up1, up2]))
+
+    def sysStateFeed(self, hostname, module, info):
+        self.output("debug: sysState: %s" % ','.join([hostname, module, info]))
 
     def stateFeed(self, hostname, timestamp, sensor_mac, info):
         pass
