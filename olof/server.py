@@ -32,6 +32,8 @@ class GyridServerProtocol(LineReceiver):
         self.last_keepalive = -1
         self.hostname = None
 
+        self.buffer = []
+
         self.sendLine('MSG,hostname')
         self.sendLine('MSG,enable_sensor_mac,true')
         self.sendLine('MSG,enable_rssi,true')
@@ -79,14 +81,21 @@ class GyridServerProtocol(LineReceiver):
                     p.connectionMade(self.hostname,
                         self.transport.getPeer().host,
                         self.transport.getPeer().port)
+                for l in self.buffer:
+                    self.process(line)
+                self.buffer[:] = []
             elif ll[1] == 'uptime':
                 if self.hostname != None:
                     for p in self.factory.server.plugins:
                         p.uptime(self.hostname, ll[3], ll[2])
+                else:
+                    self.buffer.append(line)
             elif ll[1] == 'gyrid':
                 if self.hostname != None:
                     for p in self.factory.server.plugins:
                         p.sysStateFeed(self.hostname, ll[1], ll[2])
+                else:
+                    self.buffer.append(line)
             elif len(ll) == 2 and ll[1] == 'keepalive':
                 self.last_keepalive = int(time.time())
             elif len(ll) == 3 and ll[1] == 'enable_keepalive':
