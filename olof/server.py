@@ -82,8 +82,8 @@ class GyridServerProtocol(LineReceiver):
                         self.transport.getPeer().host,
                         self.transport.getPeer().port)
                 for l in self.buffer:
-                    if not 'hostname' in line:
-                        self.process(line)
+                    if not 'hostname' in l:
+                        self.process(l)
                 self.buffer[:] = []
             elif ll[1] == 'uptime':
                 if self.hostname != None:
