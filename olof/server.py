@@ -80,11 +80,13 @@ class GyridServerProtocol(LineReceiver):
                         self.transport.getPeer().host,
                         self.transport.getPeer().port)
             elif ll[1] == 'uptime':
-                for p in self.factory.server.plugins:
-                    p.uptime(self.hostname, ll[3], ll[2])
+                if self.hostname != None:
+                    for p in self.factory.server.plugins:
+                        p.uptime(self.hostname, ll[3], ll[2])
             elif ll[1] == 'gyrid':
-                for p in self.factory.server.plugins:
-                    p.sysStateFeed(self.hostname, ll[1], ll[2])
+                if self.hostname != None:
+                    for p in self.factory.server.plugins:
+                        p.sysStateFeed(self.hostname, ll[1], ll[2])
             elif len(ll) == 2 and ll[1] == 'keepalive':
                 self.last_keepalive = int(time.time())
             elif len(ll) == 3 and ll[1] == 'enable_keepalive':

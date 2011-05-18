@@ -34,8 +34,7 @@ class Plugin(olof.core.Plugin):
         self.output("%s info: %s" % (hostname, info))
 
     def stateFeed(self, hostname, timestamp, sensor_mac, info):
-        if info == 'new_inquiry':
-            self.output("%s - %s: %s" % (hostname, sensor_mac, info))
+        pass
 
     def dataFeedCell(self, hostname, timestamp, sensor_mac, mac, deviceclass,
             move):
