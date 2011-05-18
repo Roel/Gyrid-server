@@ -22,27 +22,30 @@ import urlparse
 import olof.core
 
 def prettydate(d, prefix="", suffix=" ago"):
+    t = d
     d = datetime.datetime.fromtimestamp(d)
     diff = datetime.datetime.now() - d
     s = diff.seconds
     if diff.days > 7 or diff.days < 0:
-        return d.strftime('%d %b %y')
+        r =  d.strftime('%d %b %y')
     elif diff.days == 1:
-        return '%s1 day%s' % (prefix, suffix)
+        r =  '%s1 day%s' % (prefix, suffix)
     elif diff.days > 1:
-        return '%s%i days%s' % (prefix, diff.days, suffix)
+        r =  '%s%i days%s' % (prefix, diff.days, suffix)
     elif s <= 1:
-        return 'just now'
+        r =  'just now'
     elif s < 60:
-        return '%s%i seconds%s' % (prefix, s, suffix)
+        r =  '%s%i seconds%s' % (prefix, s, suffix)
     elif s < 120:
-        return '%s1 minute%s' % (prefix, suffix)
+        r =  '%s1 minute%s' % (prefix, suffix)
     elif s < 3600:
-        return '%s%i minutes%s' % (prefix, s/60, suffix)
+        r =  '%s%i minutes%s' % (prefix, s/60, suffix)
     elif s < 7200:
-        return '%s1 hour%s' % (prefix, suffix)
+        r =  '%s1 hour%s' % (prefix, suffix)
     else:
-        return '%s%i hours%s' % (prefix, s/3600, suffix)
+        r =  '%s%i hours%s' % (prefix, s/3600, suffix)
+    return '<span title="%s">%s</span>' % (time.strftime('%Y%m%d-%H%M%S-%Z',
+        time.localtime(t)), r)
 
 class Scanner(object):
     def __init__(self, hostname):
