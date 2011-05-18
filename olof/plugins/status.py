@@ -21,32 +21,33 @@ import urlparse
 
 import olof.core
 
-def prettydate(d):
+def prettydate(d, prefix="", suffix=" ago"):
     d = datetime.datetime.fromtimestamp(d)
     diff = datetime.datetime.now() - d
     s = diff.seconds
     if diff.days > 7 or diff.days < 0:
         return d.strftime('%d %b %y')
     elif diff.days == 1:
-        return '1 day ago'
+        return '%s1 day%s' % (prefix, suffix)
     elif diff.days > 1:
-        return '%i days ago' % (diff.days)
+        return '%s%i days%s' % (prefix, diff.days, suffix)
     elif s <= 1:
         return 'just now'
     elif s < 60:
-        return '%i seconds ago' % (s)
+        return '%s%i seconds%s' % (prefix, s, suffix)
     elif s < 120:
-        return '1 minute ago'
+        return '%s1 minute%s' % (prefix, suffix)
     elif s < 3600:
-        return '%i minutes ago' % (s/60)
+        return '%s%i minutes%s' % (prefix, s/60, suffix)
     elif s < 7200:
-        return '1 hour ago'
+        return '%s1 hour%s' % (prefix, suffix)
     else:
-        return '%i hours ago' % (s/3600)
+        return '%s%i hours%s' % (prefix, s/3600, suffix)
 
 class Scanner(object):
     def __init__(self, hostname):
         self.hostname = hostname
+        self.host_uptime = None
         self.sensors = {}
 
         self.conn_ip = None
@@ -54,13 +55,19 @@ class Scanner(object):
         self.conn_time = None
         self.location = None
         self.location_link = None
+        self.gyrid_connected = True
+        self.gyrid_disconnect_time = None
+        self.gyrid_uptime = None
 
 class Sensor(object):
     def __init__(self, mac):
         self.mac = mac
         self.last_inquiry = None
         self.last_data = None
-        self.datalines = 0
+        self.connected = False
+        self.detections = 0
+
+        self.disconnect_time = None
 
 class RootResource(resource.Resource):
     def __init__(self):
@@ -84,7 +91,7 @@ class ContentResource(resource.Resource):
     def render_server(self):
         html = '<div class="block"><div class="block_title"><h3>Server</h3></div><div class="block_topright"></div>'
         html += '<div style="clear: both;"></div>'
-        html += '<div class="block_content"><div class="block_data"><img src="static/icons/clock-arrow.png">Started<span class="block_data_attr">%s</span></div>' % prettydate(self.plugin.uptime)
+        html += '<div class="block_content"><div class="block_data"><img src="static/icons/clock-arrow.png">Uptime<span class="block_data_attr">%s</span></div>' % prettydate(self.plugin.plugin_uptime, suffix="")
         html += '<div class="block_data"><img src="static/icons/puzzle.png">Plugins<span class="block_data_attr">%s</span></div>' % ", ".join(sorted([p.name for p in self.plugin.server.plugins]))
         html += '</div></div>'
         return html
@@ -100,23 +107,37 @@ class ContentResource(resource.Resource):
             html += '</div>'
             return html
 
-        def render_net():
-            html = '<img src="static/icons/network-ip.png">'
-            if s.conn_ip and s.conn_port:
-                html += '%s - %s<span class="block_data_attr"><b>connected</b> %s</span>' % (s.conn_ip, s.conn_port,
-                    prettydate(int(float(s.conn_time))))
-            elif s.conn_ip == None:
-                html += 'No connection.<span class="block_data_attr"><b>disconnected</b> %s</span>' % prettydate(int(float(s.conn_time)))
+        def render_uptime():
+            html = '<div class="block_data"><img src="static/icons/clock-arrow.png">Uptime'
+            html += '<span class="block_data_attr"><b>connection</b> %s</span>' % prettydate(int(float(s.conn_time)), suffix="")
+            if s.gyrid_uptime != None and s.gyrid_connected == True:
+                html += '<span class="block_data_attr"><b>gyrid</b> %s</span>' % prettydate(s.gyrid_uptime, suffix="")
+            if s.host_uptime != None:
+                html += '<span class="block_data_attr"><b>system</b> %s</span>' % prettydate(s.host_uptime, suffix="")
+            html += '</div>'
+            return html
+
+        def render_notconnected(disconnect_time, suffix=""):
+            html = '<div class="block_data"><img src="static/icons/traffic-cone.png">No connection%s' % suffix
+            if disconnect_time != None:
+                html += '<span class="block_data_attr"><b>disconnected</b> %s</span>' % prettydate(int(float(disconnect_time)))
+            html += '</div>'
             return html
 
         def render_sensor(sens):
-            html = '<div class="block_data"><img src="static/icons/bluetooth.png">%s' % sens.mac
-            if sens.last_inquiry != None:
-                html += '<span class="block_data_attr"><b>last inquiry</b> %s</span>' % prettydate(int(float(sens.last_inquiry)))
+            html = '<div class="block_data">'
+            if sens.connected == False:
+                html += '<img src="static/icons/plug-disconnect.png">%s' % sens.mac
+                if sens.disconnect_time != None:
+                    html += '<span class="block_data_attr"><b>disconnected</b> %s</span>' % prettydate(int(float(sens.disconnect_time)))
+            else:
+                html += '<img src="static/icons/bluetooth.png">%s' % sens.mac
+                if sens.last_inquiry != None:
+                    html += '<span class="block_data_attr"><b>last inquiry</b> %s</span>' % prettydate(int(float(sens.last_inquiry)))
             if sens.last_data != None:
                 html += '<span class="block_data_attr"><b>last data</b> %s</span>' % prettydate(int(float(sens.last_data)))
-            if sens.datalines > 0:
-                html += '<span class="block_data_attr"><b>datalines</b> %i</span>' % sens.datalines
+            if sens.detections > 0:
+                html += '<span class="block_data_attr"><b>detections</b> %i</span>' % sens.detections
             html += '</div>'
             return html
 
@@ -125,11 +146,16 @@ class ContentResource(resource.Resource):
         html += '<div style="clear: both;"></div>'
 
         html += '<div class="block_content">'
-        html += render_net()
 
         if s.conn_ip != None:
-            for sens in s.sensors.values():
-                html += render_sensor(sens)
+            html += render_uptime()
+            if s.gyrid_connected == True:
+                for sens in s.sensors.values():
+                    html += render_sensor(sens)
+            else:
+                html += render_notconnected(s.gyrid_disconnect_time, " to Gyrid")
+        else:
+            html += render_notconnected(s.conn_time)
 
         html += '</div></div>'
         return html
@@ -177,7 +203,7 @@ class Plugin(olof.core.Plugin):
 
         self.scanners = {}
         self.locations = {}
-        self.uptime = int(time.time())
+        self.plugin_uptime = int(time.time())
 
         f = open("olof/plugins/status/data/locations.txt", "r")
         for line in f:
@@ -211,6 +237,11 @@ class Plugin(olof.core.Plugin):
             sens = s.sensors[mac]
         return sens
 
+    def uptime(self, hostname, host_uptime, gyrid_uptime):
+        s = self.getScanner(hostname)
+        s.host_uptime = int(float(host_uptime))
+        s.gyrid_uptime = int(float(gyrid_uptime))
+
     def connectionMade(self, hostname, ip, port):
         s = self.getScanner(hostname)
         s.conn_ip = ip
@@ -223,21 +254,29 @@ class Plugin(olof.core.Plugin):
         s.conn_port = None
         s.conn_time = int(time.time())
 
-    def infoFeed(self, hostname, timestamp, info):
-        pass
+    def sysStateFeed(self, hostname, module, info):
+        s = self.getScanner(hostname)
+        if module == 'gyrid':
+            if info == 'connected':
+                s.gyrid_connected = True
+            elif info == 'disconnected':
+                s.gyrid_connected = False
+                s.gyrid_disconnect_time = int(time.time())
 
     def stateFeed(self, hostname, timestamp, sensor_mac, info):
+        sens = self.getSensor(hostname, sensor_mac)
         if info == 'new_inquiry':
-            sens = self.getSensor(hostname, sensor_mac)
+            sens.connected = True
             if sens.last_inquiry == None or timestamp > sens.last_inquiry:
                 sens.last_inquiry = timestamp
-
-    def dataFeedCell(self, hostname, timestamp, sensor_mac, mac, deviceclass,
-            move):
-        pass
+        elif info == 'started_scanning':
+            sens.connected = True
+        elif info == 'stopped_scanning':
+            sens.connected = False
+            sens.disconnect_time = int(float(timestamp))
 
     def dataFeedRssi(self, hostname, timestamp, sensor_mac, mac, rssi):
         sens = self.getSensor(hostname, sensor_mac)
-        sens.datalines += 1
+        sens.detections += 1
         if sens.last_data == None or timestamp > sens.last_data:
             sens.last_data = timestamp

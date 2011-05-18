@@ -18,6 +18,9 @@ class Plugin(object):
         self.name = name
         self.output = self.server.output
 
+    def uptime(self, hostname, host_uptime, gyrid_uptime):
+        pass
+
     def connectionMade(self, hostname, ip, port):
         pass
 
@@ -25,6 +28,9 @@ class Plugin(object):
         pass
 
     def stateFeed(self, hostname, timestamp, sensor_mac, info):
+        pass
+
+    def sysStateFeed(self, hostname, module, info):
         pass
 
     def infoFeed(self, hostname, timestamp, info):

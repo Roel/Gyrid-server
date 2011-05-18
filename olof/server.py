@@ -36,6 +36,8 @@ class GyridServerProtocol(LineReceiver):
         self.sendLine('MSG,enable_sensor_mac,true')
         self.sendLine('MSG,enable_rssi,true')
         self.sendLine('MSG,enable_cache,true')
+        self.sendLine('MSG,enable_uptime,true')
+        self.sendLine('MSG,enable_state_scanning,true')
         self.sendLine('MSG,enable_state_inquiry,true')
 
         self.sendLine('MSG,enable_keepalive,%i' % self.factory.timeout)
@@ -76,6 +78,12 @@ class GyridServerProtocol(LineReceiver):
                     p.connectionMade(self.hostname,
                         self.transport.getPeer().host,
                         self.transport.getPeer().port)
+            elif ll[1] == 'uptime':
+                for p in self.factory.server.plugins:
+                    p.uptime(self.hostname, ll[3], ll[2])
+            elif ll[1] == 'gyrid':
+                for p in self.factory.server.plugins:
+                    p.sysStateFeed(self.hostname, ll[1], ll[2])
             elif len(ll) == 2 and ll[1] == 'keepalive':
                 self.last_keepalive = int(time.time())
             elif len(ll) == 3 and ll[1] == 'enable_keepalive':
