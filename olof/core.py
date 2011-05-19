@@ -18,6 +18,9 @@ class Plugin(object):
         self.name = name
         self.output = self.server.output
 
+    def unload(self):
+        pass
+
     def uptime(self, hostname, host_uptime, gyrid_uptime):
         pass
 

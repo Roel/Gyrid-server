@@ -72,7 +72,6 @@ class GyridServerProtocol(LineReceiver):
 
     def process(self, line):
         ll = line.strip().split(',')
-        print "processing: %s" % line
 
         if ll[0] == 'MSG':
             ll[1] = ll[1].strip()
@@ -165,6 +164,10 @@ class Olof(object):
             elif filename.endswith('.py') and not filename.startswith('__'):
                 load(os.path.join(home, 'olof', 'plugins', filename), self.plugins_inactive)
 
+    def unload_plugins(self):
+        for p in self.plugins:
+            p.unload()
+
     def output(self, message):
         d = {'time': time.strftime('%Y%m%d-%H%M%S-%Z'),
              'message': message}
@@ -188,5 +191,6 @@ class Olof(object):
 
         gsf = GyridServerFactory(self)
 
+        reactor.addSystemEventTrigger("before", "shutdown", self.unload_plugins)
         reactor.listenSSL(self.port, gsf, gyridCtxFactory)
         reactor.run()

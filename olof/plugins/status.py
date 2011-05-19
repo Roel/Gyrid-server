@@ -14,7 +14,9 @@ from twisted.web import resource
 from twisted.web import server as tserver
 from twisted.web.static import File
 
+import cPickle as pickle
 import datetime
+import os
 import time
 import urllib2
 import urlparse
@@ -204,7 +206,19 @@ class Plugin(olof.core.Plugin):
         self.content = ContentResource(self)
         self.root.putChild("content", self.content)
 
-        self.scanners = {}
+        if os.path.isfile("olof/plugins/status/data/obj.pickle"):
+            f = open("olof/plugins/status/data/obj.pickle", "r")
+            self.scanners = pickle.load(f)
+            f.close()
+            for s in self.scanners.values():
+                s.conn_ip = None
+                s.conn_port = None
+                s.conn_time = None
+                for sens in s.sensors.values():
+                    sens.connected = False
+        else:
+            self.scanners = {}
+
         self.locations = {}
         self.plugin_uptime = int(time.time())
 
@@ -217,6 +231,11 @@ class Plugin(olof.core.Plugin):
         f.close()
 
         reactor.listenTCP(8080, tserver.Site(self.root))
+
+    def unload(self):
+        f = open("olof/plugins/status/data/obj.pickle", "w")
+        pickle.dump(self.scanners, f)
+        f.close()
 
     def getScanner(self, hostname):
         if not hostname in self.scanners:
