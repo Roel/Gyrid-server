@@ -256,7 +256,7 @@ class Plugin(olof.core.Plugin):
         s.conn_ip = None
         s.conn_port = None
         s.conn_time = int(time.time())
-        for sens in s.sensors:
+        for sens in s.sensors.values():
             sens.connected = False
 
     def sysStateFeed(self, hostname, module, info):
