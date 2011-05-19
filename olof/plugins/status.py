@@ -216,7 +216,7 @@ class Plugin(olof.core.Plugin):
                 s.conn_time = None
                 for sens in s.sensors.values():
                     sens.connected = False
-                    self.disconnect_time = None
+                    sens.disconnect_time = None
         else:
             self.scanners = {}
 
