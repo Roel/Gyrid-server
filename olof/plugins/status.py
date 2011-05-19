@@ -153,8 +153,8 @@ class ContentResource(resource.Resource):
         if s.conn_ip != None:
             html += render_uptime()
             if s.gyrid_connected == True:
-                for sens in s.sensors.values():
-                    html += render_sensor(sens)
+                for sensor in s.sensors.values():
+                    html += render_sensor(sensor)
             else:
                 html += render_notconnected(s.gyrid_disconnect_time, " to Gyrid")
         else:
