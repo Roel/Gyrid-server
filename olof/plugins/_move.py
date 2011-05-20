@@ -15,6 +15,8 @@ import time
 import urllib2
 import urlparse
 
+import olof.core
+
 class ExtRequest(urllib2.Request):
     method = None
 
@@ -82,7 +84,7 @@ class Connection:
         except IOError, e:
             return e.readlines()
 
-class Plugin(object):
+class Plugin(olof.core.Plugin):
     """
     Class that can interact with the Gyrid network component.
     """
@@ -92,7 +94,7 @@ class Plugin(object):
 
         @param   mgr   Reference to ScanManager instance.
         """
-        self.server = server
+        olof.core.Plugin.__init__(self, server, "Move")
         self.mac_dc = {}
         self.buffer = []
         self.last_session_id = None

@@ -109,6 +109,12 @@ class ContentResource(resource.Resource):
                     else:
                         html += '<span class="block_data_attr">%s</span>' % i[0]
                 html += '</div>'
+        for p in self.plugin.server.plugins_inactive:
+            if p.name != None:
+                html += '<div class="block_data">'
+                html += '<img src="static/icons/puzzle-grey.png">%s' % p.name
+                html += '<span class="block_data_attr">disabled</span>'
+                html += '</div>'
         html += '</div></div>'
         return html
 
