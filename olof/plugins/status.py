@@ -237,15 +237,22 @@ class Plugin(olof.core.Plugin):
         else:
             self.scanners = {}
 
-        self.locations = {}
         self.plugin_uptime = int(time.time())
 
         f = open("olof/plugins/status/data/locations.txt", "r")
         for line in f:
             line = line.strip().split(',')
-            self.locations[line[0]] = [line[1]]
-            if len(line) >= 4:
-                self.locations[line[0]].extend(line[2:4])
+            if not line[0].startswith('#'):
+                s = self.getScanner(line[0])
+                s.location = line[1]
+                if len(line) >= 4:
+                    s.location_link = "http://www.openstreetmap.org/?mlat=%s&mlon=%s&zoom=15&layers=M" % (
+                        line[2], line[3])
+            else:
+                s = self.getScanner(line[0].lstrip('#'), create=False)
+                if s != None:
+                    s.location = None
+                    s.location_link = None
         f.close()
 
         reactor.listenTCP(8080, tserver.Site(self.root))
@@ -255,17 +262,14 @@ class Plugin(olof.core.Plugin):
         pickle.dump(self.scanners, f)
         f.close()
 
-    def getScanner(self, hostname):
-        if not hostname in self.scanners:
+    def getScanner(self, hostname, create=True):
+        if not hostname in self.scanners and create:
             s = Scanner(hostname)
-            if hostname in self.locations:
-                s.location = self.locations[hostname][0]
-                if len(self.locations[hostname]) >= 3:
-                    s.location_link = "http://www.openstreetmap.org/?mlat=%s&mlon=%s&zoom=15&layers=M" % (
-                        self.locations[hostname][1], self.locations[hostname][2])
             self.scanners[hostname] = s
-        else:
+        elif hostname in self.scanners:
             s = self.scanners[hostname]
+        else:
+            s = None
         return s
 
     def getSensor(self, hostname, mac):
