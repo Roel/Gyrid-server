@@ -46,7 +46,7 @@ def prettydate(d, prefix="", suffix=" ago"):
         r =  '%s1 hour%s' % (prefix, suffix)
     else:
         r =  '%s%i hours%s' % (prefix, s/3600, suffix)
-    return '<span title="%s">%s</span>' % (time.strftime('%Y%m%d-%H%M%S-%Z',
+    return '<span title="%s">%s</span>' % (time.strftime('%a %Y%m%d-%H%M%S-%Z',
         time.localtime(t)), r)
 
 class Scanner(object):
