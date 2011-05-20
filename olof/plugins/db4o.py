@@ -34,13 +34,16 @@ class InetClientFactory(ReconnectingClientFactory):
 
 class Plugin(olof.core.Plugin):
     def __init__(self, server):
-        olof.core.Plugin.__init__(self, server, "Db4o")
+        olof.core.Plugin.__init__(self, server, "db4o")
         self.host = 'localhost'
         self.port = 5000
         self.mac_dc = {}
 
         self.inet_factory = InetClientFactory(self)
         reactor.connectTCP(self.host, self.port, self.inet_factory)
+
+    def getStatus(self):
+        return [['no connection', None]]
 
     def dataFeedCell(self, hostname, timestamp, sensor_mac, mac, deviceclass,
              move):

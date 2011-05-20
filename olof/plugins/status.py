@@ -94,10 +94,21 @@ class ContentResource(resource.Resource):
         self.plugin = plugin
 
     def render_server(self):
-        html = '<div class="block"><div class="block_title"><h3>Server</h3></div><div class="block_topright"></div>'
+        html = '<div class="block"><div class="block_title"><h3>Server</h3></div>'
+        html += '<div class="block_topright">%s<img src="static/icons/clock-arrow.png"></div>' % prettydate(self.plugin.plugin_uptime, suffix="")
         html += '<div style="clear: both;"></div>'
-        html += '<div class="block_content"><div class="block_data"><img src="static/icons/clock-arrow.png">Uptime<span class="block_data_attr">%s</span></div>' % prettydate(self.plugin.plugin_uptime, suffix="")
-        html += '<div class="block_data"><img src="static/icons/puzzle.png">Plugins<span class="block_data_attr">%s</span></div>' % ", ".join(sorted([p.name for p in self.plugin.server.plugins]))
+        html += '<div class="block_content">'
+        for p in self.plugin.server.plugins:
+            if p.name != None:
+                html += '<div class="block_data">'
+                html += '<img src="static/icons/puzzle.png">%s' % p.name
+                st = p.getStatus()
+                for i in st:
+                    if i[1] != None:
+                        html += '<span class="block_data_attr"><b>%s</b> %s</span>' % (i[0], prettydate(i[1]))
+                    else:
+                        html += '<span class="block_data_attr">%s</span>' % i[0]
+                html += '</div>'
         html += '</div></div>'
         return html
 
@@ -196,7 +207,7 @@ class Plugin(olof.core.Plugin):
     Class that can interact with the Gyrid network component.
     """
     def __init__(self, server):
-        olof.core.Plugin.__init__(self, server, "Status panel")
+        olof.core.Plugin.__init__(self, server)
         self.root = RootResource()
         self.root.putChild("", self.root)
 
