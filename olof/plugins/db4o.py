@@ -22,14 +22,19 @@ class InetClientFactory(ReconnectingClientFactory):
         self.maxDelay = 120
         self.client = None
 
+    def clientConnectionLost(self, connector, reason):
+        self.plugin.connected = False
+        self.plugin.conn_time = int(time.time())
+
     def buildProtocol(self, addr):
         """
         Build the InetClient protocol, return an InetClient instance.
         """
         self.resetDelay()
+        self.plugin.connected = True
+        self.plugin.conn_time = int(time.time())
         self.client = LineReceiver()
 
-        self.plugin.output("db4o: Connected to server")
         return self.client
 
 class Plugin(olof.core.Plugin):
@@ -39,11 +44,19 @@ class Plugin(olof.core.Plugin):
         self.port = 5000
         self.mac_dc = {}
 
+        self.connected = False
+        self.conn_time = None
+
         self.inet_factory = InetClientFactory(self)
         reactor.connectTCP(self.host, self.port, self.inet_factory)
 
     def getStatus(self):
-        return [['no connection', None]]
+        if self.connected == False and self.conn_time == None:
+            return [['no connection', None]]
+        elif self.connected == False:
+            return [['disconnected', self.conn_time]]
+        elif self.connected == True:
+            return [['connected', self.conn_time]]
 
     def dataFeedCell(self, hostname, timestamp, sensor_mac, mac, deviceclass,
              move):
