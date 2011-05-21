@@ -163,7 +163,7 @@ class ContentResource(resource.Resource):
             html += '</div>'
             return html
 
-        html = '<div class="block"><div class="block_title"><h3>%s</h3></div>' % s.hostname
+        html = '<div class="block"><div class="block_title"><h3><a name="%(h)s">%(h)s</a></h3></div>' % {'h': s.hostname}
         html += render_location()
         html += '<div style="clear: both;"></div>'
 

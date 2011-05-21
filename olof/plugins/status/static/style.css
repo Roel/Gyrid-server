@@ -30,6 +30,10 @@ a:hover {
     border-bottom: 1px dotted #16497A;
 }
 
+h3 a:hover {
+    border-bottom: none;
+}
+
 #updated {
     font: bold 16pt Arial,Sans-serif;
     margin-top: 10px;
