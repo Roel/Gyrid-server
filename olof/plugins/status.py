@@ -65,6 +65,53 @@ class Scanner(object):
         self.gyrid_disconnect_time = None
         self.gyrid_uptime = None
 
+    def render(self):
+
+        def render_location():
+            html = '<div class="block_topright">'
+            if self.location != None and self.location_link == None:
+                html += '%s<img src="static/icons/marker.png">' % self.location
+            elif self.location != None:
+                html += '<a href="%s">%s</a><img src="static/icons/marker.png">' % (self.location_link, self.location)
+            html += '</div>'
+            return html
+
+        def render_uptime():
+            html = '<div class="block_data"><img src="static/icons/clock-arrow.png">Uptime'
+            html += '<span class="block_data_attr"><b>connection</b> %s</span>' % prettydate(int(float(self.conn_time)), suffix="")
+            if self.gyrid_uptime != None and self.gyrid_connected == True:
+                html += '<span class="block_data_attr"><b>gyrid</b> %s</span>' % prettydate(self.gyrid_uptime, suffix="")
+            if self.host_uptime != None:
+                html += '<span class="block_data_attr"><b>system</b> %s</span>' % prettydate(self.host_uptime, suffix="")
+            html += '</div>'
+            return html
+
+        def render_notconnected(disconnect_time, suffix=""):
+            html = '<div class="block_data"><img src="static/icons/traffic-cone.png">No connection%s' % suffix
+            if disconnect_time != None:
+                html += '<span class="block_data_attr"><b>disconnected</b> %s</span>' % prettydate(int(float(disconnect_time)))
+            html += '</div>'
+            return html
+
+        html = '<div class="block"><div class="block_title"><h3><a name="%(h)s">%(h)s</a></h3></div>' % {'h': self.hostname}
+        html += render_location()
+        html += '<div style="clear: both;"></div>'
+
+        html += '<div class="block_content">'
+
+        if self.conn_ip != None:
+            html += render_uptime()
+            if self.gyrid_connected == True:
+                for sensor in self.sensors.values():
+                    html += sensor.render()
+            else:
+                html += render_notconnected(self.gyrid_disconnect_time, " to Gyrid")
+        else:
+            html += render_notconnected(self.conn_time)
+
+        html += '</div></div>'
+        return html
+
 class Sensor(object):
     def __init__(self, mac):
         self.mac = mac
@@ -74,6 +121,23 @@ class Sensor(object):
         self.detections = 0
 
         self.disconnect_time = None
+
+    def render(self):
+        html = '<div class="block_data">'
+        if self.connected == False:
+            html += '<img src="static/icons/plug-disconnect.png">%s' % self.mac
+            if self.disconnect_time != None:
+                html += '<span class="block_data_attr"><b>disconnected</b> %s</span>' % prettydate(int(float(self.disconnect_time)))
+        else:
+            html += '<img src="static/icons/bluetooth.png">%s' % self.mac
+            if self.last_inquiry != None:
+                html += '<span class="block_data_attr"><b>last inquiry</b> %s</span>' % prettydate(int(float(self.last_inquiry)))
+        if self.last_data != None:
+            html += '<span class="block_data_attr"><b>last data</b> %s</span>' % prettydate(int(float(self.last_data)))
+        if self.detections > 0:
+            html += '<span class="block_data_attr"><b>detections</b> %i</span>' % self.detections
+        html += '</div>'
+        return html
 
 class Warning(object):
     def __init__(self, where, weight=0, btime=None):
@@ -86,6 +150,12 @@ class Warning(object):
             return self.weight
         else:
             return self.weight + (int(time.time()) - self.btime)
+
+    def render(self, block):
+        if block == "warnings":
+            html = '<div class="block_data"><img src="static/icons/traffic-cone.png">%s' % w.where
+            html += '</div>'
+        return html
 
 class RootResource(resource.Resource):
     def __init__(self):
@@ -114,8 +184,7 @@ class ContentResource(resource.Resource):
         html += '<div class="block_topright"></div><div style="clear: both;"></div>'
         html += '<div class="block_content">'
         for w in self.plugin.warnings:
-            html += '<div class="block_data"><img src="static/icons/traffic-cone.png">%s' % w.where
-            html += '</div>'
+            html += w.render(block="warnings")
         html += '</div></div>'
         return html
 
@@ -144,70 +213,6 @@ class ContentResource(resource.Resource):
         html += '</div></div>'
         return html
 
-    def render_scanner(self, s):
-
-        def render_location():
-            html = '<div class="block_topright">'
-            if s.location != None and s.location_link == None:
-                html += '%s<img src="static/icons/marker.png">' % s.location
-            elif s.location != None:
-                html += '<a href="%s">%s</a><img src="static/icons/marker.png">' % (s.location_link, s.location)
-            html += '</div>'
-            return html
-
-        def render_uptime():
-            html = '<div class="block_data"><img src="static/icons/clock-arrow.png">Uptime'
-            html += '<span class="block_data_attr"><b>connection</b> %s</span>' % prettydate(int(float(s.conn_time)), suffix="")
-            if s.gyrid_uptime != None and s.gyrid_connected == True:
-                html += '<span class="block_data_attr"><b>gyrid</b> %s</span>' % prettydate(s.gyrid_uptime, suffix="")
-            if s.host_uptime != None:
-                html += '<span class="block_data_attr"><b>system</b> %s</span>' % prettydate(s.host_uptime, suffix="")
-            html += '</div>'
-            return html
-
-        def render_notconnected(disconnect_time, suffix=""):
-            html = '<div class="block_data"><img src="static/icons/traffic-cone.png">No connection%s' % suffix
-            if disconnect_time != None:
-                html += '<span class="block_data_attr"><b>disconnected</b> %s</span>' % prettydate(int(float(disconnect_time)))
-            html += '</div>'
-            return html
-
-        def render_sensor(sens):
-            html = '<div class="block_data">'
-            if sens.connected == False:
-                html += '<img src="static/icons/plug-disconnect.png">%s' % sens.mac
-                if sens.disconnect_time != None:
-                    html += '<span class="block_data_attr"><b>disconnected</b> %s</span>' % prettydate(int(float(sens.disconnect_time)))
-            else:
-                html += '<img src="static/icons/bluetooth.png">%s' % sens.mac
-                if sens.last_inquiry != None:
-                    html += '<span class="block_data_attr"><b>last inquiry</b> %s</span>' % prettydate(int(float(sens.last_inquiry)))
-            if sens.last_data != None:
-                html += '<span class="block_data_attr"><b>last data</b> %s</span>' % prettydate(int(float(sens.last_data)))
-            if sens.detections > 0:
-                html += '<span class="block_data_attr"><b>detections</b> %i</span>' % sens.detections
-            html += '</div>'
-            return html
-
-        html = '<div class="block"><div class="block_title"><h3><a name="%(h)s">%(h)s</a></h3></div>' % {'h': s.hostname}
-        html += render_location()
-        html += '<div style="clear: both;"></div>'
-
-        html += '<div class="block_content">'
-
-        if s.conn_ip != None:
-            html += render_uptime()
-            if s.gyrid_connected == True:
-                for sensor in s.sensors.values():
-                    html += render_sensor(sensor)
-            else:
-                html += render_notconnected(s.gyrid_disconnect_time, " to Gyrid")
-        else:
-            html += render_notconnected(s.conn_time)
-
-        html += '</div></div>'
-        return html
-
     def render_footer(self):
         html = '<div id="footer"><p>Gyrid Server version <span title="%s">%s</span>.</p>' % (self.plugin.server.git_commit,
             time.strftime('%Y-%m-%d', time.localtime(self.plugin.server.git_date)))
@@ -226,8 +231,8 @@ class ContentResource(resource.Resource):
         html += self.render_server()
         html += self.render_warnings()
 
-        for s in self.plugin.scanners.values():
-            html += self.render_scanner(s)
+        for scanner in self.plugin.scanners.values():
+            html += scanner.render()
 
         html += self.render_footer()
 
