@@ -11,6 +11,7 @@ from twisted.internet import reactor, ssl, task, threads
 from twisted.internet.protocol import Factory
 from twisted.protocols.basic import LineReceiver
 
+import git
 import imp
 import os
 import sys
@@ -139,6 +140,9 @@ class Olof(object):
         self.plugins_with_errors = {}
 
         self.output("Starting Gyrid Server")
+        commit = git.Repo('.').commits()[0]
+        self.git_commit = commit.id
+        self.git_date = int(time.strftime('%s', commit.committed_date))
 
         self.load_plugins()
 

@@ -182,6 +182,14 @@ class ContentResource(resource.Resource):
         html += '</div></div>'
         return html
 
+    def render_footer(self):
+        html = '<div id="footer"><p>Gyrid Server running version dated <span title="%s">%s</span>.</p>' % (self.plugin.server.git_commit,
+            time.strftime('%Y-%m-%d', time.localtime(self.plugin.server.git_date)))
+        html += '<p>© 2011 Universiteit Gent, Roel Huybrechts. '
+        html += 'Icons by <a href="http://p.yusukekamiyamane.com/">Yusuke Kamiyamane</a>.</p>'
+        html += '</div>'
+        return html
+
     def render_GET(self, request):
         return self.render_POST(request)
 
@@ -193,6 +201,8 @@ class ContentResource(resource.Resource):
 
         for s in self.plugin.scanners.values():
             html += self.render_scanner(s)
+
+        html += self.render_footer()
 
         return html
 
