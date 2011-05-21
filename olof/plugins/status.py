@@ -183,7 +183,7 @@ class ContentResource(resource.Resource):
         return html
 
     def render_footer(self):
-        html = '<div id="footer"><p>Gyrid Server running version dated <span title="%s">%s</span>.</p>' % (self.plugin.server.git_commit,
+        html = '<div id="footer"><p>Gyrid Server version <span title="%s">%s</span>.</p>' % (self.plugin.server.git_commit,
             time.strftime('%Y-%m-%d', time.localtime(self.plugin.server.git_date)))
         html += '<p>© 2011 Universiteit Gent, Roel Huybrechts. '
         html += 'Icons by <a href="http://p.yusukekamiyamane.com/">Yusuke Kamiyamane</a>.</p>'
