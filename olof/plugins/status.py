@@ -54,6 +54,7 @@ class Scanner(object):
         self.hostname = hostname
         self.host_uptime = None
         self.sensors = {}
+        self.warnings = []
 
         self.conn_ip = None
         self.conn_port = None
@@ -74,6 +75,18 @@ class Sensor(object):
 
         self.disconnect_time = None
 
+class Warning(object):
+    def __init__(self, where, weight=0, btime=None):
+        self.where = where
+        self.weight = weight
+        self.btime = btime
+
+    def getWeight(self):
+        if self.btime == None:
+            return self.weight
+        else:
+            return self.weight + (int(time.time()) - self.btime)
+
 class RootResource(resource.Resource):
     def __init__(self):
         resource.Resource.__init__(self)
@@ -92,6 +105,19 @@ class ContentResource(resource.Resource):
     def __init__(self, plugin):
         resource.Resource.__init__(self)
         self.plugin = plugin
+
+    def render_warnings(self):
+        if len(self.plugin.warnings) == 0:
+            return ""
+
+        html = '<div class="block"><div class="block_title"><h3>Warnings</h3></div>'
+        html += '<div class="block_topright"></div><div style="clear: both;"></div>'
+        html += '<div class="block_content">'
+        for w in self.plugin.warnings:
+            html += '<div class="block_data"><img src="static/icons/traffic-cone.png">%s' % w.where
+            html += '</div>'
+        html += '</div></div>'
+        return html
 
     def render_server(self):
         html = '<div class="block"><div class="block_title"><h3>Server</h3></div>'
@@ -190,6 +216,7 @@ class ContentResource(resource.Resource):
         html += '<div style="clear: both;"></div>'
 
         html += self.render_server()
+        html += self.render_warnings()
 
         for s in self.plugin.scanners.values():
             html += self.render_scanner(s)
@@ -222,6 +249,7 @@ class Plugin(olof.core.Plugin):
 
         self.content = ContentResource(self)
         self.root.putChild("content", self.content)
+        self.warnings = []
 
         if os.path.isfile("olof/plugins/status/data/obj.pickle"):
             f = open("olof/plugins/status/data/obj.pickle", "r")
@@ -236,6 +264,7 @@ class Plugin(olof.core.Plugin):
                     sens.disconnect_time = None
         else:
             self.scanners = {}
+
 
         self.plugin_uptime = int(time.time())
 
