@@ -41,7 +41,7 @@ class Plugin(olof.core.Plugin):
     def __init__(self, server):
         olof.core.Plugin.__init__(self, server, "db4o")
         self.host = 'localhost'
-        self.port = 5000
+        self.port = 5001
         self.mac_dc = {}
 
         self.connected = False
