@@ -28,7 +28,7 @@ def prettydate(d, prefix="", suffix=" ago"):
     d = datetime.datetime.fromtimestamp(d)
     diff = datetime.datetime.now() - d
     s = diff.seconds
-    if diff.days > 7 or diff.days < 0:
+    if diff.days < 0:
         r =  d.strftime('%d %b %y')
     elif diff.days == 1:
         r =  '%s1 day%s' % (prefix, suffix)
