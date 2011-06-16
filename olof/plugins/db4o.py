@@ -63,14 +63,14 @@ class Plugin(olof.core.Plugin):
             'client' in self.inet_factory.__dict__ and \
             self.inet_factory.client != None:
             self.inet_factory.client.sendLine(','.join([hostname, 'INFO',
-                str(int(float(timestamp*1000))), 'new_inquiry', sensor_mac]))
+                str(int(float(timestamp)*1000)), 'new_inquiry', sensor_mac]))
 
     def dataFeedCell(self, hostname, timestamp, sensor_mac, mac, deviceclass,
              move):
         if 'client' in self.inet_factory.__dict__ and \
             self.inet_factory.client != None:
             self.inet_factory.client.sendLine(','.join([hostname, sensor_mac,
-                 mac, deviceclass, str(int(float(timestamp*1000))), move]))
+                 mac, deviceclass, str(int(float(timestamp)*1000)), move]))
 
         if move == 'in':
             self.mac_dc[mac] = deviceclass
@@ -82,4 +82,4 @@ class Plugin(olof.core.Plugin):
             self.inet_factory.client != None:
             deviceclass = self.mac_dc.get(mac, '-1')
             self.inet_factory.client.sendLine(','.join([hostname, sensor_mac,
-                mac, deviceclass, str(int(float(timestamp*1000))), rssi]))
+                mac, deviceclass, str(int(float(timestamp)*1000)), rssi]))
