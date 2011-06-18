@@ -23,6 +23,7 @@ class InetClientFactory(ReconnectingClientFactory):
         self.client = None
 
     def clientConnectionLost(self, connector, reason):
+        ReconnectingClientFactory.clientConnectionLost(self, connector, reason)
         self.plugin.connected = False
         self.plugin.conn_time = int(time.time())
 
