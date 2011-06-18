@@ -48,7 +48,6 @@ class Plugin(olof.core.Plugin):
         self.log(self.rssi_log, timestamp, ','.join([hostname, mac, rssi]))
 
     def sysStateFeed(self, hostname, module, info):
-        s = self.getScanner(hostname)
         if module == 'gyrid':
             if info == 'connected':
                 self.log(self.connection_log, int(time.time()),
