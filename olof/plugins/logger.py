@@ -11,6 +11,11 @@ class Plugin(olof.core.Plugin):
         self.mess_log = open('logs/messages.log', 'a')
         self.scan_log = open('logs/scan.log', 'a')
         self.rssi_log = open('logs/rssi.log', 'a')
+        self.lag_avg_log = open('logs/lag_avg.log', 'a')
+        self.lag_log = open('logs/lag.log', 'a')
+
+        self.lag_sum = 0
+        self.lag_cnt = 0
 
     def connectionMade(self, hostname, ip, port):
         self.log(self.connection_log, time.time(),
@@ -22,10 +27,24 @@ class Plugin(olof.core.Plugin):
 
     def dataFeedCell(self, hostname, timestamp, sensor_mac, mac, deviceclass,
             move):
+        lag = time.time() - timestamp
+        self.lag_sum += lag
+        self.lag_cnt += 1
+
+        self.log(self.lag_log, timestamp, str(lag))
+        self.log(self.lag_avg_log, timestamp, str(self.lag_sum/(self.lag_cnt*1.0)))
+
         self.log(self.scan_log, timestamp, ','.join([hostname, mac, deviceclass,
             move]))
 
     def dataFeedRssi(self, hostname, timestamp, sensor_mac, mac, rssi):
+        lag = time.time() - timestamp
+        self.lag_sum += lag
+        self.lag_cnt += 1
+
+        self.log(self.lag_log, timestamp, str(lag))
+        self.log(self.lag_avg_log, timestamp, str(self.lag_sum/(self.lag_cnt*1.0)))
+
         self.log(self.rssi_log, timestamp, ','.join([hostname, mac, rssi]))
 
     def log(self, log, timestamp, str):
