@@ -47,6 +47,16 @@ class Plugin(olof.core.Plugin):
 
         self.log(self.rssi_log, timestamp, ','.join([hostname, mac, rssi]))
 
+    def sysStateFeed(self, hostname, module, info):
+        s = self.getScanner(hostname)
+        if module == 'gyrid':
+            if info == 'connected':
+                self.log(self.connection_log, int(time.time()),
+                    "%s: Connection with Gyrid made.")
+            elif info == 'disconnected':
+                self.log(self.connection_log, int(time.time()),
+                    "%s: Connection with Gyrid lost.")
+
     def log(self, log, timestamp, str):
         t = time.strftime("%Y%m%d-%H%M%S-%Z", time.localtime(float(timestamp)))
         log.write("%s,%s\n" % (t, str))
