@@ -27,7 +27,7 @@ class Plugin(olof.core.Plugin):
 
     def dataFeedCell(self, hostname, timestamp, sensor_mac, mac, deviceclass,
             move):
-        lag = time.time() - timestamp
+        lag = time.time() - float(timestamp)
         self.lag_sum += lag
         self.lag_cnt += 1
 
@@ -38,7 +38,7 @@ class Plugin(olof.core.Plugin):
             move]))
 
     def dataFeedRssi(self, hostname, timestamp, sensor_mac, mac, rssi):
-        lag = time.time() - timestamp
+        lag = time.time() - float(timestamp)
         self.lag_sum += lag
         self.lag_cnt += 1
 
