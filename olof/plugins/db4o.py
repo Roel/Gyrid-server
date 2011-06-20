@@ -31,10 +31,14 @@ class InetClientFactory(ReconnectingClientFactory):
         """
         Build the InetClient protocol, return an InetClient instance.
         """
+        def sendLine(line):
+            self.client.sendLine(line + '\n')
+
         self.resetDelay()
         self.plugin.connected = True
         self.plugin.conn_time = int(time.time())
         self.client = LineReceiver()
+        self.client.sendLine = sendLine
 
         return self.client
 
