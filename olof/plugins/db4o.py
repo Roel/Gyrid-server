@@ -24,7 +24,7 @@ class InetClientFactory(ReconnectingClientFactory):
 
     def sendLine(self, line):
         if 'client' in self.__dict__ and self.client != None:
-            self.client.sendLine(line.strip() + '\n')
+            self.client.sendLine(line.strip())
 
     def clientConnectionLost(self, connector, reason):
         ReconnectingClientFactory.clientConnectionLost(self, connector, reason)
