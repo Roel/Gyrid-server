@@ -22,6 +22,10 @@ class InetClientFactory(ReconnectingClientFactory):
         self.maxDelay = 120
         self.client = None
 
+    def sendLine(self, line):
+        if 'client' in self.__dict__ and self.client != None:
+            self.client.sendLine(line.strip() + '\n')
+
     def clientConnectionLost(self, connector, reason):
         ReconnectingClientFactory.clientConnectionLost(self, connector, reason)
         self.plugin.connected = False
@@ -31,14 +35,10 @@ class InetClientFactory(ReconnectingClientFactory):
         """
         Build the InetClient protocol, return an InetClient instance.
         """
-        def sendLine(line):
-            self.client.sendLine(line + '\n')
-
         self.resetDelay()
         self.plugin.connected = True
         self.plugin.conn_time = int(time.time())
         self.client = LineReceiver()
-        self.client.sendLine = sendLine
 
         return self.client
 
@@ -64,18 +64,14 @@ class Plugin(olof.core.Plugin):
             return [['connected', self.conn_time]]
 
     def stateFeed(self, hostname, timestamp, sensor_mac, info):
-        if info == 'new_inquiry' and \
-            'client' in self.inet_factory.__dict__ and \
-            self.inet_factory.client != None:
-            self.inet_factory.client.sendLine(','.join([hostname, 'INFO',
+        if info == 'new_inquiry':
+            self.inet_factory.sendLine(','.join([hostname, 'INFO',
                 str(int(float(timestamp)*1000)), 'new_inquiry', sensor_mac]))
 
     def dataFeedCell(self, hostname, timestamp, sensor_mac, mac, deviceclass,
              move):
-        if 'client' in self.inet_factory.__dict__ and \
-            self.inet_factory.client != None:
-            self.inet_factory.client.sendLine(','.join([hostname, sensor_mac,
-                 mac, deviceclass, str(int(float(timestamp)*1000)), move]))
+        self.inet_factory.sendLine(','.join([hostname, sensor_mac, mac,
+            deviceclass, str(int(float(timestamp)*1000)), move]))
 
         if move == 'in':
             self.mac_dc[mac] = deviceclass
@@ -83,8 +79,6 @@ class Plugin(olof.core.Plugin):
             del(self.mac_dc[mac])
 
     def dataFeedRssi(self, hostname, timestamp, sensor_mac, mac, rssi):
-        if 'client' in self.inet_factory.__dict__ and \
-            self.inet_factory.client != None:
-            deviceclass = self.mac_dc.get(mac, '-1')
-            self.inet_factory.client.sendLine(','.join([hostname, sensor_mac,
-                mac, deviceclass, str(int(float(timestamp)*1000)), rssi]))
+        deviceclass = self.mac_dc.get(mac, '-1')
+        self.inet_factory.sendLine(','.join([hostname, sensor_mac, mac,
+            deviceclass, str(int(float(timestamp)*1000)), rssi]))
