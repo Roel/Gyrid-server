@@ -193,6 +193,11 @@ class ContentResource(resource.Resource):
         html += '<div class="block_topright">%s<img src="static/icons/clock-arrow.png"></div>' % prettydate(self.plugin.plugin_uptime, suffix="")
         html += '<div style="clear: both;"></div>'
         html += '<div class="block_content">'
+        if len(self.plugin.load) > 0 and len([i for i in self.plugin.load if float(i) >= 0.8]) > 0:
+            html += '<div class="block_data">'
+            html += '<img src="static/icons/system-monitor.png">Resources'
+            html += '<span class="block_data_attr"><b>load</b> %s</span>' % ' '.join(self.plugin.load)
+            html += '</div>'
         for p in self.plugin.server.plugins:
             if p.name != None:
                 html += '<div class="block_data">'
@@ -299,7 +304,16 @@ class Plugin(olof.core.Plugin):
                     s.location_link = None
         f.close()
 
+        self.load = []
+        t = task.LoopingCall(self.check_resources)
+        t.start(10)
+
         reactor.listenTCP(8080, tserver.Site(self.root))
+
+    def check_resources(self):
+        f = open('/proc/loadavg', 'r')
+        self.load = f.read().strip().split()[0:3]
+        f.close()
 
     def unload(self):
         f = open("olof/plugins/status/data/obj.pickle", "w")
