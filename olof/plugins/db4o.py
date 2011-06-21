@@ -8,6 +8,59 @@ import time
 
 import olof.core
 
+class InetClient(LineReceiver):
+    def __init__(self, factory, plugin):
+        self.factory = factory
+        self.plugin = plugin
+
+    def connectionMade(self):
+        self.plugin.connected = True
+        self.plugin.conn_time = int(time.time())
+        self.pushCache()
+
+    def connectionLost(self, reason):
+        self.plugin.connected = False
+        self.plugin.conn_time = int(time.time())
+        if not self.plugin.cache.closed:
+            self.plugin.cache.flush()
+            self.plugin.cache.close()
+        self.plugin.cache = open(self.plugin.cache_file, 'a')
+
+    def sendLine(self, line):
+        if self.transport != None and self.plugin.connected:
+            LineReceiver.sendLine(self, line.strip())
+        elif not self.plugin.connected and not self.plugin.cache.closed:
+            self.plugin.cache.write(line.strip() + '\n')
+            self.plugin.cache.flush()
+
+    def pushCache(self):
+        """
+        Push trough the cached data. Clears the cache afterwards.
+        """
+        if not self.plugin.cache.closed:
+            self.plugin.cache.flush()
+            self.plugin.cache.close()
+
+        self.plugin.cache = open(self.plugin.cache_file, 'r')
+        for line in self.plugin.cache:
+            line = line.strip()
+            self.sendLine(line)
+        self.plugin.cache.close()
+
+        self.clearCache()
+
+    def clearCache(self):
+        """
+        Clears the cache file.
+        """
+        if not self.plugin.cache.closed:
+            self.plugin.cache.flush()
+            self.plugin.cache.close()
+
+        self.plugin.cache = open(self.plugin.cache_file, 'w')
+        self.plugin.cache.truncate()
+        self.plugin.cache.close()
+
 class InetClientFactory(ReconnectingClientFactory):
     """
     The factory class of the inet client.
@@ -21,25 +74,18 @@ class InetClientFactory(ReconnectingClientFactory):
         self.plugin = plugin
         self.maxDelay = 120
         self.client = None
+        self.buildProtocol(None)
 
     def sendLine(self, line):
         if 'client' in self.__dict__ and self.client != None:
-            self.client.sendLine(line.strip())
-
-    def clientConnectionLost(self, connector, reason):
-        ReconnectingClientFactory.clientConnectionLost(self, connector, reason)
-        self.plugin.connected = False
-        self.plugin.conn_time = int(time.time())
+            self.client.sendLine(line)
 
     def buildProtocol(self, addr):
         """
         Build the InetClient protocol, return an InetClient instance.
         """
         self.resetDelay()
-        self.plugin.connected = True
-        self.plugin.conn_time = int(time.time())
-        self.client = LineReceiver()
-
+        self.client = InetClient(self, self.plugin)
         return self.client
 
 class Plugin(olof.core.Plugin):
@@ -47,6 +93,8 @@ class Plugin(olof.core.Plugin):
         olof.core.Plugin.__init__(self, server, "db4o")
         self.host = 'localhost'
         self.port = 5001
+        self.cache_file = '/var/tmp/gyrid-server-db4o.cache'
+        self.cache = open(self.cache_file, 'a')
         self.mac_dc = {}
 
         self.connected = False
