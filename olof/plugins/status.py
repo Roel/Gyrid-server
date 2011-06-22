@@ -194,11 +194,13 @@ class ContentResource(resource.Resource):
         html += '<div style="clear: both;"></div>'
         html += '<div class="block_content">'
         if (len(self.plugin.load) > 0 and len([i for i in self.plugin.load if float(i) >= 0.8]) > 0) \
-            or int(self.plugin.memfree_mb) <= 128 or float(self.plugin.memfree_pct) <= 10:
+            or int(self.plugin.memfree_mb) <= 128 or float(self.plugin.memfree_pct) <= 10 \
+            or self.plugin.diskfree_mb <= 1000:
             html += '<div class="block_data">'
             html += '<img src="static/icons/system-monitor.png">Resources'
-            html += '<span class="block_data_attr"><b>load</b> %s</span>' % ' '.join(self.plugin.load)
+            html += '<span class="block_data_attr"><b>load</b> %s</span>' % ', '.join(self.plugin.load)
             html += '<span class="block_data_attr"><b>ram free</b> %s</span>' % (self.plugin.memfree_mb + ' MB')
+            html += '<span class="block_data_attr"><b>disk free</b> %s</span>' % (str(self.plugin.diskfree_mb) + ' MB')
             html += '</div>'
         for p in self.plugin.server.plugins:
             if p.name != None:
@@ -306,9 +308,6 @@ class Plugin(olof.core.Plugin):
                     s.location_link = None
         f.close()
 
-        self.load = []
-        self.memfree_mb = None
-        self.memfree_pct = None
         t = task.LoopingCall(self.check_resources)
         t.start(10)
 
@@ -330,9 +329,11 @@ class Plugin(olof.core.Plugin):
                 buffers = int(ls[1])
             elif 'Cached' in ls[0]:
                 cached = int(ls[1])
-
         self.memfree_mb = "%i" % ((memtotal - (memfree + buffers + cached))/1024.0)
         self.memfree_pct = "%0.2f" % (((memfree + buffers + cached)*1.0 / memtotal*1.0) * 100)
+
+        s = os.statvfs('.')
+        self.diskfree_mb = (s.f_bavail * s.f_bsize)/1024/1024
 
     def unload(self):
         f = open("olof/plugins/status/data/obj.pickle", "w")
