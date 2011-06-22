@@ -320,7 +320,8 @@ class Plugin(olof.core.Plugin):
                 s = self.getScanner(line[0].lstrip('#'), create=False)
                 if s != None:
                     s.location = None
-                    s.lat, s.lon = None
+                    s.lat = None
+                    s.lon = None
         f.close()
 
     def check_resources(self):
