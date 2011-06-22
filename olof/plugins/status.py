@@ -190,10 +190,12 @@ class ContentResource(resource.Resource):
                 html += '<img src="static/icons/puzzle.png">%s' % p.name
                 st = p.getStatus()
                 for i in st:
-                    if i[1] != None:
-                        html += '<span class="block_data_attr"><b>%s</b> %s</span>' % (i[0], prettydate(i[1]))
-                    else:
-                        html += '<span class="block_data_attr">%s</span>' % i[0]
+                    if len(i) == 1 and 'id' in i:
+                        html += '<span class="block_data_attr">%s</span>' % i['id']
+                    elif len(i) > 1 and 'time' in i:
+                        html += '<span class="block_data_attr"><b>%s</b> %s</span>' % (i['id'], prettydate(i['time']))
+                    elif len(i) > 1 and 'str' in i:
+                        html += '<span class="block_data_attr"><b>%s</b> %s</span>' % (i['id'], i['str'])
                 html += '</div>'
         for p in self.plugin.server.plugins_inactive:
             if p.name != None:
