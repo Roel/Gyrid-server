@@ -139,24 +139,6 @@ class Sensor(object):
         html += '</div>'
         return html
 
-class Warning(object):
-    def __init__(self, where, weight=0, btime=None):
-        self.where = where
-        self.weight = weight
-        self.btime = btime
-
-    def getWeight(self):
-        if self.btime == None:
-            return self.weight
-        else:
-            return self.weight + (int(time.time()) - self.btime)
-
-    def render(self, block):
-        if block == "warnings":
-            html = '<div class="block_data"><img src="static/icons/traffic-cone.png">%s' % w.where
-            html += '</div>'
-        return html
-
 class RootResource(resource.Resource):
     def __init__(self):
         resource.Resource.__init__(self)
