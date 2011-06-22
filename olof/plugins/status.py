@@ -16,6 +16,7 @@ from twisted.web.static import File
 
 import cPickle as pickle
 import datetime
+import math
 import os
 import time
 import urllib2
@@ -60,7 +61,8 @@ class Scanner(object):
         self.conn_port = None
         self.conn_time = None
         self.location = None
-        self.location_link = None
+        self.lat = None
+        self.lon = None
         self.gyrid_connected = True
         self.gyrid_disconnect_time = None
         self.gyrid_uptime = None
@@ -69,10 +71,11 @@ class Scanner(object):
 
         def render_location():
             html = '<div class="block_topright">'
-            if self.location != None and self.location_link == None:
+            if self.location != None and (self.lat == None or self.lon == None):
                 html += '%s<img src="static/icons/marker.png">' % self.location
             elif self.location != None:
-                html += '<a href="%s">%s</a><img src="static/icons/marker.png">' % (self.location_link, self.location)
+                html += '<a href="%s">%s</a><img src="static/icons/marker.png">' % (
+                    ("http://www.openstreetmap.org/?mlat=%s&mlon=%s&zoom=15&layers=M" % (self.lat, self.lon)), self.location)
             html += '</div>'
             return html
 
@@ -276,26 +279,49 @@ class Plugin(olof.core.Plugin):
 
         self.plugin_uptime = int(time.time())
 
+        t = task.LoopingCall(self.check_resources)
+        t.start(10)
+
+        t = task.LoopingCall(self.load_locations)
+        t.start(60)
+
+        reactor.listenTCP(8080, tserver.Site(self.root))
+
+    def _distance(self, lat1, lon1, lat2, lon2):
+        R = 6370
+        dLon = lon1-lon2 if lon1 < lon2 else lon2-lon1
+        dLon = math.radians(abs(dLon))
+
+        p1 = math.radians(90-lat1)
+        p2 = math.radians(90-lat2)
+
+        distCos = math.cos(p2)*math.cos(p1)+math.sin(p2)*math.sin(p1)*math.cos(dLon)
+        dist = math.acos(distCos) * R
+        return dist
+
+    def load_locations(self):
         f = open("olof/plugins/status/data/locations.txt", "r")
         for line in f:
             line = line.strip().split(',')
             if not line[0].startswith('#'):
                 s = self.getScanner(line[0])
+                if s.location == None or s.lat == None or s.lon == None:
+                    s.sensors = {}
                 s.location = line[1]
                 if len(line) >= 4:
-                    s.location_link = "http://www.openstreetmap.org/?mlat=%s&mlon=%s&zoom=15&layers=M" % (
-                        line[2], line[3])
+                    if self._distance(s.lat, s.lon, float(line[2]), float(line[3])) > 0.2:
+                        s.sensors = {}
+                    s.lat = float(line[2])
+                    s.lon = float(line[3])
+                else:
+                    s.lat = None
+                    s.lon = None
             else:
                 s = self.getScanner(line[0].lstrip('#'), create=False)
                 if s != None:
                     s.location = None
-                    s.location_link = None
+                    s.lat, s.lon = None
         f.close()
-
-        t = task.LoopingCall(self.check_resources)
-        t.start(10)
-
-        reactor.listenTCP(8080, tserver.Site(self.root))
 
     def check_resources(self):
         f = open('/proc/loadavg', 'r')
