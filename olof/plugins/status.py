@@ -309,7 +309,8 @@ class Plugin(olof.core.Plugin):
                     s.sensors = {}
                 s.location = line[1]
                 if len(line) >= 4:
-                    if self._distance(s.lat, s.lon, float(line[2]), float(line[3])) > 0.2:
+                    if (s.lat != None and s.lon != None) and \
+                        self._distance(s.lat, s.lon, float(line[2]), float(line[3])) > 0.2:
                         s.sensors = {}
                     s.lat = float(line[2])
                     s.lon = float(line[3])
