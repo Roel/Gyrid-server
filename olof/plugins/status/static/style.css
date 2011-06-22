@@ -22,12 +22,13 @@ a:hover {
 
 #title {
     font: bold 16pt Arial,Sans-serif;
+    font-variant: small-caps;
+    text-shadow: #C3C3C3 0px 2px 3px;
     margin-top: 10px;
     margin-bottom: 10px;
     float: left;
     padding-top: 5px;
     padding-bottom: 5px;
-    border-bottom: 1px dotted #16497A;
 }
 
 h3 a:hover {
