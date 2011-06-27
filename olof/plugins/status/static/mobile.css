@@ -64,6 +64,7 @@ h3 {
 div #footer {
     margin-top: 30px;
     line-height: 150%;
+    clear: both;
 }
 
 #footer p {
@@ -83,6 +84,8 @@ div #footer {
     border: 1px dotted #c0c0c0;
     background-color: #ffffff;
     line-height: 150%;
+    overflow: hidden;
+    clear: both;
 }
 
 .block_content {
@@ -98,10 +101,20 @@ div #footer {
     text-align: right;
 }
 
+.block_data {
+    float: left;
+    margin-left: 10px;
+    margin-top: 2px;
+}
+
 .block_data_attr {
     margin-left: 50px;
     color: #a0a0a0;
     display: list-item;
+}
+
+.clear {
+    clear: both;
 }
 
 img {
@@ -110,7 +123,6 @@ img {
     margin-left: 8px;
     border-style: none;
 }
-
 
 ul {
     line-height: 200%;
