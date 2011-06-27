@@ -74,8 +74,10 @@ class Scanner(object):
             if self.location != None and (self.lat == None or self.lon == None):
                 html += '%s<img src="static/icons/marker.png">' % self.location
             elif self.location != None:
+                #html += '<a href="%s">%s</a><img src="static/icons/marker.png">' % (
+                #    ("http://www.openstreetmap.org/?mlat=%s&mlon=%s&zoom=15&layers=M" % (self.lat, self.lon)), self.location)
                 html += '<a href="%s">%s</a><img src="static/icons/marker.png">' % (
-                    ("http://www.openstreetmap.org/?mlat=%s&mlon=%s&zoom=15&layers=M" % (self.lat, self.lon)), self.location)
+                    ("http://maps.google.be/maps?f=q&source=s_q&hl=nl&geocode=&q=%s,%s" % (self.lat, self.lon)), self.location)
             html += '</div>'
             return html
 
