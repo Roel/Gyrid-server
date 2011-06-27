@@ -1,8 +1,8 @@
 body {
-    width: 1006px;
+    width: 95%;
     margin: 0 auto;
     background-color: #fbf8f1;
-    font: normal 12pt "Droid Sans",Arial,Sans-serif;
+    font: normal 10pt "Droid Sans",Arial,Sans-serif;
     color: #474747;
 }
 
@@ -22,11 +22,10 @@ a:hover {
 
 #title {
     font: bold 16pt "Droid Sans",Arial,Sans-serif;
+    text-align: center;
     font-variant: small-caps;
     text-shadow: #C3C3C3 0px 2px 3px;
-    margin-top: 10px;
     margin-bottom: 10px;
-    float: left;
     padding-top: 5px;
     padding-bottom: 5px;
 }
@@ -37,9 +36,9 @@ h3 a:hover {
 
 #updated {
     font: bold 16pt "Droid Sans",Arial,Sans-serif;
+    text-align: center;
     margin-top: 10px;
     margin-bottom: 10px;
-    float: right;
     outline: 1px dotted #FDB812;
     padding: 5px;
     background: #ffffff;
@@ -55,29 +54,27 @@ h3 {
 }
 
 #header {
-    margin-top: 20px;
-}
-
-#logo {
     display: none;
 }
 
+#logo {
+    text-align: center;
+}
+
 div #footer {
-    margin-top: 40px;
+    margin-top: 30px;
+    line-height: 150%;
 }
 
 #footer p {
     text-align: center;
-    font-size: 10pt;
+    font: normal 8pt "Droid Sans",Arial,Sans-serif;
     color: #c0c0c0;
     line-height: 150%;
 }
 
 #content {
-    width: 1000px;
-    margin-top: 20px;
-    margin-left: 6px;
-    margin-right: 6px;
+    width: 100%;
 }
 
 .block {
@@ -89,7 +86,7 @@ div #footer {
 }
 
 .block_content {
-    margin-left: 5px;
+    margin-left: 0px;
 }
 
 .block_title {
@@ -102,8 +99,9 @@ div #footer {
 }
 
 .block_data_attr {
-    margin-left: 12px;
+    margin-left: 50px;
     color: #a0a0a0;
+    display: list-item;
 }
 
 img {

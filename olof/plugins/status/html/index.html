@@ -5,8 +5,11 @@
     <title>Gyrid Server status panel</title>
 
     <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width">
 
-    <link rel="stylesheet" type="text/css" href="static/style.css">
+    <link rel="stylesheet" href="static/style.css" media="screen and (min-device-width: 481px)" type="text/css" />
+    <link rel="stylesheet" href="static/mobile.css" media="only screen and (max-device-width: 480px)" type="text/css" />
+    <link rel="stylesheet" href="static/mobile.css" media="handheld" type="text/css" />
     <link rel="icon" type="image/png" href="static/icons/monitor-window-flow.png">
 
     <script type="text/javascript" src="static/jquery.js"></script>
@@ -42,6 +45,7 @@
 
 <body>
     <div><p id="header"><img src="static/header.png"/></p></div>
+    <div><p id="logo"><img src="static/logo.png" width="71px" height="50px"/></p></div>
 
     <div id="content"></div>
 </body>
