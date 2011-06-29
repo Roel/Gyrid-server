@@ -181,8 +181,7 @@ class ContentResource(resource.Resource):
         html += '<div style="clear: both;"></div>'
         html += '<div class="block_content">'
         if (len(self.plugin.load) > 0 and len([i for i in self.plugin.load if float(i) >= 0.8]) > 0) \
-            or int(self.plugin.memfree_mb) <= 128 or float(self.plugin.memfree_pct) <= 10 \
-            or self.plugin.diskfree_mb <= 1000:
+            or int(self.plugin.memfree_mb) <= 128 or self.plugin.diskfree_mb <= 1000:
             html += '<div class="block_data">'
             html += '<img src="static/icons/system-monitor.png">Resources'
             html += '<span class="block_data_attr"><b>load</b> %s</span>' % ', '.join(self.plugin.load)
@@ -344,7 +343,6 @@ class Plugin(olof.core.Plugin):
             elif 'Cached' in ls[0]:
                 cached = int(ls[1])
         self.memfree_mb = "%i" % ((memtotal - (memfree + buffers + cached))/1024.0)
-        self.memfree_pct = "%0.2f" % (((memfree + buffers + cached)*1.0 / memtotal*1.0) * 100)
 
         s = os.statvfs('.')
         self.diskfree_mb = (s.f_bavail * s.f_bsize)/1024/1024
