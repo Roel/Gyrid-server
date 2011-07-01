@@ -77,7 +77,7 @@ class Scanner(object):
                 #html += '<a href="%s">%s</a><img src="static/icons/marker.png">' % (
                 #    ("http://www.openstreetmap.org/?mlat=%s&mlon=%s&zoom=15&layers=M" % (self.lat, self.lon)), self.location)
                 html += '<a href="%s">%s</a><img src="static/icons/marker.png">' % (
-                    ("http://maps.google.be/maps?f=q&source=s_q&hl=nl&geocode=&q=%s,%s" % (self.lat, self.lon)), self.location)
+                    ("http://maps.google.be/maps?f=q&source=s_q&hl=nl&geocode=&q=loc:%s,%s(%s)" % (self.lat, self.lon, self.hostname)), self.location)
             html += '</div>'
             return html
 
