@@ -56,8 +56,10 @@ class Mailer(object):
 
         self.recipients = {'mail+gyrid@rulus.be': Alert.Level.Info}
         self.alerts = []
+        self.__alertMap = {}
 
-        a = Alert('Server', Alert.Type.ServerStartup, int(time.time()))
+        a = Alert('Server', Alert.Type.ServerStartup,
+            info=0, warning=None, alert=None, fire=None)
         self.addAlert(a)
 
         t = task.LoopingCall(self.sendAlerts)
@@ -65,6 +67,21 @@ class Mailer(object):
 
     def addAlert(self, alert):
         self.alerts.append(alert)
+        if not alert.origin in self.__alertMap:
+            self.__alertMap[alert.origin] = [[alert.type, alert]]
+        else:
+            self.__alertMap[alert.origin].append([alert.type, alert])
+
+    def getAlerts(self, origin, atype):
+        if not origin in self.__alertMap:
+            return []
+        else:
+            return [a[1] for a in self.__alertMap[origin] if a[0] in atype]
+
+    def removeAlerts(self, alerts):
+        for a in alerts:
+            self.alerts.remove(a)
+            self.__alertMap[a.origin].remove([a.type, a])
 
     def sendAlerts(self):
         reactor.callInThread(self.__sendAlerts)
@@ -116,9 +133,10 @@ class Mailer(object):
 
 class Alert(object):
     class Type:
-        ServerStartup, ScannerDisconnect, SensorDisconnect = range(3)
+        ServerStartup, ScannerConnect, ScannerDisconnect, SensorDisconnect = range(4)
 
         Message = {ServerStartup: "Server has been started.",
+                   ScannerConnect: "Scanner connected.",
                    ScannerDisconnect: "Scanner disconnected."}
 
     class Level:
@@ -126,31 +144,32 @@ class Alert(object):
 
         String = {Info: 'Info', Warning: 'Warning', Alert: 'Alert', Fire: 'Fire'}
 
-    def __init__(self, origin, type, time, message=None,
+    def __init__(self, origin, type, etime=None, message=None,
                  info=0, warning=5, alert=15, fire=30):
         self.origin = origin
         self.type = type
-        self.time = time
+        self.etime = etime if etime != None else int(time.time())
         self.message = message
         self.action = {Alert.Level.Info: [info, False],
                        Alert.Level.Warning: [warning, False],
                        Alert.Level.Alert: [alert, False],
                        Alert.Level.Fire: [fire, False]}
 
-    def getStatusLevel(self, time):
-        diff = time - self.time
+    def getStatusLevel(self, ctime):
+        diff = ctime - self.etime
         for level in sorted(self.action.keys(), reverse=True):
-            if diff >= ((self.action[level][0])*60):
+            lTime = self.action[level][0]
+            if lTime != None and diff >= lTime*60:
                 return level
 
     def getMessageBody(self, level):
         msg = Alert.Level.String[level]
-        msg += ' - %s -\r\n\r\n' % prettydate(self.time)
+        msg += ' - %s -\r\n\r\n' % prettydate(self.etime)
         msg += Alert.Type.Message[self.type] + '\r\n\r\n'
         if self.message:
             msg += self.message
         msg += '--\r\nThis event occurred at %s.' % \
-            time.strftime("%Y%m%d-%H%M%S-%Z", time.localtime(self.time))
+            time.strftime("%Y%m%d-%H%M%S-%Z", time.localtime(self.etime))
         return msg
 
     def markSent(self, level):
@@ -169,31 +188,24 @@ class Plugin(olof.core.Plugin):
         self.alerts = {}
         self.mailer = Mailer()
 
-    def getAlert(self, hostname, type):
-        r = []
-        if hostname in self.alerts:
-            for alert in self.alerts[hostname]:
-                if alert.type == type:
-                    r.append(alert)
-        else:
-            self.alerts[hostname] = []
-        return r
-
     def unload(self):
         pass
 
     def connectionMade(self, hostname, ip, port):
-        a = self.getAlert(hostname, Alert.Type.ScannerDisconnect)
-        if len(a) > 0:
-            self.alerts[hostname].remove(a[0])
+        # Remove any ScannerDisconnect/ScannerConnect alerts
+        alerts = self.mailer.getAlerts(hostname, Alert.Type.ScannerDisconnect)
+        self.mailer.removeAlerts(alerts)
+
+        # Add ScannerConnect alert
+        self.mailer.addAlert(Alert(hostname, Alert.Type.ScannerConnect,
+                info=0, warning=None, alert=None, fire=None))
 
     def connectionLost(self, hostname, ip, port):
-        a = self.getAlert(hostname, Alert.Type.ScannerDisconnect)
+        a = self.mailer.getAlerts(hostname, Alert.Type.ScannerDisconnect)
         if len(a) == 0:
-            self.alerts[hostname].append(Alert(Alert.Type.ScannerDisconnect,
-                int(time.time()), 'Scanner disconnected', 2, 5, 10, 20))
+            self.mailer.addAlert(Alert(hostname, Alert.Type.ScannerDisconnect))
         else:
-            a[0].time = int(time.time())
+            a[0].etime = int(time.time())
 
     def stateFeed(self, hostname, timestamp, sensor_mac, info):
         pass
