@@ -177,14 +177,14 @@ class Plugin(olof.core.Plugin):
         self.conn = Connection(self.url, self.user, self.password)
 
     def getStatus(self):
+        r = []
         if self.conn.measureCount['last_upload'] > 0:
-            r = [{'id': 'last upload', 'time': self.conn.measureCount['last_upload']}]
-        else:
-            r = []
+            r.append({'id': 'last upload', 'time': self.conn.measureCount['last_upload']})
 
-        r.extend([{'id': 'uploads', 'str': str(self.conn.measureCount['uploads'])},
-             {'id': 'uploaded lines', 'str': str(self.conn.measureCount['uploaded'])},
-             {'id': 'cached lines', 'str': str(self.conn.measureCount['cached'])}])
+        if self.conn.measureCount['uploaded lines'] > 0:
+            r.append({'id': 'uploaded lines', 'str': str(self.conn.measureCount['uploaded'])})
+
+        r.append({'id': 'cached lines', 'str': str(self.conn.measureCount['cached'])})
         return r
 
     def dataFeedCell(self, hostname, timestamp, sensor_mac, mac, deviceclass,
