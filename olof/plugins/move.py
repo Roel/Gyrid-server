@@ -181,7 +181,7 @@ class Plugin(olof.core.Plugin):
         if self.conn.measureCount['last_upload'] > 0:
             r.append({'id': 'last upload', 'time': self.conn.measureCount['last_upload']})
 
-        if self.conn.measureCount['uploaded lines'] > 0:
+        if self.conn.measureCount['uploaded'] > 0:
             r.append({'id': 'uploaded lines', 'str': str(self.conn.measureCount['uploaded'])})
 
         r.append({'id': 'cached lines', 'str': str(self.conn.measureCount['cached'])})
