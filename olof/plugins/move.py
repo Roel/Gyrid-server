@@ -11,6 +11,8 @@ Module that handles the communication with the Move REST API.
 
 from twisted.internet import reactor, task
 
+import os
+import cPickle as pickle
 import time
 import urllib2
 import urlparse
@@ -87,29 +89,39 @@ class RawConnection(object):
             return e.readlines()
 
 class Connection(RawConnection):
-    def __init__(self, url, user, password):
+    def __init__(self, url, user, password, measurements={}, measureCount={}):
         RawConnection.__init__(self, url, user, password)
         self.scanners = {}
         self.getScanners()
 
-        self.measurements = {}
-        self.measureCount = {'uploads': 0, 'cached': 0, 'uploaded': 0,
-            'last_upload': -1}
+        self.measurements = measurements
+        if len(measureCount) == 0:
+            self.measureCount = {'uploads': 0, 'cached': 0, 'uploaded': 0,
+                'last_upload': -1}
+        else:
+            self.measureCount = measureCount
 
         t = task.LoopingCall(reactor.callInThread, self.postMeasurements)
         t.start(60, now=False)
 
     def getScanners(self):
-        scanners = self.request_get('scanner')
-        for s in scanners:
-            ls = s.strip().split(',')
-            self.scanners[ls[0]] = True
+        try:
+            scanners = self.request_get('scanner')
+        except:
+            return None
+        else:
+            for s in scanners:
+                ls = s.strip().split(',')
+                self.scanners[ls[0]] = True
 
-        return scanners
+            return scanners
 
     def addScanner(self, mac, description):
-        self.request_post('scanner', '%s,%s' % (mac, description),
-            {'Content-Type': 'text/plain'})
+        try:
+            self.request_post('scanner', '%s,%s' % (mac, description),
+                {'Content-Type': 'text/plain'})
+        except:
+            pass
 
     def addMeasurement(self, sensor, timestamp, mac, deviceclass, rssi):
         if not sensor in self.measurements:
@@ -167,14 +179,36 @@ class Plugin(olof.core.Plugin):
         self.buffer = []
         self.last_session_id = None
 
-
         f = open('olof/plugins/move/move.conf', 'r')
         for l in f:
             ls = l.strip().split(',')
             self.__dict__[ls[0]] = ls[1]
         f.close()
 
-        self.conn = Connection(self.url, self.user, self.password)
+        measureCount = {}
+        measurements = {}
+
+        if os.path.isfile("olof/plugins/move/measureCount.pickle"):
+            f = open("olof/plugins/move/measureCount.pickle", "r")
+            measureCount = pickle.load(f)
+            f.close()
+
+        if os.path.isfile("olof/plugins/move/measurements.pickle"):
+            f = open("olof/plugins/move/measurements.pickle", "r")
+            measurements = pickle.load(f)
+            f.close()
+
+        self.conn = Connection(self.url, self.user, self.password,
+            measurements, measureCount)
+
+    def unload(self):
+        f = open("olof/plugins/move/measureCount.pickle", "w")
+        pickle.dump(self.conn.measureCount, f)
+        f.close()
+
+        f = open("olof/plugins/move/measurements.pickle", "w")
+        pickle.dump(self.conn.measurements, f)
+        f.close()
 
     def getStatus(self):
         r = []
