@@ -175,7 +175,6 @@ class Plugin(olof.core.Plugin):
         @param   mgr   Reference to ScanManager instance.
         """
         olof.core.Plugin.__init__(self, server, "Move")
-        self.mac_dc = {}
         self.buffer = []
         self.last_session_id = None
 
@@ -187,6 +186,12 @@ class Plugin(olof.core.Plugin):
 
         measureCount = {}
         measurements = {}
+        self.mac_dc = {}
+
+        if os.path.isfile("olof/plugins/move/mac_dc.pickle"):
+            f = open("olof/plugins/move/mac_dc.pickle", "r")
+            self.mac_dc = pickle.load(f)
+            f.close()
 
         if os.path.isfile("olof/plugins/move/measureCount.pickle"):
             f = open("olof/plugins/move/measureCount.pickle", "r")
@@ -210,6 +215,10 @@ class Plugin(olof.core.Plugin):
         pickle.dump(self.conn.measurements, f)
         f.close()
 
+        f = open("olof/plugins/move/mac_dc.pickle", "w")
+        pickle.dump(self.mac_dc, f)
+        f.close()
+
     def getStatus(self):
         r = []
         if self.conn.measureCount['last_upload'] > 0:
@@ -223,11 +232,7 @@ class Plugin(olof.core.Plugin):
 
     def dataFeedCell(self, hostname, timestamp, sensor_mac, mac, deviceclass,
             move):
-        if move == 'in':
-            self.mac_dc[mac] = deviceclass
-        elif move == 'out':
-            if mac in self.mac_dc:
-                del(self.mac_dc[mac])
+        self.mac_dc[mac] = deviceclass
 
     def dataFeedRssi(self, hostname, timestamp, sensor_mac, mac, rssi):
         if mac in self.mac_dc:
