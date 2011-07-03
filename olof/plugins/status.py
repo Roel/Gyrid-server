@@ -334,15 +334,15 @@ class Plugin(olof.core.Plugin):
         f = open('/proc/meminfo', 'r')
         for line in f:
             ls = line.strip().split()
-            if 'MemTotal' in ls[0]:
+            if ls[0].startswith('MemTotal:'):
                 memtotal = int(ls[1])
-            elif 'MemFree' in ls[0]:
+            elif ls[0].startswith('MemFree:'):
                 memfree = int(ls[1])
-            elif 'Buffers' in ls[0]:
+            elif ls[0].startswith('Buffers:'):
                 buffers = int(ls[1])
-            elif 'Cached' in ls[0]:
+            elif ls[0].startswith('Cached:'):
                 cached = int(ls[1])
-        self.memfree_mb = "%i" % ((memtotal - (memfree + buffers + cached))/1024.0)
+        self.memfree_mb = "%i" % ((memfree + buffers + cached)/1024.0)
 
         s = os.statvfs('.')
         self.diskfree_mb = (s.f_bavail * s.f_bsize)/1024/1024
