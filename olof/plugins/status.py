@@ -180,7 +180,7 @@ class ContentResource(resource.Resource):
         html += '<div class="block_topright">%s<img src="static/icons/clock-arrow.png"></div>' % prettydate(self.plugin.plugin_uptime, suffix="")
         html += '<div style="clear: both;"></div>'
         html += '<div class="block_content">'
-        if (len(self.plugin.load) > 0 and len([i for i in self.plugin.load if float(i) >= 0.8]) > 0) \
+        if (len(self.plugin.load) > 0 and len([i for i in self.plugin.load[1:] if float(i) >= 0.8]) > 0) \
             or int(self.plugin.memfree_mb) <= 128 or self.plugin.diskfree_mb <= 1000:
             html += '<div class="block_data">'
             html += '<img src="static/icons/system-monitor.png">Resources'
