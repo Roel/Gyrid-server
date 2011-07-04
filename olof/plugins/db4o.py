@@ -46,6 +46,7 @@ class InetClient(LineReceiver):
         for line in self.plugin.cache:
             line = line.strip()
             self.sendLine(line)
+            self.plugin_cached_lines -= 1
         self.plugin.cache.close()
 
         self.clearCache()
@@ -61,7 +62,7 @@ class InetClient(LineReceiver):
         self.plugin.cache = open(self.plugin.cache_file, 'w')
         self.plugin.cache.truncate()
         self.plugin.cache.close()
-        self.plugin.cached_lines = 0
+        #self.plugin.cached_lines = 0
 
 class InetClientFactory(ReconnectingClientFactory):
     """
@@ -92,7 +93,7 @@ class InetClientFactory(ReconnectingClientFactory):
 
 class Plugin(olof.core.Plugin):
     def __init__(self, server):
-        olof.core.Plugin.__init__(self, server, "db4o")
+        olof.core.Plugin.__init__(self, server, "Db4o")
         self.host = 'localhost'
         self.port = 5001
         self.cache_file = '/var/tmp/gyrid-server-db4o.cache'
@@ -114,18 +115,19 @@ class Plugin(olof.core.Plugin):
         cl = {}
         if self.cached_lines > 0:
             cl = {'id': 'cached lines', 'str': str(self.cached_lines)}
+
+        r = []
         if self.connected == False and self.conn_time == None:
-            r = [{'id': 'no connection'}]
-            if len(cl) > 0:
-                r.append(cl)
-            return r
+            r = [{'status': 'error'}, {'id': 'no connection'}]
         elif self.connected == False:
-            return [{'id': 'disconnected', 'time': self.conn_time}]
-            if len(cl) > 0:
-                r.append(cl)
-            return r
+            r = [{'status': 'error'},
+                {'id': 'disconnected', 'time': self.conn_time}]
         elif self.connected == True:
-            return [{'id': 'connected', 'time': self.conn_time}]
+            r = [{'id': 'connected', 'time': self.conn_time}]
+
+        if len(cl) > 0:
+            r.append(cl)
+        return r
 
     def stateFeed(self, hostname, timestamp, sensor_mac, info):
         if info == 'new_inquiry':

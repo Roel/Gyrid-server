@@ -115,8 +115,6 @@ class Connection(RawConnection):
                 for s in r:
                     ls = s.strip().split(',')
                     self.scanners[ls[0]] = True
-
-            print r
             return r
 
         self.request_get('scanner', process)
@@ -183,7 +181,9 @@ class Plugin(olof.core.Plugin):
             self.__dict__[ls[0]] = ls[1]
         f.close()
 
-        measureCount = {}
+        measureCount = {'last_upload': -1,
+                        'uploads': -1,
+                        'uploaded': -1}
         measurements = {}
         self.mac_dc = {}
 
@@ -220,6 +220,11 @@ class Plugin(olof.core.Plugin):
 
     def getStatus(self):
         r = []
+
+        if self.conn.measureCount['last_upload'] < 0:
+            r.append({'status': 'error'})
+            r.append({'id': 'no upload'})
+
         if self.conn.measureCount['last_upload'] > 0:
             r.append({'id': 'last upload', 'time': self.conn.measureCount['last_upload']})
 
