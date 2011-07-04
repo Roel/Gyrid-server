@@ -183,7 +183,8 @@ class Plugin(olof.core.Plugin):
 
         measureCount = {'last_upload': -1,
                         'uploads': -1,
-                        'uploaded': -1}
+                        'uploaded': -1,
+                        'cached': -1}
         measurements = {}
         self.mac_dc = {}
 
@@ -231,7 +232,9 @@ class Plugin(olof.core.Plugin):
         if self.conn.measureCount['uploaded'] > 0:
             r.append({'id': 'uploaded lines', 'str': str(self.conn.measureCount['uploaded'])})
 
-        r.append({'id': 'cached lines', 'str': str(self.conn.measureCount['cached'])})
+        if self.conn.measureCount['cached'] > 0:
+            r.append({'id': 'cached lines', 'str': str(self.conn.measureCount['cached'])})
+
         return r
 
     def dataFeedCell(self, hostname, timestamp, sensor_mac, mac, deviceclass,
