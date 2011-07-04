@@ -280,6 +280,7 @@ class Plugin(olof.core.Plugin):
         else:
             self.scanners = {}
 
+        self.resources_log = open("olof/plugins/status/data/resources.log", "a")
 
         self.plugin_uptime = int(time.time())
 
@@ -350,7 +351,14 @@ class Plugin(olof.core.Plugin):
         s = os.statvfs('.')
         self.diskfree_mb = (s.f_bavail * s.f_bsize)/1024/1024
 
+        self.resources_log.write(",".join([str(int(time.time())),
+            ",".join(self.load), str(self.memfree_mb),
+            str(self.diskfree_mb)]) + '\n')
+        self.resources_log.flush()
+
     def unload(self):
+        self.resources_log.close()
+
         f = open("olof/plugins/status/data/obj.pickle", "w")
         pickle.dump(self.scanners, f)
         f.close()
