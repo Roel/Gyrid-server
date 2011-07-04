@@ -120,7 +120,7 @@ class Connection(RawConnection):
         self.request_get('scanner', process)
 
     def addScanner(self, mac, description):
-        self.request_post(None, 'scanner', '%s,%s' % (mac, description),
+        self.request_post('scanner', None, '%s,%s' % (mac, description),
             {'Content-Type': 'text/plain'})
 
     def addMeasurement(self, sensor, timestamp, mac, deviceclass, rssi):
