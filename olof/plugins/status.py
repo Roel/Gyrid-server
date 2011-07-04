@@ -9,7 +9,7 @@
 Module that handles the communication with the Move REST API.
 """
 
-from twisted.internet import reactor, task
+from twisted.internet import reactor, task, threads
 from twisted.web import resource
 from twisted.web import server as tserver
 from twisted.web.static import File
@@ -18,6 +18,7 @@ import cPickle as pickle
 import datetime
 import math
 import os
+import subprocess
 import time
 import urllib2
 import urlparse
@@ -56,16 +57,64 @@ class Scanner(object):
         self.host_uptime = None
         self.sensors = {}
         self.warnings = []
+        self.lag = {}
 
-        self.conn_ip = None
-        self.conn_port = None
-        self.conn_time = None
+        self.connected = False
         self.location = None
         self.lat = None
         self.lon = None
         self.gyrid_connected = True
         self.gyrid_disconnect_time = None
         self.gyrid_uptime = None
+
+        self.conn_ip = None
+        self.conn_provider = None
+        self.conn_netname = None
+
+        self.init()
+
+    def init(self):
+        self.conn_port = None
+        self.conn_time = None
+        self.connected = False
+
+        for i in [1, 5, 15, 30, 60]:
+            self.lag[i] = [0, 0]
+            t = task.LoopingCall(self.cleanLagData, i)
+            t.start(i*60, now=False)
+
+    def getProvider(self, ip=None):
+        def run(ip):
+            p = subprocess.Popen(["/usr/bin/whois", ip], stdin=subprocess.PIPE,
+                stdout=subprocess.PIPE)
+
+            stdout, stderr = p.communicate()
+
+            netname = ""
+            descr = ""
+            for line in stdout.split('\n'):
+                l = line.strip()
+                if l.lower().startswith('netname:'):
+                    netname = ' '.join(l.split()[1:]).replace(';', ',')
+                elif l.lower().startswith('descr:') and descr == "":
+                    descr = ' '.join(l.split()[1:]).replace(';', ',')
+
+            return (netname, descr)
+
+        def process(v):
+            self.conn_provider = v[1]
+            self.conn_netname = v[0]
+
+        if ip == None and self.conn_ip != None:
+            ip = self.conn_ip
+
+        if ip != None:
+            d = threads.deferToThread(run, ip)
+            d.addCallback(process)
+
+    def cleanLagData(self, m):
+        print "cleaning %i m lag" % m
+        self.lag[m] = [0, 0]
 
     def render(self):
 
@@ -91,6 +140,25 @@ class Scanner(object):
             html += '</div>'
             return html
 
+        def render_lag():
+            lag = [(self.lag[i][0]/self.lag[i][1]) for i in sorted(
+                self.lag.keys()) if (i <= 15 and self.lag[i][1] > 0)]
+            if len([i for i in lag if i >= 5]) > 0:
+                html = '<div class="block_data"><img src="static/icons/network-cloud.png">Network'
+                html += '<span class="block_data_attr"><b>ip</b> %s</span>' % self.conn_ip
+                l = ', '.join(["%0.2f" % (self.lag[i][0]/self.lag[i][1]) for i in sorted(
+                    self.lag.keys()) if (i <= 15 and self.lag[i][1] > 0)])
+                if len(l) > 0:
+                    html += '<span class="block_data_attr"><b>lag</b> %s</span>' % l
+                if self.conn_provider:
+                    html += '<span class="block_data_attr"><b>provider</b> %s</span>' % self.conn_provider
+                if self.conn_netname:
+                    html += '<span class="block_data_attr"><b>netname</b> %s</span>' % self.conn_netname
+                html += '</div>'
+                return html
+            else:
+                return ''
+
         def render_notconnected(disconnect_time, suffix=""):
             html = '<div class="block_data"><img src="static/icons/traffic-cone.png">No connection%s' % suffix
             if disconnect_time != None:
@@ -104,9 +172,10 @@ class Scanner(object):
 
         html += '<div class="block_content">'
 
-        if self.conn_ip != None:
+        if self.connected:
             html += render_uptime()
             if self.gyrid_connected == True:
+                html += render_lag()
                 for sensor in self.sensors.values():
                     html += sensor.render()
             else:
@@ -122,9 +191,12 @@ class Sensor(object):
         self.mac = mac
         self.last_inquiry = None
         self.last_data = None
-        self.connected = False
         self.detections = 0
 
+        self.init()
+
+    def init(self):
+        self.connected = False
         self.disconnect_time = None
 
     def render(self):
@@ -271,12 +343,9 @@ class Plugin(olof.core.Plugin):
             self.scanners = pickle.load(f)
             f.close()
             for s in self.scanners.values():
-                s.conn_ip = None
-                s.conn_port = None
-                s.conn_time = None
+                s.init()
                 for sens in s.sensors.values():
-                    sens.connected = False
-                    sens.disconnect_time = None
+                    sens.init()
         else:
             self.scanners = {}
 
@@ -389,14 +458,16 @@ class Plugin(olof.core.Plugin):
 
     def connectionMade(self, hostname, ip, port):
         s = self.getScanner(hostname)
-        s.conn_ip = ip
+        s.connected = True
+        if ip != s.conn_ip:
+            s.conn_ip = ip
+            s.getProvider()
         s.conn_port = port
         s.conn_time = int(time.time())
 
     def connectionLost(self, hostname, ip, port):
         s = self.getScanner(hostname)
-        s.conn_ip = None
-        s.conn_port = None
+        s.connected = False
         s.conn_time = int(time.time())
         for sens in s.sensors.values():
             sens.connected = False
@@ -422,8 +493,22 @@ class Plugin(olof.core.Plugin):
             sens.connected = False
             sens.disconnect_time = int(float(timestamp))
 
+    def dataFeedCell(self, hostname, timestamp, sensor_mac, mac, deviceclass,
+            move):
+        scann = self.getScanner(hostname)
+        t = time.time()
+        for i in scann.lag.keys():
+            scann.lag[i][0] += t - float(timestamp)
+            scann.lag[i][1] += 1
+
     def dataFeedRssi(self, hostname, timestamp, sensor_mac, mac, rssi):
         sens = self.getSensor(hostname, sensor_mac)
         sens.detections += 1
         if sens.last_data == None or timestamp > sens.last_data:
             sens.last_data = timestamp
+
+        scann = self.getScanner(hostname)
+        t = time.time()
+        for i in scann.lag.keys():
+            scann.lag[i][0] += t - float(timestamp)
+            scann.lag[i][1] += 1

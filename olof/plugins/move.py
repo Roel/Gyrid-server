@@ -190,17 +190,26 @@ class Plugin(olof.core.Plugin):
 
         if os.path.isfile("olof/plugins/move/mac_dc.pickle"):
             f = open("olof/plugins/move/mac_dc.pickle", "rb")
-            self.mac_dc = pickle.load(f)
+            try:
+                self.mac_dc = pickle.load(f)
+            except:
+                pass
             f.close()
 
         if os.path.isfile("olof/plugins/move/measureCount.pickle"):
             f = open("olof/plugins/move/measureCount.pickle", "rb")
-            measureCount = pickle.load(f)
+            try:
+                measureCount = pickle.load(f)
+            except:
+                pass
             f.close()
 
         if os.path.isfile("olof/plugins/move/measurements.pickle"):
             f = open("olof/plugins/move/measurements.pickle", "rb")
-            measurements = pickle.load(f)
+            try:
+                measurements = pickle.load(f)
+            except:
+                pass
             f.close()
 
         self.conn = Connection(self.url, self.user, self.password,
