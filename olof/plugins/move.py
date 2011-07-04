@@ -188,17 +188,17 @@ class Plugin(olof.core.Plugin):
         self.mac_dc = {}
 
         if os.path.isfile("olof/plugins/move/mac_dc.pickle"):
-            f = open("olof/plugins/move/mac_dc.pickle", "r")
+            f = open("olof/plugins/move/mac_dc.pickle", "rb")
             self.mac_dc = pickle.load(f)
             f.close()
 
         if os.path.isfile("olof/plugins/move/measureCount.pickle"):
-            f = open("olof/plugins/move/measureCount.pickle", "r")
+            f = open("olof/plugins/move/measureCount.pickle", "rb")
             measureCount = pickle.load(f)
             f.close()
 
         if os.path.isfile("olof/plugins/move/measurements.pickle"):
-            f = open("olof/plugins/move/measurements.pickle", "r")
+            f = open("olof/plugins/move/measurements.pickle", "rb")
             measurements = pickle.load(f)
             f.close()
 
@@ -206,15 +206,15 @@ class Plugin(olof.core.Plugin):
             measurements, measureCount)
 
     def unload(self):
-        f = open("olof/plugins/move/measureCount.pickle", "w")
+        f = open("olof/plugins/move/measureCount.pickle", "wb")
         pickle.dump(self.conn.measureCount, f)
         f.close()
 
-        f = open("olof/plugins/move/measurements.pickle", "w")
+        f = open("olof/plugins/move/measurements.pickle", "wb")
         pickle.dump(self.conn.measurements, f)
         f.close()
 
-        f = open("olof/plugins/move/mac_dc.pickle", "w")
+        f = open("olof/plugins/move/mac_dc.pickle", "wb")
         pickle.dump(self.mac_dc, f)
         f.close()
 
