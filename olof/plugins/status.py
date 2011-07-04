@@ -191,8 +191,11 @@ class ContentResource(resource.Resource):
         for p in self.plugin.server.plugins:
             if p.name != None:
                 html += '<div class="block_data">'
-                html += '<img src="static/icons/puzzle.png">%s' % p.name
                 st = p.getStatus()
+                if 'status' in st[0] and st[0]['status'] == 'error':
+                    html += '<img src="static/icons/puzzle-red.png">%s' % p.name
+                else:
+                    html += '<img src="static/icons/puzzle.png">%s' % p.name
                 for i in st:
                     if len(i) == 1 and 'id' in i:
                         html += '<span class="block_data_attr">%s</span>' % i['id']
