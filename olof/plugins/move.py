@@ -9,7 +9,7 @@
 Module that handles the communication with the Move REST API.
 """
 
-from twisted.internet import reactor, task
+from twisted.internet import reactor, task, threads
 
 import os
 import cPickle as pickle
@@ -56,22 +56,27 @@ class RawConnection(object):
             opener = urllib2.build_opener(authhandler)
             urllib2.install_opener(opener)
 
-    def request_get(self, resource, headers={}):
-        return self.request(resource, "get", headers=headers)
+    def request_get(self, resource, cb=None, headers={}):
+        self.request(cb, resource, "get", headers=headers)
 
-    def request_delete(self, resource, headers={}):
-        return self.request(resource, "delete", headers=headers)
+    def request_delete(self, resource, cb=None, headers={}):
+        self.request(cb, resource, "delete", headers=headers)
 
-    def request_head(self, resource, headers={}):
-        return self.request(resource, "head", headers=headers)
+    def request_head(self, resource, cb=None, headers={}):
+        self.request(cb, resource, "head", headers=headers)
 
-    def request_post(self, resource, body=None, headers={}):
-        return self.request(resource, "post", body=body, headers=headers)
+    def request_post(self, resource, cb=None, body=None, headers={}):
+        self.request(cb, resource, "post", body=body, headers=headers)
 
-    def request_put(self, resource, body=None, headers={}):
-        return self.request(resource, "put", body=body, headers=headers)
+    def request_put(self, resource, cb=None, body=None, headers={}):
+        self.request(cb, resource, "put", body=body, headers=headers)
 
-    def request(self, resource, method="get", body=None, headers={}):
+    def request(self, callback, resource, method="get", body=None, headers={}):
+        d = threads.deferToThread(self.__request, resource, method, body, headers)
+        if callback != None:
+            d.addCallback(callback)
+
+    def __request(self, resource, method="get", body=None, headers={}):
         if resource.startswith('/'):
             req = ExtRequest(self.base_url+resource)
         else:
@@ -85,8 +90,8 @@ class RawConnection(object):
         try:
             resp = urllib2.urlopen(req)
             return resp.readlines()
-        except IOError, e:
-            return e.readlines()
+        except:
+            return None
 
 class Connection(RawConnection):
     def __init__(self, url, user, password, measurements={}, measureCount={}):
@@ -105,23 +110,20 @@ class Connection(RawConnection):
         t.start(60, now=False)
 
     def getScanners(self):
-        try:
-            scanners = self.request_get('scanner')
-        except:
-            return None
-        else:
-            for s in scanners:
-                ls = s.strip().split(',')
-                self.scanners[ls[0]] = True
+        def process(r):
+            if r != None:
+                for s in r:
+                    ls = s.strip().split(',')
+                    self.scanners[ls[0]] = True
 
-            return scanners
+            print r
+            return r
+
+        self.request_get('scanner', process)
 
     def addScanner(self, mac, description):
-        try:
-            self.request_post('scanner', '%s,%s' % (mac, description),
-                {'Content-Type': 'text/plain'})
-        except:
-            pass
+        self.request_post(None, 'scanner', '%s,%s' % (mac, description),
+            {'Content-Type': 'text/plain'})
 
     def addMeasurement(self, sensor, timestamp, mac, deviceclass, rssi):
         if not sensor in self.measurements:
@@ -137,6 +139,14 @@ class Connection(RawConnection):
         self.measureCount['cached'] += 1
 
     def postMeasurements(self):
+        def process(r):
+            self.measureCount['uploads'] += 1
+            self.measureCount['last_upload'] = int(time.time())
+            for i in to_delete:
+                self.measureCount['uploaded'] += len(self.measurements[i])
+                self.measureCount['cached'] -= len(self.measurements[i])
+                self.measurements[i] = []
+
         m = ""
         if False in self.scanners.values():        
             self.getScanners()
@@ -150,19 +160,8 @@ class Connection(RawConnection):
                 to_delete.append(scanner)
 
         if len(m) > 0:
-            try:
-                self.request_post('measurement', m,
-                    {'Content-Type': 'text/plain'})
-            except:
-                pass
-            else:
-                self.measureCount['uploads'] += 1
-                self.measureCount['last_upload'] = int(time.time())
-                for i in to_delete:
-                    self.measureCount['uploaded'] += len(self.measurements[i])
-                    self.measureCount['cached'] -= len(self.measurements[i])
-                    self.measurements[i] = []
-
+            self.request_post('measurement', process, m,
+                {'Content-Type': 'text/plain'})
 
 class Plugin(olof.core.Plugin):
     """
