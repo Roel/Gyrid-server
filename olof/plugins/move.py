@@ -106,7 +106,7 @@ class Connection(RawConnection):
         else:
             self.measureCount = measureCount
 
-        t = task.LoopingCall(reactor.callInThread, self.postMeasurements)
+        t = task.LoopingCall(self.postMeasurements)
         t.start(60, now=False)
 
     def getScanners(self):
