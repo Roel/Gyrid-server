@@ -113,7 +113,6 @@ class Scanner(object):
             d.addCallback(process)
 
     def cleanLagData(self, m):
-        print "cleaning %i m lag" % m
         self.lag[m] = [0, 0]
 
     def render(self):
