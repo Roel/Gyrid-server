@@ -146,10 +146,15 @@ class Scanner(object):
             if len([i for i in lag if i >= 5]) > 0:
                 html = '<div class="block_data"><img src="static/icons/network-cloud.png">Network'
                 html += '<span class="block_data_attr"><b>ip</b> %s</span>' % self.conn_ip
-                l = ', '.join(["%0.2f" % (self.lag[i][0]/self.lag[i][1]) for i in sorted(
-                    self.lag.keys()) if (i <= 15 and self.lag[i][1] > 0)])
+                l = []
+                for i in sorted(self.lag.keys()):
+                    if i <= 15:
+                        if self.lag[i][1] == 0:
+                            l.append('nd')
+                        else:
+                            l.append("%0.2f" % (self.lag[i][0]/self.lag[i][1]))
                 if len(l) > 0:
-                    html += '<span class="block_data_attr"><b>lag</b> %s</span>' % l
+                    html += '<span class="block_data_attr"><b>lag</b> %s</span>' %  ', '.join(l)
                 if self.conn_provider:
                     html += '<span class="block_data_attr"><b>provider</b> %s</span>' % self.conn_provider
                 if self.conn_netname:
