@@ -46,7 +46,7 @@ class InetClient(LineReceiver):
         for line in self.plugin.cache:
             line = line.strip()
             self.sendLine(line)
-            self.plugin_cached_lines -= 1
+            self.plugin.cached_lines -= 1
         self.plugin.cache.close()
 
         self.clearCache()
