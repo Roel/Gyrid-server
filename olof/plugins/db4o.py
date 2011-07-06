@@ -139,6 +139,6 @@ class Plugin(olof.core.Plugin):
             deviceclass, str(int(float(timestamp)*1000)), move]))
 
     def dataFeedRssi(self, hostname, timestamp, sensor_mac, mac, rssi):
-        deviceclass = self.server.getDeviceclass(mac)
+        deviceclass = str(self.server.getDeviceclass(mac))
         self.inet_factory.sendLine(','.join([hostname, sensor_mac, mac,
             deviceclass, str(int(float(timestamp)*1000)), rssi]))
