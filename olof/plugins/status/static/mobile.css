@@ -22,12 +22,13 @@ a:hover {
 
 #title {
     font: bold 16pt "Droid Sans",Arial,Sans-serif;
-    text-align: center;
+    text-align: right;
     font-variant: small-caps;
     text-shadow: #C3C3C3 0px 2px 3px;
-    margin-bottom: 10px;
-    padding-top: 5px;
-    padding-bottom: 5px;
+    margin-top: 12px;
+    float: right;
+    min-width: 50%;
+    max-width: 50%;
 }
 
 h3 a:hover {
@@ -37,6 +38,7 @@ h3 a:hover {
 #updated {
     font: bold 16pt "Droid Sans",Arial,Sans-serif;
     text-align: center;
+    clear: both;
     margin-top: 10px;
     margin-bottom: 10px;
     outline: 1px dotted #FDB812;
@@ -58,11 +60,12 @@ h3 {
 }
 
 #logo {
-    text-align: center;
+    float: left;
+    min-width: 50%;
 }
 
 div #footer {
-    margin-top: 30px;
+    margin-top: 20px;
     line-height: 150%;
     clear: both;
 }
@@ -79,7 +82,7 @@ div #footer {
 }
 
 .block {
-    margin-top: 20px;
+    margin-top: 10px;
     padding: 5px;
     border: 1px dotted #c0c0c0;
     background-color: #ffffff;
