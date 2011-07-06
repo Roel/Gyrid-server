@@ -83,16 +83,16 @@ class Scanner(object):
 
     def checkLag(self):
         t = time.time()
-        for i in self.lagData:
-            if (t - i[0]) > 15*60:
-                self.lagData.remove(i)
-
         lag = {1: [0, 0], 5: [0, 0], 15: [0, 0]}
-        for i in lag.keys():
-            for l in self.lagData:
-                if (t - l[0]) <= i*60:
-                    lag[i][0] += (l[0] - l[1])
-                    lag[i][1] += 1
+        for i in self.lagData:
+            if (t - i[0]) > (sorted(lag.keys())[-1]*60):
+                self.lagData.remove(i)
+                continue
+
+            for j in lag.keys():
+                if (t - i[0]) <= j*60:
+                    lag[j][0] += (i[0] - i[1])
+                    lag[j][1] += 1
 
         self.lag = lag
 
