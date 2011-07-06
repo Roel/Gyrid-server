@@ -103,7 +103,6 @@ class Plugin(olof.core.Plugin):
             self.cached_lines += 1
         self.cache.close()
         self.cache = open(self.cache_file, 'a')
-        self.mac_dc = {}
 
         self.connected = False
         self.conn_time = None
@@ -139,12 +138,7 @@ class Plugin(olof.core.Plugin):
         self.inet_factory.sendLine(','.join([hostname, sensor_mac, mac,
             deviceclass, str(int(float(timestamp)*1000)), move]))
 
-        if move == 'in':
-            self.mac_dc[mac] = deviceclass
-        elif move == 'out' and mac in self.mac_dc:
-            del(self.mac_dc[mac])
-
     def dataFeedRssi(self, hostname, timestamp, sensor_mac, mac, rssi):
-        deviceclass = self.mac_dc.get(mac, '-1')
+        deviceclass = self.server.getDeviceclass(mac)
         self.inet_factory.sendLine(','.join([hostname, sensor_mac, mac,
             deviceclass, str(int(float(timestamp)*1000)), rssi]))

@@ -187,15 +187,6 @@ class Plugin(olof.core.Plugin):
                         'uploaded': -1,
                         'cached': -1}
         measurements = {}
-        self.mac_dc = {}
-
-        if os.path.isfile("olof/plugins/move/mac_dc.pickle"):
-            f = open("olof/plugins/move/mac_dc.pickle", "rb")
-            try:
-                self.mac_dc = pickle.load(f)
-            except:
-                pass
-            f.close()
 
         if os.path.isfile("olof/plugins/move/measureCount.pickle"):
             f = open("olof/plugins/move/measureCount.pickle", "rb")
@@ -225,10 +216,6 @@ class Plugin(olof.core.Plugin):
         pickle.dump(self.conn.measurements, f)
         f.close()
 
-        f = open("olof/plugins/move/mac_dc.pickle", "wb")
-        pickle.dump(self.mac_dc, f)
-        f.close()
-
     def getStatus(self):
         r = []
 
@@ -247,14 +234,6 @@ class Plugin(olof.core.Plugin):
 
         return r
 
-    def dataFeedCell(self, hostname, timestamp, sensor_mac, mac, deviceclass,
-            move):
-        self.mac_dc[mac] = deviceclass
-
     def dataFeedRssi(self, hostname, timestamp, sensor_mac, mac, rssi):
-        if mac in self.mac_dc:
-            deviceclass = self.mac_dc[mac]
-        else:
-            deviceclass = -1
-
+        deviceclass = self.server.getDeviceclass(mac)
         self.conn.addMeasurement(sensor_mac, timestamp, mac, deviceclass, rssi)

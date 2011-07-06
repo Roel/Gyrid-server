@@ -19,6 +19,8 @@ import time
 import traceback
 import zlib
 
+import cPickle as pickle
+
 def verifyCallback(connection, x509, errnum, errdepth, ok):
     if not ok:
         print 'invalid cert from subject:', x509.get_subject()
@@ -113,6 +115,7 @@ class GyridServerProtocol(LineReceiver):
                         p.stateFeed(self.hostname, ll[2], ll[1], ll[3])
                 elif len(ll) == 5:
                     for p in self.factory.server.plugins:
+                        self.factory.server.mac_dc[ll[2]] = ll[3]
                         p.dataFeedCell(self.hostname, ll[1], ll[0], ll[2], ll[3],
                             ll[4])
                 elif len(ll) == 4:
@@ -144,6 +147,15 @@ class Olof(object):
         self.git_commit = commit.id
         self.git_date = int(time.strftime('%s', commit.committed_date))
 
+        self.mac_dc = {}
+        if os.path.isfile('olof/data/mac_dc.pickle'):
+            f = open('olof/data/mac_dc.pickle', 'rb')
+            try:
+                self.mac_dc = pickle.load(f)
+            except:
+                self.mac_dc = {}
+            f.close()
+
         self.load_plugins()
 
     def load_plugins(self):
@@ -169,8 +181,15 @@ class Olof(object):
                 load(os.path.join(home, 'olof', 'plugins', filename), self.plugins_inactive)
 
     def unload_plugins(self):
+        f = open('olof/data/mac_dc.pickle', 'wb')
+        pickle.dump(self.mac_dc, f)
+        f.close()
+
         for p in self.plugins:
             p.unload()
+
+    def getDeviceclass(self, mac):
+        return self.mac_dc.get(mac, -1)
 
     def output(self, message):
         d = {'time': time.strftime('%Y%m%d-%H%M%S-%Z'),
