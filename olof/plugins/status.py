@@ -267,7 +267,7 @@ class ContentResource(resource.Resource):
         html += '<div style="clear: both;"></div>'
         html += '<div class="block_content">'
         if (len(self.plugin.load) > 0 and len([i for i in self.plugin.load[1:] if float(i) >= 0.8]) > 0) \
-            or int(self.plugin.memfree_mb) <= 128 or self.plugin.diskfree_mb <= 1000:
+            or int(self.plugin.memfree_mb) <= 256 or self.plugin.diskfree_mb <= 1000:
             html += '<div class="block_data">'
             html += '<img src="static/icons/system-monitor.png">Resources'
             html += '<span class="block_data_attr"><b>load</b> %s</span>' % ', '.join(self.plugin.load)
