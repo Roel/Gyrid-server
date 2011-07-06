@@ -103,14 +103,15 @@ div #footer {
 
 .block_data {
     float: left;
-    margin-left: 10px;
     margin-top: 2px;
+    min-width: 50%;
 }
 
 .block_data_attr {
     margin-left: 50px;
     color: #a0a0a0;
-    display: list-item;
+    display: block;
+    text-indent: -10px;
 }
 
 .clear {
