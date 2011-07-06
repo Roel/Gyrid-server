@@ -57,7 +57,6 @@ class Scanner(object):
         self.host_uptime = None
         self.sensors = {}
         self.warnings = []
-        self.lag = {}
 
         self.connected = False
         self.location = None
@@ -77,11 +76,25 @@ class Scanner(object):
         self.conn_port = None
         self.conn_time = None
         self.connected = False
+        self.lagData = []
 
-        for i in [1, 5, 15, 30, 60]:
-            self.lag[i] = [0, 0]
-            t = task.LoopingCall(self.cleanLagData, i)
-            t.start(i*60, now=False)
+        t = task.LoopingCall(self.checkLag)
+        t.start(10)
+
+    def checkLag(self):
+        t = time.time()
+        for i in self.lagData:
+            if (t - i[0]) > 15*60:
+                self.lagData.remove(i)
+
+        lag = {1: [0, 0], 5: [0, 0], 15: [0, 0]}
+        for i in lag.keys():
+            for l in self.lagData:
+                if (t - l[0]) <= i*60:
+                    lag[i][0] += (l[0] - l[1])
+                    lag[i][1] += 1
+
+        self.lag = lag
 
     def getProvider(self, ip=None):
         def run(ip):
@@ -111,9 +124,6 @@ class Scanner(object):
         if ip != None:
             d = threads.deferToThread(run, ip)
             d.addCallback(process)
-
-    def cleanLagData(self, m):
-        self.lag[m] = [0, 0]
 
     def render(self):
 
@@ -501,9 +511,7 @@ class Plugin(olof.core.Plugin):
             move):
         scann = self.getScanner(hostname)
         t = time.time()
-        for i in scann.lag.keys():
-            scann.lag[i][0] += t - float(timestamp)
-            scann.lag[i][1] += 1
+        scann.lagData.append((t, float(timestamp)))
 
     def dataFeedRssi(self, hostname, timestamp, sensor_mac, mac, rssi):
         sens = self.getSensor(hostname, sensor_mac)
@@ -513,6 +521,4 @@ class Plugin(olof.core.Plugin):
 
         scann = self.getScanner(hostname)
         t = time.time()
-        for i in scann.lag.keys():
-            scann.lag[i][0] += t - float(timestamp)
-            scann.lag[i][1] += 1
+        scann.lagData.append((t, float(timestamp)))
