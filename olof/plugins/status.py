@@ -87,8 +87,10 @@ class Scanner(object):
         lag = {1: [0, 0], 5: [0, 0], 15: [0, 0]}
         for i in self.lagData:
             if (t - i[0]) > (sorted(lag.keys())[-1]*60):
-                self.lagData.remove(i)
-                continue
+                try:
+                    self.lagData.remove(i)
+                finally:
+                    continue
 
             for j in lag.keys():
                 if (t - i[0]) <= j*60:
