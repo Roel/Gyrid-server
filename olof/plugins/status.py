@@ -247,7 +247,7 @@ class Sensor(object):
         if self.last_data != None:
             html += '<span class="block_data_attr"><b>last data</b> %s</span>' % prettydate(int(float(self.last_data)))
         if self.detections > 0:
-            html += '<span class="block_data_attr"><b>detections</b> %i</span>' % formatNumber(self.detections)
+            html += '<span class="block_data_attr"><b>detections</b> %s</span>' % formatNumber(self.detections)
         html += '</div>'
         return html
 
