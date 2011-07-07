@@ -57,6 +57,7 @@ class Scanner(object):
         self.host_uptime = None
         self.sensors = {}
         self.warnings = []
+        self.lagData = []
 
         self.connected = False
         self.location = None
@@ -76,7 +77,6 @@ class Scanner(object):
         self.conn_port = None
         self.conn_time = None
         self.connected = False
-        self.lagData = []
 
         self.checkLag_call = task.LoopingCall(reactor.callInThread,
             self.checkLag)
