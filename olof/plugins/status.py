@@ -89,8 +89,9 @@ class Scanner(object):
             if (t - i[0]) > (sorted(lag.keys())[-1]*60):
                 try:
                     self.lagData.remove(i)
-                finally:
-                    continue
+                except:
+                    pass
+                continue
 
             for j in lag.keys():
                 if (t - i[0]) <= j*60:
