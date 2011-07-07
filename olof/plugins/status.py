@@ -270,7 +270,7 @@ class ContentResource(resource.Resource):
         html += '<div class="block_topright">%s<img src="static/icons/clock-arrow.png"></div>' % prettydate(self.plugin.plugin_uptime, suffix="")
         html += '<div style="clear: both;"></div>'
         html += '<div class="block_content">'
-        if (len(self.plugin.load) > 0 and len([i for i in self.plugin.load[1:] if float(i) >= 0.8]) > 0) \
+        if (len(self.plugin.load) > 0 and len([i for i in self.plugin.load[1:] if float(i) >= (self.plugin.cpuCount*0.8)]) > 0) \
             or int(self.plugin.memfree_mb) <= 256 or self.plugin.diskfree_mb <= 1000:
             html += '<div class="block_data">'
             html += '<img src="static/icons/system-monitor.png">Resources'
@@ -370,6 +370,12 @@ class Plugin(olof.core.Plugin):
         self.resources_log = open("olof/plugins/status/data/resources.log", "a")
 
         self.plugin_uptime = int(time.time())
+
+        try:
+            import multiprocessing
+            self.cpuCount = multiprocessing.cpu_count()
+        except:
+            self.cpuCount = 1
 
         t = task.LoopingCall(self.check_resources)
         t.start(10)
