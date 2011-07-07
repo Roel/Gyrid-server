@@ -152,7 +152,7 @@ class Scanner(object):
         def render_lag():
             lag = [(self.lag[i][0]/self.lag[i][1]) for i in sorted(
                 self.lag.keys()) if (i <= 15 and self.lag[i][1] > 0)]
-            if len([i for i in lag if i >= 5]) > 0:
+            if len([i for i in lag[1:] if i >= 5]) > 0:
                 html = '<div class="block_data"><img src="static/icons/network-cloud.png">Network'
                 html += '<span class="block_data_attr"><b>ip</b> %s</span>' % self.conn_ip
                 l = []
