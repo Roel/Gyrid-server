@@ -255,7 +255,7 @@ class RootResource(resource.Resource):
     def __init__(self):
         resource.Resource.__init__(self)
 
-        f = open('olof/plugins/status/html/index.html', 'r')
+        f = open('olof/plugins/status/static/index.html', 'r')
         self.rendered_page = f.read()
         f.close()
 
