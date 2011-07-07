@@ -338,8 +338,8 @@ class ContentResource(resource.Resource):
         html += self.render_server()
         html += self.render_warnings()
 
-        for scanner in self.plugin.scanners.values():
-            html += scanner.render()
+        for scanner in sorted(self.plugin.scanners.keys()):
+            html += self.plugin.scanners[scanner].render()
 
         html += self.render_footer()
 
