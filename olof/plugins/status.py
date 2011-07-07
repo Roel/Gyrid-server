@@ -182,7 +182,7 @@ class Scanner(object):
                         if self.lag[i][1] == 0:
                             l.append('nd')
                         else:
-                            l.append(formatNumber("%0.2f" % (self.lag[i][0]/self.lag[i][1])))
+                            l.append(formatNumber(float("%0.2f" % (self.lag[i][0]/self.lag[i][1]))))
                 if len([i for i in l if i != 'nd']) > 0:
                     html += '<span class="block_data_attr"><b>lag</b> %s</span>' %  ', '.join(l)
                 if self.conn_provider:
