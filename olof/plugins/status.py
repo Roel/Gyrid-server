@@ -77,6 +77,7 @@ class Scanner(object):
         self.conn_port = None
         self.conn_time = None
         self.connected = False
+        self.lag = {1: [0, 0], 5: [0, 0], 15: [0, 0]}
 
         self.checkLag_call = task.LoopingCall(reactor.callInThread,
             self.checkLag)
