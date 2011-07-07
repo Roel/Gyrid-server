@@ -353,7 +353,7 @@ class Plugin(olof.core.Plugin):
         self.warnings = []
 
         if os.path.isfile("olof/plugins/status/data/obj.pickle"):
-            f = open("olof/plugins/status/data/obj.pickle", "r")
+            f = open("olof/plugins/status/data/obj.pickle", "rb")
             self.scanners = pickle.load(f)
             f.close()
             for s in self.scanners.values():
@@ -442,7 +442,7 @@ class Plugin(olof.core.Plugin):
     def unload(self):
         self.resources_log.close()
 
-        f = open("olof/plugins/status/data/obj.pickle", "w")
+        f = open("olof/plugins/status/data/obj.pickle", "wb")
         pickle.dump(self.scanners, f)
         f.close()
 
