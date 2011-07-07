@@ -374,13 +374,16 @@ class Plugin(olof.core.Plugin):
         self.warnings = []
 
         if os.path.isfile("olof/plugins/status/data/obj.pickle"):
-            f = open("olof/plugins/status/data/obj.pickle", "rb")
-            self.scanners = pickle.load(f)
-            f.close()
-            for s in self.scanners.values():
-                s.init()
-                for sens in s.sensors.values():
-                    sens.init()
+            try:
+                f = open("olof/plugins/status/data/obj.pickle", "rb")
+                self.scanners = pickle.load(f)
+                f.close()
+                for s in self.scanners.values():
+                    s.init()
+                    for sens in s.sensors.values():
+                        sens.init()
+            except:
+                self.scanners = {}
         else:
             self.scanners = {}
 
