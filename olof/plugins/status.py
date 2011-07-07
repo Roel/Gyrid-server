@@ -82,6 +82,23 @@ class Scanner(object):
         self.checkLag_call = task.LoopingCall(reactor.callInThread,
             self.checkLag)
 
+    def checkLagCall(self, action):
+        if action == 'start':
+            if not 'checkLag_call' in self.__dict__:
+                self.checkLag_call = task.LoopingCall(reactor.callInThread,
+                    self.checkLag)
+            try:
+                self.checkLag_call.start(10, now=False)
+            except AssertionError:
+                pass
+
+        elif action == 'stop':
+            if 'checkLag_call' in self.__dict__:
+                try:
+                    self.checkLag_call.stop()
+                except AssertionError:
+                    pass
+
     def checkLag(self):
         t = time.time()
         lag = {1: [0, 0], 5: [0, 0], 15: [0, 0]}
@@ -452,9 +469,9 @@ class Plugin(olof.core.Plugin):
     def unload(self):
         self.resources_log.close()
         for s in self.scanners.values():
-            if s.connected:
-                s.checkLag_call.stop()
-            del(s.checkLag_call)
+            s.checkLagCall('stop')
+            if 'checkLag_call' in s.__dict__:
+                del(s.checkLag_call)
 
         f = open("olof/plugins/status/data/obj.pickle", "wb")
         pickle.dump(self.scanners, f)
@@ -492,13 +509,14 @@ class Plugin(olof.core.Plugin):
             s.getProvider()
         s.conn_port = port
         s.conn_time = int(time.time())
-        s.checkLag_call.start(10, now=False)
+
+        s.checkLagCall('start')
 
     def connectionLost(self, hostname, ip, port):
         s = self.getScanner(hostname)
         s.connected = False
         s.conn_time = int(time.time())
-        s.checkLag_call.stop()
+        s.checkLagCall('stop')
         for sens in s.sensors.values():
             sens.connected = False
 
