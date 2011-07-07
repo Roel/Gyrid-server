@@ -361,7 +361,10 @@ class StaticResource(File):
 
 
 def formatNumber(number):
-    return '{:,}'.format(number).replace(',', '<span class="thousandSep"></span>')
+    if type(number) is int:
+        return '{:,.0f}'.format(number).replace(',', '<span class="thousandSep"></span>')
+    elif type(number) is float:
+        return '{:,.2f}'.format(number).replace(',', '<span class="thousandSep"></span>')
 
 class Plugin(olof.core.Plugin):
     """
