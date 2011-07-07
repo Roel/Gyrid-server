@@ -78,8 +78,8 @@ class Scanner(object):
         self.connected = False
         self.lagData = []
 
-        t = task.LoopingCall(self.checkLag)
-        t.start(10)
+        self.checkLag_call = task.LoopingCall(reactor.callInThread,
+            self.checkLag)
 
     def checkLag(self):
         t = time.time()
@@ -478,11 +478,13 @@ class Plugin(olof.core.Plugin):
             s.getProvider()
         s.conn_port = port
         s.conn_time = int(time.time())
+        s.checkLag_call.start(10, now=False)
 
     def connectionLost(self, hostname, ip, port):
         s = self.getScanner(hostname)
         s.connected = False
         s.conn_time = int(time.time())
+        s.checkLag_call.stop()
         for sens in s.sensors.values():
             sens.connected = False
 
