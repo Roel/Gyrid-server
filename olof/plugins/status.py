@@ -441,6 +441,10 @@ class Plugin(olof.core.Plugin):
 
     def unload(self):
         self.resources_log.close()
+        for s in self.scanners.values():
+            if s.connected:
+                s.checkLag_call.stop()
+            del(s.checkLag_call)
 
         f = open("olof/plugins/status/data/obj.pickle", "wb")
         pickle.dump(self.scanners, f)
