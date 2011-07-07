@@ -112,7 +112,7 @@ class Scanner(object):
 
             for j in lag.keys():
                 if (t - i[0]) <= j*60:
-                    lag[j][0] += (i[0] - i[1])
+                    lag[j][0] += abs(i[0] - i[1])
                     lag[j][1] += 1
 
         self.lag = lag
@@ -173,7 +173,7 @@ class Scanner(object):
         def render_lag():
             lag = [(self.lag[i][0]/self.lag[i][1]) for i in sorted(
                 self.lag.keys()) if (i <= 15 and self.lag[i][1] > 0)]
-            if len([i for i in lag[1:] if (i >= 5 or i <= -5)]) > 0:
+            if len([i for i in lag[1:] if i >= 5]) > 0:
                 html = '<div class="block_data"><img src="static/icons/network-cloud.png">Network'
                 html += '<span class="block_data_attr"><b>ip</b> %s</span>' % self.conn_ip
                 l = []
@@ -358,7 +358,6 @@ class StaticResource(File):
             def render(self, arg):
                 return ""
         return NoneRenderer()
-
 
 def formatNumber(number):
     if type(number) is int:
