@@ -113,7 +113,7 @@ class Plugin(olof.core.Plugin):
     def getStatus(self):
         cl = {}
         if self.cached_lines > 0:
-            cl = {'id': 'cached lines', 'str': str(self.cached_lines)}
+            cl = {'id': 'cached lines', 'int': self.cached_lines}
 
         r = []
         if self.connected == False and self.conn_time == None:

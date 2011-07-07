@@ -182,7 +182,7 @@ class Scanner(object):
                         if self.lag[i][1] == 0:
                             l.append('nd')
                         else:
-                            l.append("%0.2f" % (self.lag[i][0]/self.lag[i][1]))
+                            l.append(formatNumber("%0.2f" % (self.lag[i][0]/self.lag[i][1])))
                 if len([i for i in l if i != 'nd']) > 0:
                     html += '<span class="block_data_attr"><b>lag</b> %s</span>' %  ', '.join(l)
                 if self.conn_provider:
@@ -247,7 +247,7 @@ class Sensor(object):
         if self.last_data != None:
             html += '<span class="block_data_attr"><b>last data</b> %s</span>' % prettydate(int(float(self.last_data)))
         if self.detections > 0:
-            html += '<span class="block_data_attr"><b>detections</b> %i</span>' % self.detections
+            html += '<span class="block_data_attr"><b>detections</b> %i</span>' % formatNumber(self.detections)
         html += '</div>'
         return html
 
@@ -292,8 +292,8 @@ class ContentResource(resource.Resource):
             html += '<div class="block_data">'
             html += '<img src="static/icons/system-monitor.png">Resources'
             html += '<span class="block_data_attr"><b>load</b> %s</span>' % ', '.join(self.plugin.load)
-            html += '<span class="block_data_attr"><b>ram free</b> %s</span>' % (self.plugin.memfree_mb + ' MB')
-            html += '<span class="block_data_attr"><b>disk free</b> %s</span>' % (str(self.plugin.diskfree_mb) + ' MB')
+            html += '<span class="block_data_attr"><b>ram free</b> %s</span>' % (formatNumber(self.plugin.memfree_mb) + ' MB')
+            html += '<span class="block_data_attr"><b>disk free</b> %s</span>' % (formatNumber(self.plugin.diskfree_mb) + ' MB')
             html += '</div>'
         for p in self.plugin.server.plugins:
             if p.name != None:
@@ -310,6 +310,8 @@ class ContentResource(resource.Resource):
                         html += '<span class="block_data_attr"><b>%s</b> %s</span>' % (i['id'], prettydate(i['time']))
                     elif len(i) > 1 and 'str' in i:
                         html += '<span class="block_data_attr"><b>%s</b> %s</span>' % (i['id'], i['str'])
+                    elif len(i) > 1 and 'int' in i:
+                        html += '<span class="block_data_attr"><b>%s</b> %s</span>' % (i['id'], formatNumber(i['int']))
                 html += '</div>'
         for p in self.plugin.server.plugins_inactive:
             if p.name != None:
@@ -356,6 +358,10 @@ class StaticResource(File):
             def render(self, arg):
                 return ""
         return NoneRenderer()
+
+
+def formatNumber(number):
+    return '{:,}'.format(number).replace(',', '<span class="thousandSep"></span>')
 
 class Plugin(olof.core.Plugin):
     """
@@ -459,7 +465,7 @@ class Plugin(olof.core.Plugin):
                 buffers = int(ls[1])
             elif ls[0].startswith('Cached:'):
                 cached = int(ls[1])
-        self.memfree_mb = "%i" % ((memfree + buffers + cached)/1024.0)
+        self.memfree_mb = int((memfree + buffers + cached)/1024.0)
 
         s = os.statvfs('.')
         self.diskfree_mb = (s.f_bavail * s.f_bsize)/1024/1024

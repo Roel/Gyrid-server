@@ -113,7 +113,10 @@ img {
     border-style: none;
 }
 
-
 ul {
     line-height: 200%;
+}
+
+.thousandSep {
+    margin-left: 4px;
 }
