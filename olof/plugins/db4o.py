@@ -131,14 +131,14 @@ class Plugin(olof.core.Plugin):
     def stateFeed(self, hostname, timestamp, sensor_mac, info):
         if info == 'new_inquiry':
             self.inet_factory.sendLine(','.join([hostname, 'INFO',
-                str(int(float(timestamp)*1000)), 'new_inquiry', sensor_mac]))
+                str(int(timestamp*1000)), 'new_inquiry', sensor_mac]))
 
     def dataFeedCell(self, hostname, timestamp, sensor_mac, mac, deviceclass,
              move):
         self.inet_factory.sendLine(','.join([hostname, sensor_mac, mac,
-            deviceclass, str(int(float(timestamp)*1000)), move]))
+            str(deviceclass), str(int(timestamp*1000)), move]))
 
     def dataFeedRssi(self, hostname, timestamp, sensor_mac, mac, rssi):
         deviceclass = str(self.server.getDeviceclass(mac))
         self.inet_factory.sendLine(','.join([hostname, sensor_mac, mac,
-            deviceclass, str(int(float(timestamp)*1000)), rssi]))
+            deviceclass, str(int(timestamp*1000)), str(rssi)]))

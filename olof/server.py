@@ -61,9 +61,15 @@ class GyridServerProtocol(LineReceiver):
 
     def connectionLost(self, reason):
         if self.hostname != None:
-            for p in self.factory.server.plugins:
-                p.connectionLost(self.hostname, self.transport.getPeer().host,
-                    self.transport.getPeer().port)
+            try:
+                args = {'hostname': str(self.hostname),
+                        'ip': str(self.transport.getPeer().host),
+                        'port': int(self.transport.getPeer().port)}
+            except:
+                return
+            else:
+                for p in self.factory.server.plugins:
+                    p.connectionLost(**args)
 
     def checksum(self, data):
         return hex(abs(zlib.crc32(data)))[2:]
@@ -80,24 +86,44 @@ class GyridServerProtocol(LineReceiver):
             ll[1] = ll[1].strip()
             if ll[1] == 'hostname':
                 self.hostname = ll[2]
-                for p in self.factory.server.plugins:
-                    p.connectionMade(self.hostname,
-                        self.transport.getPeer().host,
-                        self.transport.getPeer().port)
+                try:
+                    args = {'hostname': str(self.hostname),
+                            'ip': str(self.transport.getPeer().host),
+                            'port': int(self.transport.getPeer().port)}
+                except:
+                    return
+                else:
+                    for p in self.factory.server.plugins:
+                        p.connectionMade(**args)
+
                 for l in self.buffer:
                     if not 'hostname' in l:
                         self.process(l)
                 self.buffer[:] = []
             elif ll[1] == 'uptime':
                 if self.hostname != None:
-                    for p in self.factory.server.plugins:
-                        p.uptime(self.hostname, ll[3], ll[2])
+                    try:
+                        args = {'hostname': str(self.hostname),
+                                'host_uptime': int(ll[3]),
+                                'gyrid_uptime': int(ll[2])}
+                    except:
+                        return
+                    else:
+                        for p in self.factory.server.plugins:
+                            p.uptime(**args)
                 else:
                     self.buffer.append(line)
             elif ll[1] == 'gyrid':
                 if self.hostname != None:
-                    for p in self.factory.server.plugins:
-                        p.sysStateFeed(self.hostname, ll[1], ll[2])
+                    try:
+                        args = {'hostname': str(self.hostname),
+                                'module': str(ll[1]),
+                                'info': str(ll[2])}
+                    except:
+                        return
+                    else:
+                        for p in self.factory.server.plugins:
+                            p.sysStateFeed(**args)
                 else:
                     self.buffer.append(line)
             elif len(ll) == 2 and ll[1] == 'keepalive':
@@ -111,19 +137,58 @@ class GyridServerProtocol(LineReceiver):
 
             if self.hostname != None:
                 if len(ll) == 4 and ll[0] == 'STATE':
-                    for p in self.factory.server.plugins:
-                        p.stateFeed(self.hostname, ll[2], ll[1], ll[3])
+                    try:
+                        args = {'hostname': str(self.hostname),
+                                'timestamp': float(ll[2]),
+                                'sensor_mac': str(ll[1]),
+                                'info': str(ll[3])}
+                    except:
+                        return
+                    else:
+                        for p in self.factory.server.plugins:
+                            p.stateFeed(**args)
                 elif len(ll) == 5:
-                    for p in self.factory.server.plugins:
-                        self.factory.server.mac_dc[ll[2]] = ll[3]
-                        p.dataFeedCell(self.hostname, ll[1], ll[0], ll[2], ll[3],
-                            ll[4])
+                    try:
+                        mac = str(ll[2])
+                        dc = int(ll[3])
+                    except:
+                        return
+                    else:
+                        self.factory.server.mac_dc[mac] = dc
+                        try:
+                            args = {'hostname': str(self.hostname),
+                                    'timestamp': float(ll[1]),
+                                    'sensor_mac': str(ll[0]),
+                                    'mac': mac,
+                                    'deviceclass': dc,
+                                    'move': str(ll[4])}
+                        except:
+                            return
+                        else:
+                            for p in self.factory.server.plugins:
+                                p.dataFeedCell(**args)
                 elif len(ll) == 4:
-                    for p in self.factory.server.plugins:
-                        p.dataFeedRssi(self.hostname, ll[1], ll[0], ll[2], ll[3])
+                    try:
+                        args = {'hostname': str(self.hostname),
+                                'timestamp': float(ll[1]),
+                                'sensor_mac': str(ll[0]),
+                                'mac': str(ll[2]),
+                                'rssi': int(ll[3])}
+                    except:
+                        return
+                    else:
+                        for p in self.factory.server.plugins:
+                            p.dataFeedRssi(**args)
                 elif len(ll) == 3 and ll[0] == 'INFO':
-                    for p in self.factory.server.plugins:
-                        p.infoFeed(self.hostname, ll[1], ll[2])
+                    try:
+                        args = {'hostname': str(self.hostname),
+                                'timestamp': float(ll[1]),
+                                'info': str(ll[2])}
+                    except:
+                        return
+                    else:
+                        for p in self.factory.server.plugins:
+                            p.infoFeed(**args)
 
 
 class GyridServerFactory(Factory):

@@ -33,8 +33,8 @@ class Plugin(olof.core.Plugin):
     def infoFeed(self, hostname, timestamp, info):
         self.output("%s info: %s" % (hostname, info))
 
-    def uptime(self, hostname, up1, up2):
-        self.output("debug: uptime: %s" % ','.join([hostname, up1, up2]))
+    def uptime(self, hostname, host_uptime, gyrid_uptime):
+        self.output("debug: uptime: %s" % ','.join([hostname, str(host_uptime), str(gyrid_uptime)]))
 
     def sysStateFeed(self, hostname, module, info):
         self.output("debug: sysState: %s" % ','.join([hostname, module, info]))

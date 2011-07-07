@@ -90,14 +90,14 @@ class Scanner(object):
             try:
                 self.checkLag_call.start(10, now=False)
             except AssertionError:
-                pass
+                print self.hostname + ": AssertionError starting call"
 
         elif action == 'stop':
             if 'checkLag_call' in self.__dict__:
                 try:
                     self.checkLag_call.stop()
                 except AssertionError:
-                    pass
+                    print self.hostname + ": AssertionError stopping call"
 
     def checkLag(self):
         t = time.time()
