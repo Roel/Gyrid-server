@@ -47,14 +47,19 @@ class Mailer(object):
         self.server = 'smtp.ugent.be'
         self.port = 587
         self.from_address = 'noreply@gyrid-server.ugent.be'
+        self.recipients = {}
 
-        f = open('olof/plugins/alert/mailserver.conf')
+        f = open('olof/plugins/alert/alert.conf')
         for line in f:
             ls = line.strip().split(',')
-            self.__dict__[ls[0]] = ls[1]
+            if len(ls) == 1 and ls[0] == '':
+                continue
+            if ls[0] == 'recipient':
+                self.recipients[ls[1]] = eval(ls[2])
+            else:
+                self.__dict__[ls[0]] = ls[1]
         f.close()
 
-        self.recipients = {'mail+gyrid@rulus.be': Alert.Level.Info}
         self.alerts = []
         self.__alertMap = {}
 
@@ -110,10 +115,8 @@ class Mailer(object):
         to_delete = []
         for alert in self.alerts:
             level = alert.getStatusLevel(t)
-            print alert.origin, alert.module, Alert.Level.String[level]
             if level is not None and not alert.isSent(level):
                 for r in self.recipients:
-                    print "Checking recipient %s" % r
                     if level >= self.recipients[r]:
                         mails.append([r,
                             alert.origin,
@@ -129,12 +132,9 @@ class Mailer(object):
         self.removeAlerts(to_delete)
 
         if len(mails) > 0:
-            print "Connecting ..."
             self.__connect()
             for m in mails:
                 self.__sendMail(m[0], m[1], m[2])
-                print "Sending e-mail to %s" % m[0]
-            print "Disconnecting ..."
             self.__disconnect()
 
 class Alert(object):
