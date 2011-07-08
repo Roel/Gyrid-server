@@ -9,7 +9,7 @@
 Module that handles the communication with the Move REST API.
 """
 
-from twisted.internet import reactor, task
+from twisted.internet import reactor, task, threads
 
 import datetime
 import smtplib
@@ -49,22 +49,32 @@ class Mailer(object):
         self.from_address = 'noreply@gyrid-server.ugent.be'
         self.recipients = {}
 
-        f = open('olof/plugins/alert/alert.conf')
+        f = open('olof/plugins/alert/mailserver.conf')
         for line in f:
             ls = line.strip().split(',')
             if len(ls) == 1 and ls[0] == '':
                 continue
-            if ls[0] == 'recipient':
-                self.recipients[ls[1]] = eval(ls[2])
-            else:
-                self.__dict__[ls[0]] = ls[1]
+            self.__dict__[ls[0]] = ls[1]
         f.close()
 
         self.alerts = []
         self.__alertMap = {}
+        self.loadRecipients()
 
         t = task.LoopingCall(self.sendAlerts)
         t.start(60)
+
+    def loadRecipients(self, *args):
+        r = {}
+        f = open('olof/plugins/alert/recipients.conf')
+        for line in f:
+            ls = line.strip().split(',')
+            if len(ls) == 1 and ls[0] == '':
+                continue
+            r[ls[0]] = eval(ls[1])
+        f.close()
+
+        self.recipients = r
 
     def addAlert(self, alert):
         self.alerts.append(alert)
@@ -86,7 +96,8 @@ class Mailer(object):
             self.__alertMap[a.origin].remove([a.type, a])
 
     def sendAlerts(self):
-        reactor.callInThread(self.__sendAlerts)
+        d = threads.deferToThread(self.__sendAlerts)
+        d.addCallback(self.loadRecipients)
 
     def __connect(self):
         self.s = smtplib.SMTP(self.server, self.port)
