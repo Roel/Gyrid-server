@@ -14,7 +14,7 @@ class ScanSetup(object):
         self.logDir = '/'.join([self.logBase, self.hostname])
 
         if not os.path.exists(self.logDir):
-            os.makedirs(self.logDir)
+            os.makedirs(self.logDir, mode=0755)
 
         self.logFiles = ['connections', 'messages', 'scan', 'rssi']
         self.logs = dict(zip(self.logFiles, [open('/'.join([
