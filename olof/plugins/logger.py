@@ -11,14 +11,15 @@ class ScanSetup(object):
         self.sensor = sensor_mac
         self.logBase = 'olof/plugins/logger'
 
-        self.logDir = '/'.join([self.logBase, self.hostname, self.sensor])
+        self.logDir = '/'.join([self.logBase, self.hostname])
 
         if not os.path.exists(self.logDir):
             os.makedirs(self.logDir)
 
         self.logFiles = ['connections', 'messages', 'scan', 'rssi']
         self.logs = dict(zip(self.logFiles, [open('/'.join([
-            self.logDir, i + '.log']), 'a') for i in self.logFiles]))
+            self.logDir, '%s-%s-%s.log' % (self.hostname, self.sensor, i)]),
+            'a') for i in self.logFiles]))
 
     def formatTimestamp(self, timestamp):
         return time.strftime('%Y%m%d-%H%M%S-%Z', time.localtime(timestamp))
