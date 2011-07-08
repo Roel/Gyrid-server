@@ -5,28 +5,62 @@ import time
 
 import olof.core
 
-class ScanSetup(object):
-    def __init__(self, hostname, sensor_mac):
+class Logger(object):
+    def __init__(self, hostname):
         self.hostname = hostname
-        self.sensor = sensor_mac
         self.logBase = 'olof/plugins/logger'
-
         self.logDir = '/'.join([self.logBase, self.hostname])
+        self.logs = {}
 
         if not os.path.exists(self.logDir):
             os.makedirs(self.logDir, mode=0755)
 
-        self.logFiles = ['connections', 'messages', 'scan', 'rssi']
-        self.logs = dict(zip(self.logFiles, [open('/'.join([
-            self.logDir, '%s-%s-%s.log' % (self.hostname, self.sensor, i)]),
-            'a') for i in self.logFiles]))
+    def unload(self):
+        for f in self.logs.values():
+            f.close()
 
     def formatTimestamp(self, timestamp):
         return time.strftime('%Y%m%d-%H%M%S-%Z', time.localtime(timestamp))
 
+class Scanner(Logger):
+    def __init__(self, hostname):
+        Logger.__init__(self, hostname)
+
+        self.logFiles = ['messages', 'connections']
+        self.logs = dict(zip(self.logFiles, [open('/'.join([
+            self.logDir, '%s-%s.log' % (self.hostname, i)]),
+            'a') for i in self.logFiles]))
+
+        self.host = None
+        self.port = None
+
     def unload(self):
-        for f in self.logs.values():
-            f.close()
+        self.logConnection(time.time(), self.host, self.port, 'server shutdown')
+        Logger.unload(self)
+
+    def logInfo(self, timestamp, info):
+        self.logs['messages'].write(','.join([str(i) for i in [
+            self.formatTimestamp(timestamp), info]]) + '\n')
+        self.logs['messages'].flush()
+
+    def logConnection(self, timestamp, host, port, action):
+        if action == 'made':
+            self.host = host
+            self.port = port
+
+        self.logs['connections'].write(','.join([str(i) for i in [
+            self.formatTimestamp(timestamp), host, port, action]]) + '\n')
+        self.logs['connections'].flush()
+
+class ScanSetup(Logger):
+    def __init__(self, hostname, sensor_mac):
+        Logger.__init__(self, hostname)
+        self.sensor = sensor_mac
+
+        self.logFiles = ['scan', 'rssi']
+        self.logs = dict(zip(self.logFiles, [open('/'.join([
+            self.logDir, '%s-%s-%s.log' % (self.hostname, self.sensor, i)]),
+            'a') for i in self.logFiles]))
 
     def logRssi(self, timestamp, mac, rssi):
         self.logs['rssi'].write(','.join([str(i) for i in [
@@ -55,6 +89,29 @@ class Plugin(olof.core.Plugin):
         else:
             ss = self.scanSetups[(hostname, sensor_mac)]
         return ss
+
+    def getScanner(self, hostname):
+        if not (hostname, None) in self.scanSetups:
+            sc = Scanner(hostname)
+            self.scanSetups[(hostname, None)] = sc
+        else:
+            sc = self.scanSetups[(hostname, None)]
+        return sc
+
+    def connectionMade(self, hostname, ip, port):
+        sc = self.getScanner(hostname)
+        sc.logConnection(time.time(), ip, port, 'made')
+
+    def connectionLost(self, hostname, ip, port):
+        sc = self.getScanner(hostname)
+        try:
+            sc.logConnection(time.time(), ip, port, 'lost')
+        except ValueError:
+            pass
+
+    def infoFeed(self, hostname, timestamp, info):
+        sc = self.getScanner(hostname)
+        sc.logInfo(timestamp, info)
 
     def dataFeedCell(self, hostname, timestamp, sensor_mac, mac, deviceclass,
             move):
