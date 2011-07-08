@@ -187,8 +187,6 @@ class Scanner(object):
                     html += '<span class="block_data_attr"><b>lag</b> %s</span>' %  ', '.join(l)
                 if self.conn_provider:
                     html += '<span class="block_data_attr"><b>provider</b> %s</span>' % self.conn_provider
-                if self.conn_netname:
-                    html += '<span class="block_data_attr"><b>netname</b> %s</span>' % self.conn_netname
                 html += '</div>'
                 return html
             else:
