@@ -225,6 +225,9 @@ class Plugin(olof.core.Plugin):
                 info=0, warning=None, alert=None, fire=None))
 
     def connectionLost(self, hostname, ip, port):
+        a = self.mailer.getAlerts(hostname, [Alert.Type.GyridDisconnect])
+        self.mailer.removeAlerts(a)
+
         a = self.mailer.getAlerts(hostname, [Alert.Type.ScannerDisconnect])
         if len(a) == 0:
             self.mailer.addAlert(Alert(hostname, Alert.Type.ScannerDisconnect))
