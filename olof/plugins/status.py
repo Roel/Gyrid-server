@@ -204,7 +204,7 @@ class Scanner(object):
             html += '</div>'
             return html
 
-        html = '<div class="block"><div class="block_title"><h3><a name="%(h)s">%(h)s</a></h3></div>' % {'h': self.hostname}
+        html = '<div id="%(h)s" class="block" onclick="toTop()"><div class="block_title"><h3>%(h)s</h3></div>' % {'h': self.hostname}
         html += render_location()
         html += '<div style="clear: both;"></div>'
 
@@ -222,6 +222,16 @@ class Scanner(object):
             html += render_notconnected(self.conn_time)
 
         html += '</div></div>'
+        return html
+
+    def render_navigation(self):
+        html = '<div class="navigation_item" onclick="goTo(\'#%s\')">' % self.hostname
+        html += '<div class="navigation_link">%s</div>' % self.hostname
+        if self.connected and self.gyrid_connected:
+            html += '<div class="navigation_status_good"></div>'
+        else:
+            html += '<div class="navigation_status_bad"></div>'
+        html += '</div>'
         return html
 
 class Sensor(object):
@@ -274,7 +284,7 @@ class ContentResource(resource.Resource):
         self.plugin = plugin
 
     def render_server(self):
-        html = '<div class="block"><div class="block_title"><h3>Server</h3></div>'
+        html = '<div class="block" onclick="goTo(\'top\')"><div class="block_title"><h3>Server</h3></div>'
         html += '<div class="block_topright">%s<img src="static/icons/clock-arrow.png"></div>' % prettydate(self.plugin.plugin_uptime, suffix="")
         html += '<div style="clear: both;"></div>'
         html += '<div class="block_content">'
@@ -313,6 +323,13 @@ class ContentResource(resource.Resource):
         html += '</div></div>'
         return html
 
+    def render_navigation(self):
+        html = '<div id="navigation_block">'
+        for s in sorted(self.plugin.scanners.keys()):
+            html += self.plugin.scanners[s].render_navigation()
+        html += '</div>'
+        return html
+
     def render_footer(self):
         html = '<div id="footer"><p>Gyrid Server version <span title="%s">%s</span>.</p>' % (self.plugin.server.git_commit,
             time.strftime('%Y-%m-%d', time.localtime(self.plugin.server.git_date)))
@@ -329,6 +346,9 @@ class ContentResource(resource.Resource):
         html += '<div style="clear: both;"></div>'
 
         html += self.render_server()
+
+        if len(self.plugin.scanners) >= 4:
+            html += self.render_navigation()
 
         for scanner in sorted(self.plugin.scanners.keys()):
             html += self.plugin.scanners[scanner].render()

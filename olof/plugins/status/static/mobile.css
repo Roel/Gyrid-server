@@ -80,6 +80,55 @@ div #footer {
     width: 100%;
 }
 
+#navigation_block {
+    margin-top: 10px;
+    margin: 0 auto;
+}
+
+.navigation_item {
+    border: 1px dotted #40BFC7;
+    margin-top: 10px;
+    margin-left: 6px;
+    max-width: 12em;
+    min-width: 5em;
+    height: 6ex;
+    background-color: #ffffff;
+    display: inline-block;
+}
+
+.navigation_item:hover {
+    background-color: #E0FDFF;
+    cursor: pointer;
+}
+
+.navigation_link {
+    font-variant: small-caps;
+    text-align: center;
+    display: block;
+    height: 100%;
+    margin-top: 1.5ex;
+}
+
+.navigation_link:link, .navigation_link:visited, .navigation_link:active {
+    border: none;
+}
+
+.navigation_status_good {
+    margin-top: -2.5ex;
+    height: 6px;
+    width: 98%;
+    margin-left: 2%;
+    background-color: #D1F856;
+}
+
+.navigation_status_bad {
+    margin-top: -2.5ex;
+    height: 6px;
+    width: 98%;
+    margin-left: 2%;
+    background-color: #F86D56;
+}
+
 .block {
     margin-top: 10px;
     padding: 5px;
@@ -88,6 +137,10 @@ div #footer {
     line-height: 150%;
     overflow: hidden;
     clear: both;
+}
+
+.block:hover {
+    cursor: pointer;
 }
 
 .block_content {

@@ -16,6 +16,14 @@
     <script type="text/javascript" src="static/jquery.js"></script>
 
     <script type="text/javascript">
+        function goTo(anchor) {
+              $('html, body').animate({ scrollTop: $(anchor).offset().top }, 0);
+        };
+
+        function toTop() {
+              $('html, body').animate({ scrollTop: 0 }, 0);
+        };
+
         function getContent(){
             $.ajax({
                 type: "GET",

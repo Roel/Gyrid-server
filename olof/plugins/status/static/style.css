@@ -80,12 +80,67 @@ div #footer {
     margin-right: 6px;
 }
 
+#navigation_block {
+    margin-top: 10px;
+    line-height: 150%;
+    width: 100%;
+    margin-left: -10px;
+}
+
+.navigation_item {
+    border: 1px dotted #40BFC7;
+    margin-top: 10px;
+    margin-left: 10px;
+    max-width: 12em;
+    min-width: 6em;
+    height: 6ex;
+    background-color: #ffffff;
+    display: inline-block;
+}
+
+.navigation_item:hover {
+    background-color: #E0FDFF;
+    cursor: pointer;
+}
+
+.navigation_link {
+    font-variant: small-caps;
+    text-align: center;
+    display: block;
+    height: 100%;
+    margin-top: 1.5ex;
+}
+
+.navigation_link:hover {
+    border: none;
+}
+
+.navigation_status_good {
+    margin-top: -2.5ex;
+    height: 8px;
+    width: 100%;
+    vertical-align: bottom;
+    background-color: #D1F856;
+}
+
+.navigation_status_bad {
+    margin-top: -2.5ex;
+    height: 8px;
+    width: 100%;
+    vertical-align: bottom;
+    background-color: #F86D56;
+}
+
 .block {
     margin-top: 20px;
     padding: 5px;
     border: 1px dotted #c0c0c0;
     background-color: #ffffff;
     line-height: 150%;
+}
+
+.block:hover {
+    cursor: pointer;
 }
 
 .block_content {
