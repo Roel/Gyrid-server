@@ -132,9 +132,11 @@ class Connection(RawConnection):
             self.scanners[sensor] = False
 
         tm = str(timestamp)
+        decSec = tm[tm.find('.')+1:]
+        decSec += "0" * (3-len(decSec))
         self.measurements[sensor].append(','.join([
-            time.strftime('%Y%m%d-%H%M%S.%%s0-%Z', time.localtime(
-            timestamp)) % tm[tm.find('.')+1:], mac, str(deviceclass),
+            time.strftime('%Y%m%d-%H%M%S.%%s-%Z', time.localtime(
+            timestamp)) % decSec, mac, str(deviceclass),
             str(rssi)]))
         self.measureCount['cached'] += 1
 
