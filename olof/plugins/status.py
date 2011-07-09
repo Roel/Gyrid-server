@@ -225,12 +225,16 @@ class Scanner(object):
         return html
 
     def render_navigation(self):
+        lag = [(self.lag[i][0]/self.lag[i][1]) for i in sorted(
+                self.lag.keys()) if (i <= 15 and self.lag[i][1] > 0)]
         html = '<div class="navigation_item" onclick="goTo(\'#%s\')">' % self.hostname
         html += '<div class="navigation_link">%s</div>' % self.hostname
-        if self.connected and self.gyrid_connected:
-            html += '<div class="navigation_status_good"></div>'
-        else:
+        if not self.connected or not self.gyrid_connected:
             html += '<div class="navigation_status_bad"></div>'
+        elif len([i for i in lag[1:] if i >= 5]) > 0:
+            html += '<div class="navigation_status_ugly"></div>'
+        else:
+            html += '<div class="navigation_status_good"></div>'
         html += '</div>'
         return html
 

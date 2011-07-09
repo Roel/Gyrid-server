@@ -131,6 +131,14 @@ div #footer {
     background-color: #F86D56;
 }
 
+.navigation_status_ugly {
+    margin-top: -2.5ex;
+    height: 8px;
+    width: 100%;
+    vertical-align: bottom;
+    background-color: #FFEC88;
+}
+
 .block {
     margin-top: 20px;
     padding: 5px;
