@@ -62,7 +62,6 @@ class Scanner(object):
         self.hostname = hostname
         self.host_uptime = None
         self.sensors = {}
-        self.warnings = []
         self.lagData = []
 
         self.connected = False
@@ -274,18 +273,6 @@ class ContentResource(resource.Resource):
         resource.Resource.__init__(self)
         self.plugin = plugin
 
-    def render_warnings(self):
-        if len(self.plugin.warnings) == 0:
-            return ""
-
-        html = '<div class="block"><div class="block_title"><h3>Warnings</h3></div>'
-        html += '<div class="block_topright"></div><div style="clear: both;"></div>'
-        html += '<div class="block_content">'
-        for w in self.plugin.warnings:
-            html += w.render(block="warnings")
-        html += '</div></div>'
-        return html
-
     def render_server(self):
         html = '<div class="block"><div class="block_title"><h3>Server</h3></div>'
         html += '<div class="block_topright">%s<img src="static/icons/clock-arrow.png"></div>' % prettydate(self.plugin.plugin_uptime, suffix="")
@@ -342,7 +329,6 @@ class ContentResource(resource.Resource):
         html += '<div style="clear: both;"></div>'
 
         html += self.render_server()
-        html += self.render_warnings()
 
         for scanner in sorted(self.plugin.scanners.keys()):
             html += self.plugin.scanners[scanner].render()
@@ -398,8 +384,6 @@ class Plugin(olof.core.Plugin):
 
         self.root.putChild("static",
             StaticResource("olof/plugins/status/static/"))
-
-        self.warnings = []
 
         if os.path.isfile("olof/plugins/status/data/obj.pickle"):
             try:
