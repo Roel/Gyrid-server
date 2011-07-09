@@ -9,10 +9,16 @@
 Module that handles the communication with the Move REST API.
 """
 
+from twisted.cred.portal import IRealm, Portal
+from twisted.cred.checkers import FilePasswordDB
 from twisted.internet import reactor, task, threads
 from twisted.web import resource
 from twisted.web import server as tserver
+from twisted.web.guard import HTTPAuthSessionWrapper, BasicCredentialFactory
+from twisted.web.resource import IResource
 from twisted.web.static import File
+
+from zope.interface import implements
 
 import cPickle as pickle
 import datetime
@@ -357,6 +363,18 @@ class StaticResource(File):
                 return ""
         return NoneRenderer()
 
+class AuthenticationRealm(object):
+    implements(IRealm)
+
+    def __init__(self, plugin):
+        self.plugin = plugin
+
+    def requestAvatar(self, avatarId, mind, *interfaces):
+        if IResource in interfaces:
+            return (IResource, ContentResource(self.plugin), lambda: None)
+        else:
+            raise NotImplementedError()
+
 def formatNumber(number):
     if type(number) is int:
         return '{:,.0f}'.format(number).replace(',', '<span class="thousandSep"></span>')
@@ -372,11 +390,15 @@ class Plugin(olof.core.Plugin):
         self.root = RootResource()
         self.root.putChild("", self.root)
 
+        portal = Portal(AuthenticationRealm(self), [FilePasswordDB(
+            'olof/plugins/status/data/auth.password')])
+        credfac = BasicCredentialFactory("Gyrid Server")
+        resource = HTTPAuthSessionWrapper(portal, [credfac])
+        self.root.putChild("content", resource)
+
         self.root.putChild("static",
             StaticResource("olof/plugins/status/static/"))
 
-        self.content = ContentResource(self)
-        self.root.putChild("content", self.content)
         self.warnings = []
 
         if os.path.isfile("olof/plugins/status/data/obj.pickle"):
