@@ -30,6 +30,7 @@ import urllib2
 import urlparse
 
 import olof.core
+import olof.plugins.status.macvendor as macvendor
 
 def prettydate(d, prefix="", suffix=" ago"):
     t = d
@@ -271,12 +272,14 @@ class Sensor(object):
 
     def render(self):
         html = '<div class="block_data">'
+        vendor = macvendor.get_vendor(self.mac)
+        mac = self.mac if vendor == None else '<span title="%s">%s</span>' % (vendor, self.mac)
         if self.connected == False:
-            html += '<img src="static/icons/plug-disconnect.png">%s' % self.mac
+            html += '<img src="static/icons/plug-disconnect.png">%s' % mac
             if self.disconnect_time != None:
                 html += '<span class="block_data_attr"><b>disconnected</b> %s</span>' % prettydate(int(float(self.disconnect_time)))
         else:
-            html += '<img src="static/icons/bluetooth.png">%s' % self.mac
+            html += '<img src="static/icons/bluetooth.png">%s' % mac
             if self.last_inquiry != None:
                 html += '<span class="block_data_attr"><b>last inquiry</b> %s</span>' % prettydate(int(float(self.last_inquiry)))
         if self.last_data != None:
