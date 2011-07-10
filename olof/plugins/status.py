@@ -197,6 +197,18 @@ class Scanner(object):
             else:
                 return ''
 
+        def render_detections():
+            detc = [self.lag[i][1] for i in sorted(self.lag.keys()) if i <= 15]
+            html = '<div class="block_data"><img src="static/icons/users.png">Detections'
+            html += '<span class="block_data_attr"><b>recently received</b> %s</span>' % \
+                ', '.join([formatNumber(i) for i in detc])
+            sensors_connected = len([s for s in self.sensors.values() if s.connected == True])
+            if sensors_connected > 1:
+                html += '<span class="block_data_attr"><b>averaged</b> %s</span>' % \
+                    ', '.join([formatNumber(int(i/sensors_connected)) for i in detc])
+            html += '</div>'
+            return html
+
         def render_notconnected(disconnect_time, suffix=""):
             html = '<div class="block_data"><img src="static/icons/traffic-cone.png">No connection%s' % suffix
             if disconnect_time != None:
@@ -213,6 +225,7 @@ class Scanner(object):
         if self.connected:
             html += render_uptime()
             if self.gyrid_connected == True:
+                html += render_detections()
                 html += render_lag()
                 for sensor in self.sensors.values():
                     html += sensor.render()
@@ -581,12 +594,6 @@ class Plugin(olof.core.Plugin):
         elif info == 'stopped_scanning':
             sens.connected = False
             sens.disconnect_time = int(float(timestamp))
-
-    def dataFeedCell(self, hostname, timestamp, sensor_mac, mac, deviceclass,
-            move):
-        scann = self.getScanner(hostname)
-        t = time.time()
-        scann.lagData.append((t, float(timestamp)))
 
     def dataFeedRssi(self, hostname, timestamp, sensor_mac, mac, rssi):
         sens = self.getSensor(hostname, sensor_mac)
