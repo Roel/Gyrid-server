@@ -22,7 +22,7 @@
               } else {
                 anim = 0;
               }
-              $('html, body').animate({ scrollTop: $(anchor).offset().top - ($(anchor).css('margin-top').replace('px', '')+2) }, anim);
+              $('html, body').animate({ scrollTop: $(anchor).offset().top - $(anchor).css('margin-top').replace('px', '') }, anim);
         };
 
         function toTop() {
