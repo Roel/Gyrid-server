@@ -204,7 +204,7 @@ class Scanner(object):
             html += '</div>'
             return html
 
-        html = '<div id="%(h)s" class="block" onclick="toTop()"><div class="block_title"><h3>%(h)s</h3></div>' % {'h': self.hostname}
+        html = '<div id="%(h)s" class="block" onclick="goTo(\'#navigation_block\')"><div class="block_title"><h3>%(h)s</h3></div>' % {'h': self.hostname}
         html += render_location()
         html += '<div style="clear: both;"></div>'
 
