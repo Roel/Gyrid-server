@@ -96,7 +96,7 @@ div #footer {
     display: inline-block;
 }
 
-.navigation_item:hover {
+.navigation_item:active {
     background-color: #E0FDFF;
     cursor: pointer;
 }
@@ -145,10 +145,6 @@ div #footer {
     line-height: 150%;
     overflow: hidden;
     clear: both;
-}
-
-.block:hover {
-    cursor: pointer;
 }
 
 .block_content {
