@@ -93,7 +93,7 @@ class Scanner(object):
                 self.checkLag_call = task.LoopingCall(reactor.callInThread,
                     self.checkLag)
             try:
-                self.checkLag_call.start(10, now=False)
+                self.checkLag_call.start(10)
             except AssertionError:
                 print self.hostname + ": AssertionError starting call"
 
