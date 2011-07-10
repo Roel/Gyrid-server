@@ -288,7 +288,7 @@ class ContentResource(resource.Resource):
         self.plugin = plugin
 
     def render_server(self):
-        html = '<div class="block" onclick="goTo(\'top\')"><div class="block_title"><h3>Server</h3></div>'
+        html = '<div id="server_block" onclick="goTo(\'top\')"><div class="block_title"><h3>Server</h3></div>'
         html += '<div class="block_topright">%s<img src="static/icons/clock-arrow.png"></div>' % prettydate(self.plugin.plugin_uptime, suffix="")
         html += '<div style="clear: both;"></div>'
         html += '<div class="block_content">'

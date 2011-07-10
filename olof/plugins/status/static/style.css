@@ -139,7 +139,7 @@ div #footer {
     background-color: #FFEC88;
 }
 
-.block {
+.block, #server_block {
     margin-top: 20px;
     padding: 5px;
     border: 1px dotted #c0c0c0;
