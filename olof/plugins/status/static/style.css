@@ -56,6 +56,7 @@ h3 {
 
 #header {
     margin-top: 20px;
+    display: block;
 }
 
 #logo {

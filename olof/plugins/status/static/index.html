@@ -17,7 +17,12 @@
 
     <script type="text/javascript">
         function goTo(anchor) {
-              $('html, body').animate({ scrollTop: $(anchor).offset().top - $(anchor).css('margin-top').replace('px', '') }, 0);
+              if ($('#header').css('display') == 'block') {
+                anim = 150;
+              } else {
+                anim = 0;
+              }
+              $('html, body').animate({ scrollTop: $(anchor).offset().top - $(anchor).css('margin-top').replace('px', '') }, anim);
         };
 
         function toTop() {
