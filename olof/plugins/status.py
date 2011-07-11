@@ -313,6 +313,8 @@ class ContentResource(resource.Resource):
         html += '<div class="block_topright">%s<img src="static/icons/clock-arrow.png"></div>' % prettydate(self.plugin.plugin_uptime, suffix="")
         html += '<div style="clear: both;"></div>'
         html += '<div class="block_content">'
+
+        # Resources
         if (len(self.plugin.load) > 0 and len([i for i in self.plugin.load[1:] if float(i) >= (self.plugin.cpuCount*0.8)]) > 0) \
             or int(self.plugin.memfree_mb) <= 256 or self.plugin.diskfree_mb <= 1000:
             html += '<div class="block_data">'
@@ -321,10 +323,14 @@ class ContentResource(resource.Resource):
             html += '<span class="block_data_attr"><b>ram free</b> %s</span>' % (formatNumber(self.plugin.memfree_mb) + ' MB')
             html += '<span class="block_data_attr"><b>disk free</b> %s</span>' % (formatNumber(self.plugin.diskfree_mb) + ' MB')
             html += '</div>'
+
+        # Unique devices
         html += '<div class="block_data">'
         html += '<img src="static/icons/users.png">Unique devices'
         html += '<span class="block_data_attr"><b>total</b> %s' % formatNumber(len(self.plugin.server.mac_dc))
         html += '</div>'
+
+        # Plugins
         for p in self.plugin.server.plugins:
             if p.name != None:
                 html += '<div class="block_data">'
@@ -343,12 +349,15 @@ class ContentResource(resource.Resource):
                     elif len(i) > 1 and 'int' in i:
                         html += '<span class="block_data_attr"><b>%s</b> %s</span>' % (i['id'], formatNumber(i['int']))
                 html += '</div>'
+
+        # Disabled plugins
         for p in self.plugin.server.plugins_inactive:
             if p.name != None:
                 html += '<div class="block_data">'
                 html += '<img src="static/icons/puzzle-grey.png">%s' % p.name
                 html += '<span class="block_data_attr">disabled</span>'
                 html += '</div>'
+
         html += '</div></div>'
         return html
 
