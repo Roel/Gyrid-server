@@ -321,6 +321,10 @@ class ContentResource(resource.Resource):
             html += '<span class="block_data_attr"><b>ram free</b> %s</span>' % (formatNumber(self.plugin.memfree_mb) + ' MB')
             html += '<span class="block_data_attr"><b>disk free</b> %s</span>' % (formatNumber(self.plugin.diskfree_mb) + ' MB')
             html += '</div>'
+        html += '<div class="block_data">'
+        html += '<img src="static/icons/users.png">Unique devices'
+        html += '<span class="block_data_attr"><b>total</b> %s' % formatNumber(len(self.plugin.server.mac_dc))
+        html += '</div>'
         for p in self.plugin.server.plugins:
             if p.name != None:
                 html += '<div class="block_data">'
