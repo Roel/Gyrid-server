@@ -33,6 +33,9 @@ class Plugin(object):
     def connectionLost(self, hostname, ip, port):
         pass
 
+    def locationUpdate(self, hostname, module, timestamp, id, description, coordinates):
+        pass
+
     def stateFeed(self, hostname, timestamp, sensor_mac, info):
         pass
 

@@ -94,7 +94,8 @@ class RawConnection(object):
             return None
 
 class Connection(RawConnection):
-    def __init__(self, url, user, password, measurements={}, measureCount={}):
+    def __init__(self, url, user, password, measurements={}, measureCount={},
+        locations={}):
         RawConnection.__init__(self, url, user, password)
         self.scanners = {}
         self.getScanners()
@@ -106,8 +107,13 @@ class Connection(RawConnection):
         else:
             self.measureCount = measureCount
 
+        self.locations = locations
+
         t = task.LoopingCall(self.postMeasurements)
         t.start(60, now=False)
+
+        t = task.LoopingCall(self.postLocations)
+        reactor.callLater(40, t.start, 60, now=False)
 
     def getScanners(self):
         def process(r):
@@ -122,6 +128,47 @@ class Connection(RawConnection):
     def addScanner(self, mac, description):
         self.request_post('scanner', None, '%s,%s' % (mac, description),
             {'Content-Type': 'text/plain'})
+
+    def addLocation(self, sensor, timestamp, coordinates, description):
+        print "Adding location for %s..." % sensor
+        if not sensor in self.scanners:
+            self.addScanner(sensor, 'test scanner')
+            self.scanners[sensor] = False
+
+        if not sensor in self.locations:
+            self.locations[sensor] = [[timestamp, coordinates, description]]
+        else:
+            self.locations[sensor].append([timestamp, coordinates, description])
+
+    def postLocations(self):
+        def process(r):
+            for scanner in to_delete:
+                del(self.locations[scanner])
+
+        l = ""
+        to_delete = []
+
+        print "Running postLocations..."
+        for scanner in [s for s in self.scanners.keys() if (self.scanners[s] == True \
+            and s in self.locations)]:
+            l += "==%s\n" % scanner
+            to_delete.append(scanner)
+            loc = []
+            for location in self.locations[scanner]:
+                if location[1] != None:
+                    loc.append(','.join([time.strftime('%Y%m%d-%H%M%S-%Z',
+                        time.localtime(location[0])),
+                        'SRID=4326;POINT(%0.6f %0.6f)' % location[1],
+                        'EWKT', location[2]]))
+                else:
+                    loc.append(','.join([time.strftime('%Y%m%d-%H%M%S-%Z',
+                        time.localtime(location[0])), '', 'NULL', '']))
+            l += "\n".join(loc)
+
+        if len(l) > 0:
+            print "Posting: %s" % l
+            self.request_post('scanner/location', process, l,
+                {'Content-Type': 'text/plain'})
 
     def addMeasurement(self, sensor, timestamp, mac, deviceclass, rssi):
         if not sensor in self.measurements:
@@ -190,6 +237,7 @@ class Plugin(olof.core.Plugin):
                         'uploaded': -1,
                         'cached': -1}
         measurements = {}
+        locations = {}
 
         if os.path.isfile("olof/plugins/move/measureCount.pickle"):
             f = open("olof/plugins/move/measureCount.pickle", "rb")
@@ -207,8 +255,16 @@ class Plugin(olof.core.Plugin):
                 pass
             f.close()
 
+        if os.path.isfile("olof/plugins/move/locations.pickle"):
+            f = open("olof/plugins/move/locations.pickle", "rb")
+            try:
+                locations = pickle.load(f)
+            except:
+                pass
+            f.close()
+
         self.conn = Connection(self.url, self.user, self.password,
-            measurements, measureCount)
+            measurements, measureCount, locations)
 
     def unload(self):
         f = open("olof/plugins/move/measureCount.pickle", "wb")
@@ -217,6 +273,10 @@ class Plugin(olof.core.Plugin):
 
         f = open("olof/plugins/move/measurements.pickle", "wb")
         pickle.dump(self.conn.measurements, f)
+        f.close()
+
+        f = open("olof/plugins/move/locations.pickle", "wb")
+        pickle.dump(self.conn.locations, f)
         f.close()
 
     def getStatus(self):
@@ -236,6 +296,12 @@ class Plugin(olof.core.Plugin):
             r.append({'id': 'cached lines', 'int': self.conn.measureCount['cached']})
 
         return r
+
+    def locationUpdate(self, hostname, module, timestamp, id, description, coordinates):
+        if module == 'scanner' or module == 'sensor':
+            return
+
+        self.conn.addLocation(module, timestamp, coordinates, description)
 
     def dataFeedRssi(self, hostname, timestamp, sensor_mac, mac, rssi):
         deviceclass = self.server.getDeviceclass(mac)

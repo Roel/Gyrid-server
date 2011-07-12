@@ -67,6 +67,7 @@ class Scanner(object):
 
         self.connected = False
         self.location = None
+        self.location_description = None
         self.lat = None
         self.lon = None
         self.gyrid_connected = True
@@ -161,8 +162,9 @@ class Scanner(object):
             elif self.location != None:
                 #html += '<a href="%s">%s</a><img src="static/icons/marker.png">' % (
                 #    ("http://www.openstreetmap.org/?mlat=%s&mlon=%s&zoom=15&layers=M" % (self.lat, self.lon)), self.location)
+                loc = '<span title="%s">%s</span>' % (self.location_description, self.location) if self.location_description != None else self.location
                 html += '<a href="%s">%s</a><img src="static/icons/marker.png">' % (
-                    ("http://maps.google.be/maps?f=q&source=s_q&hl=nl&geocode=&q=loc:%s,%s(%s)" % (self.lat, self.lon, self.hostname)), self.location)
+                    ("http://maps.google.be/maps?f=q&source=s_q&hl=nl&geocode=&q=loc:%s,%s(%s)" % (self.lat, self.lon, self.hostname)), loc)
             html += '</div>'
             return html
 
@@ -468,8 +470,8 @@ class Plugin(olof.core.Plugin):
         t = task.LoopingCall(self.check_resources)
         t.start(10)
 
-        t = task.LoopingCall(self.load_locations)
-        t.start(60)
+        #t = task.LoopingCall(self.load_locations)
+        #t.start(60)
 
         reactor.listenTCP(8080, tserver.Site(self.root))
 
@@ -590,6 +592,19 @@ class Plugin(olof.core.Plugin):
         s.checkLagCall('stop')
         for sens in s.sensors.values():
             sens.connected = False
+
+    def locationUpdate(self, hostname, module, timestamp, id, description, coordinates):
+        if module != 'scanner':
+            return
+
+        s = self.getScanner(hostname)
+        if coordinates != None:
+            s.lon = coordinates[0]
+            s.lat = coordinates[1]
+            s.location = id
+            s.location_description = description
+        else:
+            s.lon = s.lat = s.location = s.location_description = None
 
     def sysStateFeed(self, hostname, module, info):
         s = self.getScanner(hostname)

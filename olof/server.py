@@ -21,6 +21,8 @@ import zlib
 
 import cPickle as pickle
 
+import olof.locationprovider
+
 def verifyCallback(connection, x509, errnum, errdepth, ok):
     if not ok:
         print 'invalid cert from subject:', x509.get_subject()
@@ -223,6 +225,8 @@ class Olof(object):
 
         self.load_plugins()
 
+        self.locationprovider = olof.locationprovider.LocationProvider(self)
+
     def load_plugins(self):
         def load(filename, list):
             name = os.path.basename(filename)[:-3]
@@ -246,6 +250,8 @@ class Olof(object):
                 load(os.path.join(home, 'olof', 'plugins', filename), self.plugins_inactive)
 
     def unload_plugins(self):
+        self.locationprovider.unload()
+
         f = open('olof/data/mac_dc.pickle', 'wb')
         pickle.dump(self.mac_dc, f)
         f.close()

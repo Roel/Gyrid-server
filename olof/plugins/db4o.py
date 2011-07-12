@@ -128,6 +128,23 @@ class Plugin(olof.core.Plugin):
             r.append(cl)
         return r
 
+    def locationUpdate(self, hostname, module, timestamp, id, description, coordinates):
+        if module == 'scanner':
+            return
+
+        if module != 'sensor':
+            if coordinates != None:
+                self.inet_factory.sendLine(','.join(['addLocation',
+                    '%s|%s' % (id, module), description,
+                    "%0.6f" % coordinates[0], "%0.6f" % coordinates[1]]))
+
+                self.inet_factory.sendLine(','.join(['installScannerSetup',
+                    hostname, module, '%s|%s' % (id, module), str(timestamp)]))
+
+            else:
+                self.inet_factory.sendLine(','.join(['removeScannerSetup',
+                    hostname, module, '%s|%s' % (id, module), str(timestamp)]))
+
     def stateFeed(self, hostname, timestamp, sensor_mac, info):
         if info == 'new_inquiry':
             self.inet_factory.sendLine(','.join([hostname, 'INFO',
