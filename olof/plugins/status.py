@@ -384,9 +384,7 @@ class ContentResource(resource.Resource):
         html += '<div style="clear: both;"></div>'
 
         html += self.render_server()
-
-        if len(self.plugin.scanners) >= 4:
-            html += self.render_navigation()
+        html += self.render_navigation()
 
         for scanner in sorted(self.plugin.scanners.keys()):
             html += self.plugin.scanners[scanner].render()
