@@ -28,7 +28,7 @@ class LocationProvider(object):
             f.close()
 
         self.task = task.LoopingCall(self.readLocations)
-        self.task.start(10)
+        self.task.start(10, now=False)
 
     def unload(self):
         f = open("olof/data/locations.pickle", "wb")

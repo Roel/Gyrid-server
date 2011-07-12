@@ -225,7 +225,7 @@ class Olof(object):
 
         self.load_plugins()
 
-        self.locationprovider = olof.locationprovider.LocationProvider(self)
+        self.location_provider = olof.locationprovider.LocationProvider(self)
 
     def load_plugins(self):
         def load(filename, list):
@@ -250,7 +250,7 @@ class Olof(object):
                 load(os.path.join(home, 'olof', 'plugins', filename), self.plugins_inactive)
 
     def unload_plugins(self):
-        self.locationprovider.unload()
+        self.location_provider.unload()
 
         f = open('olof/data/mac_dc.pickle', 'wb')
         pickle.dump(self.mac_dc, f)
