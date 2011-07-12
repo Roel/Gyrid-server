@@ -92,14 +92,20 @@ class LocationProvider(object):
 
             # Push scanner update
             args['module'] = 'scanner'
-            for p in self.server.plugins:
-                p.locationUpdate(**args)
+            if False in [self.locations[hostname][i] == location[i] for i in [
+                Location.ID, Location.Description, Location.X, Location.Y]]:
+                for p in self.server.plugins:
+                    p.locationUpdate(**args)
 
             # Push sensor updates
             for s in location[Location.Sensors]:
                 args['module'] = s if s != Location.Sensor else 'sensor'
-                for p in self.server.plugins:
-                    p.locationUpdate(**args)
+                if not s in self.locations[hostname][Location.Sensors] or \
+                    False in [self.locations[hostname][Location.Sensors][s][i] == \
+                        location[Location.Sensors][s][i] for i in [
+                            Location.X, Location.Y]]:
+                    for p in self.server.plugins:
+                        p.locationUpdate(**args)
 
         if Location.TimeUninstall in location[Location.Times]:
             args['timestamp'] = float(time.strftime('%s', time.strptime(

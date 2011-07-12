@@ -138,7 +138,8 @@ class Connection(RawConnection):
         if not sensor in self.locations:
             self.locations[sensor] = [[timestamp, coordinates, description]]
         else:
-            self.locations[sensor].append([timestamp, coordinates, description])
+            if not [timestamp, coordinates, description] in self.locations[sensor]:
+                self.locations[sensor].append([timestamp, coordinates, description])
 
     def postLocations(self):
         def process(r):
