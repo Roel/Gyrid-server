@@ -4,6 +4,8 @@ from twisted.internet import reactor
 from twisted.internet.protocol import ReconnectingClientFactory
 from twisted.protocols.basic import LineReceiver
 
+import cPickle as pickle
+import os
 import time
 
 import olof.core
@@ -108,8 +110,29 @@ class Plugin(olof.core.Plugin):
         self.connected = False
         self.conn_time = None
 
+        self.locations = []
+        if os.path.isfile('olof/plugins/db4o/locations.pickle'):
+            f = open('olof/plugins/db4o/locations.pickle', 'rb')
+            self.locations = pickle.load(f)
+            f.close()
+
+        self.scanSetups = []
+        if os.path.isfile('olof/plugins/db4o/scanSetups.pickle'):
+            f = open('olof/plugins/db4o/scanSetups.pickle', 'rb')
+            self.locations = pickle.load(f)
+            f.close()
+
         self.inet_factory = InetClientFactory(self)
         reactor.connectTCP(self.host, self.port, self.inet_factory)
+
+    def unload(self):
+        f = open('olof/plugins/db4o/locations.pickle', 'wb')
+        pickle.dump(self.locations, f)
+        f.close()
+
+        f = open('olof/plugins/db4o/scanSetups.pickle', 'wb')
+        pickle.dump(self.scanSetups, f)
+        f.close()
 
     def getStatus(self):
         cl = {}
@@ -129,40 +152,49 @@ class Plugin(olof.core.Plugin):
             r.append(cl)
         return r
 
+    def addLocation(self, sensor, id, description, x, y):
+        if not [sensor, id, description, x, y] in self.locations:
+            self.server.output('db4o: Adding location %s|%s' % (id, sensor))
+            self.locations.append([sensor, id, description, x, y])
+            self.inet_factory.sendLine(','.join(['addLocation',
+                '%s|%s' % (id, sensor), "%0.6f" % x, "%0.6f" % y]))
+
+    def addScanSetup(self, hostname, sensor, id, timestamp):
+        if not [hostname, sensor, id, timestamp, 1] in self.scanSetups:
+            self.server.output('db4o: Adding ScanSetup for %s at %i: %s' % \
+                (hostname, timestamp, '%s|%s' % (id, sensor)))
+            self.scanSetups.append([hostname, sensor, id, timestamp, 1])
+            self.inet_factory.sendLine(','.join(['installScannerSetup',
+                hostname, sensor, '%s|%s' % (id, sensor), str(timestamp)]))
+
+    def removeScanSetup(self, hostname, sensor, id, timestamp):
+        if not [hostname, sensor, id, timestamp, 0] in self.scanSetups:
+            self.server.output('db4o: Removing ScanSetup for %s at %i: %s' % \
+                (hostname, timestamp, '%s|%s' % (id, sensor)))
+            self.scanSetups.append([hostname, sensor, id, timestamp, 0])
+            self.inet_factory.sendLine(','.join(['removeScannerSetup',
+                hostname, sensor, '%s|%s' % (id, sensor), str(timestamp)]))
+
     def locationUpdate(self, hostname, module, timestamp, id, description, coordinates):
         if module == 'scanner' and hostname in self.server.location_provider.new_locations:
             for sensor in self.server.location_provider.new_locations[hostname][Location.Sensors]:
                 if sensor != Location.Sensor:
-                    self.server.output('db4o: Adding location %s|%s' % (id, sensor)) 
-                    self.inet_factory.sendLine(','.join(['addLocation',
-                        '%s|%s' % (id, sensor), description,
-                        "%0.6f" % self.server.location_provider.new_locations[hostname][Location.Sensors][sensor][Location.X],
-                        "%0.6f" % self.server.location_provider.new_locations[hostname][Location.Sensors][sensor][Location.Y]]))
+                    
+                    self.addLocation(sensor, id, description,
+                        self.server.location_provider.new_locations[hostname][Location.Sensors][sensor][Location.X],
+                        self.server.location_provider.new_locations[hostname][Location.Sensors][sensor][Location.Y])
 
                     if Location.TimeInstall in self.server.location_provider.new_locations[hostname][Location.Times]:
-                        self.server.output('db4o: Installing scanner setup %s|%s at %i' % (id, sensor, timestamp))
-                        self.inet_factory.sendLine(','.join(['installScannerSetup',
-                            hostname, module, '%s|%s' % (id, module), str(timestamp)]))
+                        self.addScanSetup(hostname, sensor, id, timestamp)
                     if Location.TimeUninstall in self.server.location_provider.new_locations[hostname][Location.Times]:
-                        self.server.output('db4o: Removing scanner setup %s|%s at %i' % (id, sensor, timestamp))
-                        self.inet_factory.sendLine(','.join(['removeScannerSetup',
-                            hostname, module, '%s|%s' % (id, module), str(timestamp)]))
+                        self.removeScanSetup(hostname, sensor, id, timestamp)
 
         if module not in ['sensor', 'scanner']:
             if coordinates != None:
-                self.server.output('db4o: Adding location %s|%s' % (id, module)) 
-                self.inet_factory.sendLine(','.join(['addLocation',
-                    '%s|%s' % (id, module), description,
-                    "%0.6f" % coordinates[0], "%0.6f" % coordinates[1]]))
-
-                self.server.output('db4o: Installiing scanner setup %s|%s at %i' % (id, module, timestamp))
-                self.inet_factory.sendLine(','.join(['installScannerSetup',
-                    hostname, module, '%s|%s' % (id, module), str(timestamp)]))
-
+                self.addLocation(module, id, description, coordinates[0], coordinates[1])
+                self.addScanSetup(hostname, module, id, timestamp)
             else:
-                self.server.output('db4o: Removing scanner setup %s|%s at %i' % (id, module, timestamp))
-                self.inet_factory.sendLine(','.join(['removeScannerSetup',
-                    hostname, module, '%s|%s' % (id, module), str(timestamp)]))
+                self.removeScanSetup(hostname, module, id, timestamp)
 
     def stateFeed(self, hostname, timestamp, sensor_mac, info):
         if info == 'new_inquiry':

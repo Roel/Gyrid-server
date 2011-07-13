@@ -132,16 +132,17 @@ class Connection(RawConnection):
             {'Content-Type': 'text/plain'})
 
     def addLocation(self, sensor, timestamp, coordinates, description):
-        self.server.output("move: Adding location for %s at %i: %s (%s)" % (sensor, timestamp, description, coordinates))
         if not sensor in self.scanners:
             self.addScanner(sensor, 'test scanner')
             self.scanners[sensor] = False
 
         if not sensor in self.locations:
             self.locations[sensor] = [[timestamp, coordinates, description]]
+            self.server.output("move: Adding location for %s at %s: %s (%s)" % (sensor, timestamp, description, coordinates))
         else:
             if not [timestamp, coordinates, description] in self.locations[sensor]:
                 self.locations[sensor].append([timestamp, coordinates, description])
+                self.server.output("move: Adding location for %s at %s: %s (%s)" % (sensor, timestamp, description, coordinates))
 
     def postLocations(self):
         def process(r):
@@ -303,20 +304,25 @@ class Plugin(olof.core.Plugin):
         if module == 'sensor':
             return
 
-        if module == 'scanner':
+        elif module == 'scanner':
             for sensor in self.server.location_provider.new_locations[hostname][Location.Sensors]:
                 if sensor != Location.Sensor:
                     if Location.TimeInstall in self.server.location_provider.new_locations[hostname][Location.Times]:
-                        self.conn.addLocation(sensor, self.server.location_provider.new_locations[hostname][Location.Times][Location.TimeInstall],
+                        self.conn.addLocation(sensor, float(time.strftime('%s', time.strptime(
+                            self.server.location_provider.new_locations[hostname][Location.Times][Location.TimeInstall],
+                            '%Y%m%d-%H%M%S-%Z'))),
                             (self.server.location_provider.new_locations[hostname][Location.Sensors][sensor][Location.X],
                              self.server.location_provider.new_locations[hostname][Location.Sensors][sensor][Location.Y]),
                             self.server.location_provider.new_locations[hostname][Location.ID])
                     if Location.TimeUninstall in self.server.location_provider.new_locations[hostname][Location.Times]:
                         self.conn.addLocation(sensor,
+                            float(time.strftime('%s', time.strptime(
                             self.server.location_provider.new_locations[hostname][Location.Times][Location.TimeUninstall],
-                            None, '')            
+                            '%Y%m%d-%H%M%S-%Z'))),
+                            None, self.server.location_provider.new_locations[hostname][Location.ID])            
 
-        self.conn.addLocation(module, timestamp, coordinates, id)
+        else:
+            self.conn.addLocation(module, timestamp, coordinates, id)
 
     def dataFeedRssi(self, hostname, timestamp, sensor_mac, mac, rssi):
         deviceclass = self.server.getDeviceclass(mac)
