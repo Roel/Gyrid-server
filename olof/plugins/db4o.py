@@ -165,7 +165,7 @@ class Plugin(olof.core.Plugin):
                 (hostname, timestamp, '%s|%s' % (id, sensor)))
             self.scanSetups.append([hostname, sensor, id, timestamp, 1])
             self.inet_factory.sendLine(','.join(['installScannerSetup',
-                hostname, sensor, '%s|%s' % (id, sensor), str(timestamp)]))
+                hostname, sensor, '%s|%s' % (id, sensor), str(int(timestamp*1000))]))
 
     def removeScanSetup(self, hostname, sensor, id, timestamp):
         if not [hostname, sensor, id, timestamp, 0] in self.scanSetups:
@@ -173,7 +173,7 @@ class Plugin(olof.core.Plugin):
                 (hostname, timestamp, '%s|%s' % (id, sensor)))
             self.scanSetups.append([hostname, sensor, id, timestamp, 0])
             self.inet_factory.sendLine(','.join(['removeScannerSetup',
-                hostname, sensor, '%s|%s' % (id, sensor), str(timestamp)]))
+                hostname, sensor, '%s|%s' % (id, sensor), str(int(timestamp*1000))]))
 
     def locationUpdate(self, hostname, module, timestamp, id, description, coordinates):
         if module == 'scanner' and hostname in self.server.location_provider.new_locations:
