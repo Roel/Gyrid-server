@@ -115,7 +115,7 @@ class Connection(RawConnection):
         t.start(60, now=False)
 
         t = task.LoopingCall(self.postLocations)
-        #lreactor.callLater(40, t.start, 60, now=False)
+        reactor.callLater(40, t.start, 60, now=False)
 
     def getScanners(self):
         def process(r):
