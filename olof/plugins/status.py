@@ -31,6 +31,7 @@ import urlparse
 
 import olof.core
 import olof.plugins.status.macvendor as macvendor
+from olof.plugins.move import RawConnection
 
 def prettydate(d, prefix="", suffix=" ago"):
     t = d
@@ -38,7 +39,7 @@ def prettydate(d, prefix="", suffix=" ago"):
     diff = datetime.datetime.now() - d
     s = diff.seconds
     if diff.days < 0:
-        r =  d.strftime('%d %b %y')
+        r =  d.strftime('%d %b %Y')
     elif diff.days == 1:
         r =  '%s1 day%s' % (prefix, suffix)
     elif diff.days > 1:
@@ -66,6 +67,17 @@ class Scanner(object):
         self.lagData = []
         self.connections = set()
         self.ip_provider = {}
+        self.msisdn = None
+        self.mv_balance = {}
+        self.mv_updated = None
+
+        f = open('olof/plugins/status/data/mobilevikings.conf', 'r')
+        for l in f:
+            ls = l.strip().split(',')
+            self.__dict__[ls[0]] = ls[1]
+        f.close()
+        self.mv_conn = RawConnection(self.url, self.user, self.password,
+            urllib2.HTTPBasicAuthHandler)
 
         self.location = None
         self.location_description = None
@@ -85,6 +97,10 @@ class Scanner(object):
 
         self.checkLag_call = task.LoopingCall(reactor.callInThread,
             self.checkLag)
+
+        self.checkMVBalance_call = task.LoopingCall(reactor.callInThread,
+            self.getMVBalance)
+        self.checkMVBalanceCall('start')
 
     def checkLagCall(self, action):
         if action == 'start':
@@ -120,6 +136,31 @@ class Scanner(object):
                     lag[j][1] += 1
 
         self.lag = lag
+
+    def checkMVBalanceCall(self, action):
+        if action == 'start':
+            if not 'checkMVBalance_call' in self.__dict__:
+                self.checkMVBalance_call = task.LoopingCall(reactor.callInThread,
+                    self.getMVBalance)
+            try:
+                self.checkMVBalance_call.start(1800)
+            except AssertionError:
+                print self.hostname + ": AssertionError starting call"
+
+        elif action == 'stop':
+            if 'checkMVBalance_call' in self.__dict__:
+                try:
+                    self.checkMVBalance_call.stop()
+                except AssertionError:
+                    print self.hostname + ": AssertionError stopping call"
+
+    def getMVBalance(self):
+        def process(r):
+            self.mv_balance = pickle.loads("".join(r))
+            self.mv_updated = int(time.time())
+
+        if self.msisdn:
+            self.mv_conn.request_get('sim_balance.pickle?msisdn=%s' % self.msisdn, process)
 
     def getProvider(self, ip):
         def run(ip):
@@ -194,6 +235,28 @@ class Scanner(object):
             else:
                 return ''
 
+        def render_balance():
+            if 'data' in self.mv_balance:
+                mb = self.mv_balance['data']/1024.0/1024.0
+                if mb <= 200:
+                    html = '<div class="block_data"><img src="static/icons/shield-red.png">SIM balance'
+                elif mb <= 500:
+                    html = '<div class="block_data"><img src="static/icons/shield-yellow.png">SIM balance'
+                else:
+                    return ''
+                html += '<span class="block_data_attr"><b>data</b> %s MB</span>' % formatNumber(mb)
+                if 'is_expired' in self.mv_balance and self.mv_balance['is_expired']:
+                    html += '<span class="block_data_attr"><b>expired</b> %s</span>' % ('yes' if self.mv_balance['is_expired'] else 'no')
+                if 'valid_until' in self.mv_balance and not self.mv_balance['is_expired']:
+                    html += '<span class="block_data_attr"><b>expires</b> %s</span>' % \
+                        prettydate(float(time.strftime('%s', time.strptime(self.mv_balance['valid_until'], '%Y-%m-%d %H:%M:%S'))))
+                if self.mv_updated:
+                    html += '<span class="block_data_attr"><b>updated</b> %s</span>' % prettydate(self.mv_updated)
+                html += '</div>'
+                return html
+            else:
+                return ''
+
         def render_detections():
             detc = [self.lag[i][1] for i in sorted(self.lag.keys()) if i <= 15]
             if len([i for i in detc if i > 0]) > 0:
@@ -227,6 +290,7 @@ class Scanner(object):
             if self.gyrid_connected == True:
                 html += render_detections()
                 html += render_lag()
+                html += render_balance()
                 for sensor in self.sensors.values():
                     html += sensor.render()
             else:
@@ -464,6 +528,9 @@ class Plugin(olof.core.Plugin):
         t = task.LoopingCall(self.check_resources)
         t.start(10)
 
+        t = task.LoopingCall(self.read_MV_numbers)
+        t.start(120)
+
         reactor.listenTCP(8080, tserver.Site(self.root))
 
     def _distance(self, lat1, lon1, lat2, lon2):
@@ -504,12 +571,24 @@ class Plugin(olof.core.Plugin):
             str(self.diskfree_mb)]) + '\n')
         self.resources_log.flush()
 
+    def read_MV_numbers(self):
+        f = open('olof/plugins/status/data/mobilevikings_numbers.conf', 'r')
+        for line in f:
+            l = line.strip().split(',')
+            s = self.getScanner(l[0], create=False)
+            if s:
+                s.msisdn = l[1]
+        f.close()
+
     def unload(self):
         self.resources_log.close()
         for s in self.scanners.values():
             s.checkLagCall('stop')
+            s.checkMVBalanceCall('stop')
             if 'checkLag_call' in s.__dict__:
                 del(s.checkLag_call)
+            if 'checkMVBalance_call' in s.__dict__:
+                del(s.checkMVBalance_call)
 
         f = open("olof/plugins/status/data/obj.pickle", "wb")
         pickle.dump(self.scanners, f)

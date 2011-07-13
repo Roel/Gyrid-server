@@ -36,10 +36,17 @@ class ExtRequest(urllib2.Request):
             return self.method
 
 class RawConnection(object):
-    def __init__(self, base_url, username=None, password=None):
+    def __init__(self, base_url, username=None, password=None, authHandler=None):
         self.base_url = base_url
         self.username = username
         self.url = urlparse.urlparse(base_url)
+
+        if username and password and authHandler:
+            passman = urllib2.HTTPPasswordMgrWithDefaultRealm()
+            passman.add_password(None, self.base_url, username, password)
+            self.opener = urllib2.build_opener(authHandler(passman))
+        else:
+            self.opener = None
         
         self.returns = {}
         self.returnCount = 0
@@ -49,13 +56,6 @@ class RawConnection(object):
         self.scheme = scheme
         self.host = netloc
         self.path = path
-
-        if username and password:
-            passman = urllib2.HTTPPasswordMgrWithDefaultRealm()
-            passman.add_password(None, base_url, username, password)
-            authhandler = urllib2.HTTPDigestAuthHandler(passman)
-            opener = urllib2.build_opener(authhandler)
-            urllib2.install_opener(opener)
 
     def request_get(self, resource, cb=None, headers={}):
         self.request(cb, resource, "get", headers=headers)
@@ -89,7 +89,10 @@ class RawConnection(object):
             req.add_header(i[0],i[1])
 
         try:
-            resp = urllib2.urlopen(req)
+            if self.opener:
+                resp = self.opener.open(req)
+            else:
+                resp = urllib2.urlopen(req)
             return resp.readlines()
         except:
             return None
@@ -97,7 +100,7 @@ class RawConnection(object):
 class Connection(RawConnection):
     def __init__(self, server, url, user, password, measurements={}, measureCount={},
         locations={}):
-        RawConnection.__init__(self, url, user, password)
+        RawConnection.__init__(self, url, user, password, urllib2.HTTPDigestAuthHandler)
         self.server = server
         self.scanners = {}
         self.getScanners()
