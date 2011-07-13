@@ -59,13 +59,14 @@ def prettydate(d, prefix="", suffix=" ago"):
         time.localtime(t)), r)
 
 class Scanner(object):
-    def __init__(self, hostname):
+    def __init__(self, plugin, hostname):
+        self.plugin = plugin
         self.hostname = hostname
         self.host_uptime = None
         self.sensors = {}
         self.lagData = []
+        self.connections = set()
 
-        self.connected = False
         self.location = None
         self.location_description = None
         self.lat = None
@@ -74,16 +75,12 @@ class Scanner(object):
         self.gyrid_disconnect_time = None
         self.gyrid_uptime = None
 
-        self.conn_ip = None
-        self.conn_provider = None
-        self.conn_netname = None
-
         self.init()
 
     def init(self):
         self.conn_port = None
         self.conn_time = None
-        self.connected = False
+        self.connections = set()
         self.lag = {1: [0, 0], 5: [0, 0], 15: [0, 0]}
 
         self.checkLag_call = task.LoopingCall(reactor.callInThread,
@@ -124,35 +121,6 @@ class Scanner(object):
 
         self.lag = lag
 
-    def getProvider(self, ip=None):
-        def run(ip):
-            p = subprocess.Popen(["/usr/bin/whois", ip], stdin=subprocess.PIPE,
-                stdout=subprocess.PIPE)
-
-            stdout, stderr = p.communicate()
-
-            netname = ""
-            descr = ""
-            for line in stdout.split('\n'):
-                l = line.strip()
-                if l.lower().startswith('netname:'):
-                    netname = ' '.join(l.split()[1:]).replace(';', ',')
-                elif l.lower().startswith('descr:') and descr == "":
-                    descr = ' '.join(l.split()[1:]).replace(';', ',')
-
-            return (netname, descr)
-
-        def process(v):
-            self.conn_provider = v[1]
-            self.conn_netname = v[0]
-
-        if ip == None and self.conn_ip != None:
-            ip = self.conn_ip
-
-        if ip != None:
-            d = threads.deferToThread(run, ip)
-            d.addCallback(process)
-
     def render(self):
 
         def render_location():
@@ -182,8 +150,9 @@ class Scanner(object):
             lag = [(self.lag[i][0]/self.lag[i][1]) for i in sorted(
                 self.lag.keys()) if (i <= 15 and self.lag[i][1] > 0)]
             if len([i for i in lag[1:] if i >= 5]) > 0:
+                provider = self.plugin.ip_provider.get(list(self.connections)[0][0], (None, None))[0]
                 html = '<div class="block_data"><img src="static/icons/network-cloud.png">Network'
-                html += '<span class="block_data_attr"><b>ip</b> %s</span>' % self.conn_ip
+                html += '<span class="block_data_attr"><b>ip</b> %s</span>' % list(self.connections)[0][0]
                 l = []
                 for i in sorted(self.lag.keys()):
                     if i <= 15:
@@ -193,8 +162,8 @@ class Scanner(object):
                             l.append(formatNumber(float("%0.2f" % (self.lag[i][0]/self.lag[i][1]))))
                 if len([i for i in l if i != 'nd']) > 0:
                     html += '<span class="block_data_attr"><b>lag</b> %s</span>' %  ', '.join(l)
-                if self.conn_provider:
-                    html += '<span class="block_data_attr"><b>provider</b> %s</span>' % self.conn_provider
+                if provider:
+                    html += '<span class="block_data_attr"><b>provider</b> %s</span>' % provider
                 html += '</div>'
                 return html
             else:
@@ -228,7 +197,7 @@ class Scanner(object):
 
         html += '<div class="block_content">'
 
-        if self.connected:
+        if len(self.connections) >= 1:
             html += render_uptime()
             if self.gyrid_connected == True:
                 html += render_detections()
@@ -248,7 +217,7 @@ class Scanner(object):
                 self.lag.keys()) if (i <= 15 and self.lag[i][1] > 0)]
         html = '<div class="navigation_item" onclick="goTo(\'#%s\')">' % self.hostname
         html += '<div class="navigation_link">%s</div>' % self.hostname
-        if not self.connected or not self.gyrid_connected:
+        if len(self.connections) == 0 or not self.gyrid_connected:
             html += '<div class="navigation_status_bad"></div>'
         elif len([s for s in self.sensors.values() if s.connected == True]) == 0:
             html += '<div class="navigation_status_bad"></div>'
@@ -457,6 +426,16 @@ class Plugin(olof.core.Plugin):
         else:
             self.scanners = {}
 
+        if os.path.isfile("olof/plugins/status/data/ip_provider.pickle"):
+            try:
+                f = open("olof/plugins/status/data/ip_provider.pickle", "rb")
+                self.ip_provider = pickle.load(f)
+                f.close()
+            except:
+                self.ip_provider = {}
+        else:
+            self.ip_provider = {}
+
         self.resources_log = open("olof/plugins/status/data/resources.log", "a")
 
         self.plugin_uptime = int(time.time())
@@ -521,9 +500,38 @@ class Plugin(olof.core.Plugin):
         pickle.dump(self.scanners, f)
         f.close()
 
+        f = open("olof/plugins/status/data/ip_provider.pickle", "wb")
+        pickle.dump(self.ip_provider, f)
+        f.close()
+
+    def getProvider(self, ip):
+        def run(ip):
+            p = subprocess.Popen(["/usr/bin/whois", ip], stdin=subprocess.PIPE,
+                stdout=subprocess.PIPE)
+
+            stdout, stderr = p.communicate()
+
+            netname = ""
+            descr = ""
+            for line in stdout.split('\n'):
+                l = line.strip()
+                if l.lower().startswith('netname:'):
+                    netname = ' '.join(l.split()[1:]).replace(';', ',')
+                elif l.lower().startswith('descr:') and descr == "":
+                    descr = ' '.join(l.split()[1:]).replace(';', ',')
+
+            return (netname, descr)
+
+        def process(v):
+            self.ip_provider[ip] = (v[1], v[0])
+
+        if ip != None and ip not in self.ip_provider:
+            d = threads.deferToThread(run, ip)
+            d.addCallback(process)
+
     def getScanner(self, hostname, create=True):
         if not hostname in self.scanners and create:
-            s = Scanner(hostname)
+            s = Scanner(self, hostname)
             self.scanners[hostname] = s
         elif hostname in self.scanners:
             s = self.scanners[hostname]
@@ -544,21 +552,22 @@ class Plugin(olof.core.Plugin):
         s = self.getScanner(hostname)
         s.host_uptime = int(float(host_uptime))
         s.gyrid_uptime = int(float(gyrid_uptime))
+        s.gyrid_connected = True
 
     def connectionMade(self, hostname, ip, port):
         s = self.getScanner(hostname)
-        s.connected = True
-        if ip != s.conn_ip:
-            s.conn_ip = ip
-            s.getProvider()
-        s.conn_port = port
+        s.connections.add((ip, port))
+        self.getProvider(ip)
         s.conn_time = int(time.time())
+        s.gyrid_uptime = None
+        s.gyrid_connected = True
 
         s.checkLagCall('start')
 
     def connectionLost(self, hostname, ip, port):
         s = self.getScanner(hostname)
-        s.connected = False
+        if (ip, port) in s.connections:
+            s.connections.remove((ip, port))
         s.conn_time = int(time.time())
         s.checkLagCall('stop')
         for sens in s.sensors.values():
