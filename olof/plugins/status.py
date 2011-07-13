@@ -571,6 +571,7 @@ class Plugin(olof.core.Plugin):
         s = self.getScanner(hostname)
         s.host_uptime = int(float(host_uptime))
         s.gyrid_uptime = int(float(gyrid_uptime))
+        s.gyrid_connected = True
 
     def connectionMade(self, hostname, ip, port):
         s = self.getScanner(hostname)
