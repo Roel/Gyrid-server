@@ -470,9 +470,6 @@ class Plugin(olof.core.Plugin):
         t = task.LoopingCall(self.check_resources)
         t.start(10)
 
-        #t = task.LoopingCall(self.load_locations)
-        #t.start(60)
-
         reactor.listenTCP(8080, tserver.Site(self.root))
 
     def _distance(self, lat1, lon1, lat2, lon2):
@@ -486,32 +483,6 @@ class Plugin(olof.core.Plugin):
         distCos = math.cos(p2)*math.cos(p1)+math.sin(p2)*math.sin(p1)*math.cos(dLon)
         dist = math.acos(distCos) * R
         return dist
-
-    def load_locations(self):
-        f = open("olof/plugins/status/data/locations.txt", "r")
-        for line in f:
-            line = line.strip().split(',')
-            if not line[0].startswith('#'):
-                s = self.getScanner(line[0])
-                if s.location == None or s.lat == None or s.lon == None:
-                    s.sensors = {}
-                s.location = line[1]
-                if len(line) >= 4:
-                    if (s.lat != None and s.lon != None) and \
-                        self._distance(s.lat, s.lon, float(line[2]), float(line[3])) > 0.2:
-                        s.sensors = {}
-                    s.lat = float(line[2])
-                    s.lon = float(line[3])
-                else:
-                    s.lat = None
-                    s.lon = None
-            else:
-                s = self.getScanner(line[0].lstrip('#'), create=False)
-                if s != None:
-                    s.location = None
-                    s.lat = None
-                    s.lon = None
-        f.close()
 
     def check_resources(self):
         f = open('/proc/loadavg', 'r')
