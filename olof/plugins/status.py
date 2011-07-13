@@ -59,13 +59,13 @@ def prettydate(d, prefix="", suffix=" ago"):
         time.localtime(t)), r)
 
 class Scanner(object):
-    def __init__(self, plugin, hostname):
-        self.plugin = plugin
+    def __init__(self, hostname):
         self.hostname = hostname
         self.host_uptime = None
         self.sensors = {}
         self.lagData = []
         self.connections = set()
+        self.ip_provider = {}
 
         self.location = None
         self.lat = None
@@ -120,6 +120,31 @@ class Scanner(object):
 
         self.lag = lag
 
+    def getProvider(self, ip):
+        def run(ip):
+            p = subprocess.Popen(["/usr/bin/whois", ip], stdin=subprocess.PIPE,
+                stdout=subprocess.PIPE)
+
+            stdout, stderr = p.communicate()
+
+            netname = ""
+            descr = ""
+            for line in stdout.split('\n'):
+                l = line.strip()
+                if l.lower().startswith('netname:'):
+                    netname = ' '.join(l.split()[1:]).replace(';', ',')
+                elif l.lower().startswith('descr:') and descr == "":
+                    descr = ' '.join(l.split()[1:]).replace(';', ',')
+
+            return (netname, descr)
+
+        def process(v):
+            self.ip_provider[ip] = (v[1], v[0])
+
+        if ip != None and ip not in self.ip_provider:
+            d = threads.deferToThread(run, ip)
+            d.addCallback(process)
+
     def render(self):
 
         def render_location():
@@ -148,7 +173,7 @@ class Scanner(object):
             lag = [(self.lag[i][0]/self.lag[i][1]) for i in sorted(
                 self.lag.keys()) if (i <= 15 and self.lag[i][1] > 0)]
             if len([i for i in lag[1:] if i >= 5]) > 0:
-                provider = self.plugin.ip_provider.get(list(self.connections)[0][0], (None, None))[0]
+                provider = self.ip_provider.get(list(self.connections)[0][0], (None, None))[0]
                 html = '<div class="block_data"><img src="static/icons/network-cloud.png">Network'
                 html += '<span class="block_data_attr"><b>ip</b> %s</span>' % list(self.connections)[0][0]
                 l = []
@@ -424,16 +449,6 @@ class Plugin(olof.core.Plugin):
         else:
             self.scanners = {}
 
-        if os.path.isfile("olof/plugins/status/data/ip_provider.pickle"):
-            try:
-                f = open("olof/plugins/status/data/ip_provider.pickle", "rb")
-                self.ip_provider = pickle.load(f)
-                f.close()
-            except:
-                self.ip_provider = {}
-        else:
-            self.ip_provider = {}
-
         self.resources_log = open("olof/plugins/status/data/resources.log", "a")
 
         self.plugin_uptime = int(time.time())
@@ -527,38 +542,9 @@ class Plugin(olof.core.Plugin):
         pickle.dump(self.scanners, f)
         f.close()
 
-        f = open("olof/plugins/status/data/ip_provider.pickle", "wb")
-        pickle.dump(self.ip_provider, f)
-        f.close()
-
-    def getProvider(self, ip):
-        def run(ip):
-            p = subprocess.Popen(["/usr/bin/whois", ip], stdin=subprocess.PIPE,
-                stdout=subprocess.PIPE)
-
-            stdout, stderr = p.communicate()
-
-            netname = ""
-            descr = ""
-            for line in stdout.split('\n'):
-                l = line.strip()
-                if l.lower().startswith('netname:'):
-                    netname = ' '.join(l.split()[1:]).replace(';', ',')
-                elif l.lower().startswith('descr:') and descr == "":
-                    descr = ' '.join(l.split()[1:]).replace(';', ',')
-
-            return (netname, descr)
-
-        def process(v):
-            self.ip_provider[ip] = (v[1], v[0])
-
-        if ip != None and ip not in self.ip_provider:
-            d = threads.deferToThread(run, ip)
-            d.addCallback(process)
-
     def getScanner(self, hostname, create=True):
         if not hostname in self.scanners and create:
-            s = Scanner(self, hostname)
+            s = Scanner(hostname)
             self.scanners[hostname] = s
         elif hostname in self.scanners:
             s = self.scanners[hostname]
@@ -584,7 +570,7 @@ class Plugin(olof.core.Plugin):
     def connectionMade(self, hostname, ip, port):
         s = self.getScanner(hostname)
         s.connections.add((ip, port))
-        self.getProvider(ip)
+        s.getProvider(ip)
         s.conn_time = int(time.time())
         s.gyrid_uptime = None
         s.gyrid_connected = True
