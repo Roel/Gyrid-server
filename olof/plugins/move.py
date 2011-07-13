@@ -313,16 +313,18 @@ class Plugin(olof.core.Plugin):
                             '%Y%m%d-%H%M%S-%Z'))),
                             (self.server.location_provider.new_locations[hostname][Location.Sensors][sensor][Location.X],
                              self.server.location_provider.new_locations[hostname][Location.Sensors][sensor][Location.Y]),
-                            self.server.location_provider.new_locations[hostname][Location.ID])
+                            '%s - %s' % (self.server.location_provider.new_locations[hostname][Location.ID],
+                            self.server.location_provider.new_locations[hostname][Location.Description]))
                     if Location.TimeUninstall in self.server.location_provider.new_locations[hostname][Location.Times]:
                         self.conn.addLocation(sensor,
                             float(time.strftime('%s', time.strptime(
                             self.server.location_provider.new_locations[hostname][Location.Times][Location.TimeUninstall],
                             '%Y%m%d-%H%M%S-%Z'))),
-                            None, self.server.location_provider.new_locations[hostname][Location.ID])            
+                            None, '%s - %s' % (self.server.location_provider.new_locations[hostname][Location.ID],
+                            self.server.location_provider.new_locations[hostname][Location.Description]))
 
         else:
-            self.conn.addLocation(module, timestamp, coordinates, id)
+            self.conn.addLocation(module, timestamp, coordinates, '%s - %s' % (id, description))
 
     def dataFeedRssi(self, hostname, timestamp, sensor_mac, mac, rssi):
         deviceclass = self.server.getDeviceclass(mac)
