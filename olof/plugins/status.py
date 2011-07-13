@@ -532,9 +532,6 @@ class Plugin(olof.core.Plugin):
         t = task.LoopingCall(self.read_MV_numbers)
         t.start(120)
 
-        t = task.LoopingCall(self.read_MV_numbers)
-        t.start(120)
-
         reactor.listenTCP(8080, tserver.Site(self.root))
 
     def _distance(self, lat1, lon1, lat2, lon2):
