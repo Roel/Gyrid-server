@@ -47,7 +47,7 @@ class RawConnection(object):
             self.opener = urllib2.build_opener(authHandler(passman))
         else:
             self.opener = None
-        
+
         self.returns = {}
         self.returnCount = 0
 
@@ -203,7 +203,7 @@ class Connection(RawConnection):
                 self.measurements[i] = []
 
         m = ""
-        if False in self.scanners.values():        
+        if False in self.scanners.values():
             self.getScanners()
 
         to_delete = []

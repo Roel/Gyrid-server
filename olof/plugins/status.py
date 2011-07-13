@@ -310,7 +310,8 @@ class Scanner(object):
             html += '<div class="navigation_status_bad"></div>'
         elif len([s for s in self.sensors.values() if s.connected == True]) == 0:
             html += '<div class="navigation_status_bad"></div>'
-        elif len([i for i in lag[1:] if i >= 5]) > 0:
+        elif len([i for i in lag[1:] if i >= 5]) > 0 or \
+            ('data' in self.mv_balance and self.mv_balance['data']/1024.0/1024.0 <= 200):
             html += '<div class="navigation_status_ugly"></div>'
         else:
             html += '<div class="navigation_status_good"></div>'
@@ -527,6 +528,9 @@ class Plugin(olof.core.Plugin):
 
         t = task.LoopingCall(self.check_resources)
         t.start(10)
+
+        t = task.LoopingCall(self.read_MV_numbers)
+        t.start(120)
 
         t = task.LoopingCall(self.read_MV_numbers)
         t.start(120)
