@@ -111,11 +111,11 @@ class Connection(RawConnection):
 
         self.locations = locations
 
-        t = task.LoopingCall(self.postMeasurements)
-        t.start(60, now=False)
+        self.task_postM = task.LoopingCall(self.postMeasurements)
+        self.task_postM.start(60, now=False)
 
-        t = task.LoopingCall(self.postLocations)
-        reactor.callLater(40, t.start, 60, now=False)
+        self.task_postL = task.LoopingCall(self.postLocations)
+        reactor.callLater(40, self.task_postL.start, 60, now=False)
 
     def getScanners(self):
         def process(r):
