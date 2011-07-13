@@ -18,6 +18,7 @@ import urllib2
 import urlparse
 
 import olof.core
+from olof.locationprovider import Location
 
 class ExtRequest(urllib2.Request):
     method = None
@@ -94,9 +95,10 @@ class RawConnection(object):
             return None
 
 class Connection(RawConnection):
-    def __init__(self, url, user, password, measurements={}, measureCount={},
+    def __init__(self, server, url, user, password, measurements={}, measureCount={},
         locations={}):
         RawConnection.__init__(self, url, user, password)
+        self.server = server
         self.scanners = {}
         self.getScanners()
 
@@ -113,7 +115,7 @@ class Connection(RawConnection):
         t.start(60, now=False)
 
         t = task.LoopingCall(self.postLocations)
-        reactor.callLater(40, t.start, 60, now=False)
+        #lreactor.callLater(40, t.start, 60, now=False)
 
     def getScanners(self):
         def process(r):
@@ -130,7 +132,7 @@ class Connection(RawConnection):
             {'Content-Type': 'text/plain'})
 
     def addLocation(self, sensor, timestamp, coordinates, description):
-        print "Adding location for %s..." % sensor
+        self.server.output("move: Adding location for %s at %i: %s (%s)" % (sensor, timestamp, description, coordinates))
         if not sensor in self.scanners:
             self.addScanner(sensor, 'test scanner')
             self.scanners[sensor] = False
@@ -149,7 +151,6 @@ class Connection(RawConnection):
         l = ""
         to_delete = []
 
-        print "Running postLocations..."
         for scanner in [s for s in self.scanners.keys() if (self.scanners[s] == True \
             and s in self.locations)]:
             l += "==%s\n" % scanner
@@ -167,7 +168,7 @@ class Connection(RawConnection):
             l += "\n".join(loc)
 
         if len(l) > 0:
-            print "Posting: %s" % l
+            self.server.output("move: Posting location: %s" % l)
             self.request_post('scanner/location', process, l,
                 {'Content-Type': 'text/plain'})
 
@@ -264,7 +265,7 @@ class Plugin(olof.core.Plugin):
                 pass
             f.close()
 
-        self.conn = Connection(self.url, self.user, self.password,
+        self.conn = Connection(self.server, self.url, self.user, self.password,
             measurements, measureCount, locations)
 
     def unload(self):
@@ -299,10 +300,23 @@ class Plugin(olof.core.Plugin):
         return r
 
     def locationUpdate(self, hostname, module, timestamp, id, description, coordinates):
-        if module == 'scanner' or module == 'sensor':
+        if module == 'sensor':
             return
 
-        self.conn.addLocation(module, timestamp, coordinates, description)
+        if module == 'scanner':
+            for sensor in self.server.location_provider.new_locations[hostname][Location.Sensors]:
+                if sensor != Location.Sensor:
+                    if Location.TimeInstall in self.server.location_provider.new_locations[hostname][Location.Times]:
+                        self.conn.addLocation(sensor, self.server.location_provider.new_locations[hostname][Location.Times][Location.TimeInstall],
+                            (self.server.location_provider.new_locations[hostname][Location.Sensors][sensor][Location.X],
+                             self.server.location_provider.new_locations[hostname][Location.Sensors][sensor][Location.Y]),
+                            self.server.location_provider.new_locations[hostname][Location.ID])
+                    if Location.TimeUninstall in self.server.location_provider.new_locations[hostname][Location.Times]:
+                        self.conn.addLocation(sensor,
+                            self.server.location_provider.new_locations[hostname][Location.Times][Location.TimeUninstall],
+                            None, '')            
+
+        self.conn.addLocation(module, timestamp, coordinates, id)
 
     def dataFeedRssi(self, hostname, timestamp, sensor_mac, mac, rssi):
         deviceclass = self.server.getDeviceclass(mac)

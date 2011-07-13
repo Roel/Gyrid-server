@@ -130,27 +130,37 @@ class Plugin(olof.core.Plugin):
         return r
 
     def locationUpdate(self, hostname, module, timestamp, id, description, coordinates):
-        if module == 'scanner':
-            for sensor in self.server.location_provider.locations[hostname][Location.Sensors]:
-                if sensor != 'sensor':
+        if module == 'scanner' and hostname in self.server.location_provider.new_locations:
+            for sensor in self.server.location_provider.new_locations[hostname][Location.Sensors]:
+                if sensor != Location.Sensor:
+                    self.server.output('db4o: Adding location %s|%s' % (id, sensor)) 
                     self.inet_factory.sendLine(','.join(['addLocation',
                         '%s|%s' % (id, sensor), description,
-                        "%0.6f" % self.server.location_provider.locations[hostname][Location.Sensors][sensor][Location.X],
-                        "%0.6f" % self.server.location_provider.locations[hostname][Location.Sensors][sensor][Location.Y]]))
+                        "%0.6f" % self.server.location_provider.new_locations[hostname][Location.Sensors][sensor][Location.X],
+                        "%0.6f" % self.server.location_provider.new_locations[hostname][Location.Sensors][sensor][Location.Y]]))
 
-                    self.inet_factory.sendLine(','.join(['installScannerSetup',
-                        hostname, module, '%s|%s' % (id, module), str(timestamp)]))
+                    if Location.TimeInstall in self.server.location_provider.new_locations[hostname][Location.Times]:
+                        self.server.output('db4o: Installing scanner setup %s|%s at %i' % (id, sensor, timestamp))
+                        self.inet_factory.sendLine(','.join(['installScannerSetup',
+                            hostname, module, '%s|%s' % (id, module), str(timestamp)]))
+                    if Location.TimeUninstall in self.server.location_provider.new_locations[hostname][Location.Times]:
+                        self.server.output('db4o: Removing scanner setup %s|%s at %i' % (id, sensor, timestamp))
+                        self.inet_factory.sendLine(','.join(['removeScannerSetup',
+                            hostname, module, '%s|%s' % (id, module), str(timestamp)]))
 
-        elif module != 'sensor':
+        if module not in ['sensor', 'scanner']:
             if coordinates != None:
+                self.server.output('db4o: Adding location %s|%s' % (id, module)) 
                 self.inet_factory.sendLine(','.join(['addLocation',
                     '%s|%s' % (id, module), description,
                     "%0.6f" % coordinates[0], "%0.6f" % coordinates[1]]))
 
+                self.server.output('db4o: Installiing scanner setup %s|%s at %i' % (id, module, timestamp))
                 self.inet_factory.sendLine(','.join(['installScannerSetup',
                     hostname, module, '%s|%s' % (id, module), str(timestamp)]))
 
             else:
+                self.server.output('db4o: Removing scanner setup %s|%s at %i' % (id, module, timestamp))
                 self.inet_factory.sendLine(','.join(['removeScannerSetup',
                     hostname, module, '%s|%s' % (id, module), str(timestamp)]))
 

@@ -31,8 +31,8 @@ class Plugin(olof.core.Plugin):
         self.output("Connection lost with %s (%s:%s)" % (hostname, ip, port))
 
     def locationUpdate(self, hostname, module, timestamp, id, description, coordinates):
-        self.output("Received new location for %s, module %s, time %s" % \
-            (hostname, module, timestamp))
+        self.output("debug: Received new location for %s, module %s, time %s: %s" % \
+            (hostname, module, timestamp, id))
 
     def infoFeed(self, hostname, timestamp, info):
         self.output("%s info: %s" % (hostname, info))

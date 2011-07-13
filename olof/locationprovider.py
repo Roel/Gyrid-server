@@ -36,10 +36,9 @@ class LocationProvider(object):
         f.close()
 
     def readLocations(self):
-        #from olof.data.locations import locations
-        locations = imp.load_source('l', os.getcwd() + "/olof/data/locations.py").locations
-        self.parseLocations(locations)
-        self.locations = copy.deepcopy(locations)
+        self.new_locations = imp.load_source('l', os.getcwd() + "/olof/data/locations.py").locations
+        self.parseLocations(self.new_locations)
+        self.locations = copy.deepcopy(self.new_locations)
 
     def parseLocations(self, locations):
         to_update = set()
@@ -77,7 +76,10 @@ class LocationProvider(object):
                 self.pushLocationUpdate(scanner, None)
 
     def pushLocationUpdate(self, hostname, location):
+        self.server.output('locationprovider: push location update for %s' % hostname)
         #hostname, timestamp, id, description, coordinates
+        if location == None:
+            return
 
         args = {'hostname': str(hostname),
                 'id': str(location[Location.ID]),
@@ -92,15 +94,18 @@ class LocationProvider(object):
 
             # Push scanner update
             args['module'] = 'scanner'
-            if False in [self.locations[hostname][i] == location[i] for i in [
-                Location.ID, Location.Description, Location.X, Location.Y]]:
+            if hostname not in self.locations or \
+                False in [self.locations[hostname][i] == location[i] for i in [
+                Location.ID, Location.Description, Location.X, Location.Y, Location.Times] \
+                if hostname in self.locations]:
                 for p in self.server.plugins:
                     p.locationUpdate(**args)
 
             # Push sensor updates
             for s in location[Location.Sensors]:
                 args['module'] = s if s != Location.Sensor else 'sensor'
-                if not s in self.locations[hostname][Location.Sensors] or \
+                if hostname not in self.locations or \
+                    s not in self.locations[hostname][Location.Sensors] or \
                     False in [self.locations[hostname][Location.Sensors][s][i] == \
                         location[Location.Sensors][s][i] for i in [
                             Location.X, Location.Y]]:
