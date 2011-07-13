@@ -580,6 +580,8 @@ class Plugin(olof.core.Plugin):
             s.getProvider()
         s.conn_port = port
         s.conn_time = int(time.time())
+        s.gyrid_uptime = None
+        s.gyrid_connected = True
 
         s.checkLagCall('start')
 
