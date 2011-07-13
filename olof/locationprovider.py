@@ -76,8 +76,6 @@ class LocationProvider(object):
                 self.pushLocationUpdate(scanner, None)
 
     def pushLocationUpdate(self, hostname, location):
-        self.server.output('locationprovider: push location update for %s' % hostname)
-        #hostname, timestamp, id, description, coordinates
         if location == None:
             return
 
