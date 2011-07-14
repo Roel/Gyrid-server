@@ -195,7 +195,7 @@ class Connection(RawConnection):
 
     def postMeasurements(self):
         def process(r):
-            if r != None
+            if r != None:
                 self.measureCount['uploads'] += 1
                 self.measureCount['last_upload'] = int(time.time())
                 for i in to_delete:
