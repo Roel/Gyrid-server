@@ -157,7 +157,7 @@ class Plugin(olof.core.Plugin):
             self.server.output('db4o: Adding location %s|%s' % (id, sensor))
             self.locations.append([sensor, id, description, x, y])
             self.inet_factory.sendLine(','.join(['addLocation',
-                '%s|%s' % (id, sensor), "%0.6f" % x, "%0.6f" % y]))
+                '%s|%s' % (id, sensor), description, "%0.6f" % x, "%0.6f" % y]))
 
     def addScanSetup(self, hostname, sensor, id, timestamp):
         if not [hostname, sensor, id, timestamp, 1] in self.scanSetups:
