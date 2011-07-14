@@ -90,9 +90,9 @@ class RawConnection(object):
 
         try:
             if self.opener:
-                resp = self.opener.open(req)
+                resp = self.opener.open(req, timeout=120)
             else:
-                resp = urllib2.urlopen(req)
+                resp = urllib2.urlopen(req, timeout=120)
             return resp.readlines()
         except:
             return None
