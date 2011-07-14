@@ -97,6 +97,7 @@ class Scanner(object):
 
         self.checkLag_call = task.LoopingCall(reactor.callInThread,
             self.checkLag)
+        self.checkLagCall('start')
 
         self.checkMVBalance_call = task.LoopingCall(reactor.callInThread,
             self.getMVBalance)
@@ -630,14 +631,11 @@ class Plugin(olof.core.Plugin):
         s.host_uptime = None
         s.gyrid_connected = True
 
-        s.checkLagCall('start')
-
     def connectionLost(self, hostname, ip, port):
         s = self.getScanner(hostname)
         if (ip, port) in s.connections:
             s.connections.remove((ip, port))
         s.conn_time['lost'] = int(time.time())
-        s.checkLagCall('stop')
         for sens in s.sensors.values():
             sens.connected = False
 
