@@ -162,6 +162,9 @@ class Scanner(object):
 
         if self.msisdn:
             self.mv_conn.request_get('sim_balance.pickle?msisdn=%s' % self.msisdn, process)
+        else:
+            self.mv_updated = None
+            self.mv_balance = {}
 
     def getProvider(self, ip):
         def run(ip):
@@ -580,7 +583,12 @@ class Plugin(olof.core.Plugin):
             l = line.strip().split(',')
             s = self.getScanner(l[0], create=False)
             if s:
-                s.msisdn = l[1]
+                if l[1]:
+                    s.msisdn = l[1]
+                else:
+                    s.msisdn = None
+                    s.mv_balance = {}
+                    s.mv_updated = None
         f.close()
 
     def unload(self):
