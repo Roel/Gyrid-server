@@ -143,7 +143,7 @@ class Scanner(object):
                 self.checkMVBalance_call = task.LoopingCall(reactor.callInThread,
                     self.getMVBalance)
             try:
-                self.checkMVBalance_call.start(1800)
+                self.checkMVBalance_call.start(1800, now=False)
             except AssertionError:
                 print self.hostname + ": AssertionError starting call"
 
