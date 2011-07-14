@@ -195,12 +195,13 @@ class Connection(RawConnection):
 
     def postMeasurements(self):
         def process(r):
-            self.measureCount['uploads'] += 1
-            self.measureCount['last_upload'] = int(time.time())
-            for i in to_delete:
-                self.measureCount['uploaded'] += len(self.measurements[i])
-                self.measureCount['cached'] -= len(self.measurements[i])
-                self.measurements[i] = []
+            if r != None
+                self.measureCount['uploads'] += 1
+                self.measureCount['last_upload'] = int(time.time())
+                for i in to_delete:
+                    self.measureCount['uploaded'] += len(self.measurements[i])
+                    self.measureCount['cached'] -= len(self.measurements[i])
+                    self.measurements[i] = []
 
         m = ""
         if False in self.scanners.values():
