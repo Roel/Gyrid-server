@@ -627,6 +627,7 @@ class Plugin(olof.core.Plugin):
         s.getProvider(ip)
         s.conn_time['made'] = int(time.time())
         s.gyrid_uptime = None
+        s.host_uptime = None
         s.gyrid_connected = True
 
         s.checkLagCall('start')
