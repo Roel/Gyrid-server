@@ -91,7 +91,7 @@ class Scanner(object):
 
     def init(self):
         self.conn_port = None
-        self.conn_time = None
+        self.conn_time = {}
         self.connections = set()
         self.lag = {1: [0, 0], 5: [0, 0], 15: [0, 0]}
 
@@ -204,7 +204,8 @@ class Scanner(object):
 
         def render_uptime():
             html = '<div class="block_data"><img src="static/icons/clock-arrow.png">Uptime'
-            html += '<span class="block_data_attr"><b>connection</b> %s</span>' % prettydate(int(float(self.conn_time)), suffix="")
+            if 'made' in self.conn_time:
+                html += '<span class="block_data_attr"><b>connection</b> %s</span>' % prettydate(int(float(self.conn_time['made'])), suffix="")
             if self.gyrid_uptime != None and self.gyrid_connected == True:
                 html += '<span class="block_data_attr"><b>gyrid</b> %s</span>' % prettydate(self.gyrid_uptime, suffix="")
             if self.host_uptime != None:
@@ -296,7 +297,7 @@ class Scanner(object):
             else:
                 html += render_notconnected(self.gyrid_disconnect_time, " to Gyrid")
         else:
-            html += render_notconnected(self.conn_time)
+            html += render_notconnected(self.conn_time.get('lost', None))
 
         html += '</div></div>'
         return html
@@ -624,7 +625,7 @@ class Plugin(olof.core.Plugin):
         s = self.getScanner(hostname)
         s.connections.add((ip, port))
         s.getProvider(ip)
-        s.conn_time = int(time.time())
+        s.conn_time['made'] = int(time.time())
         s.gyrid_uptime = None
         s.gyrid_connected = True
 
@@ -634,7 +635,7 @@ class Plugin(olof.core.Plugin):
         s = self.getScanner(hostname)
         if (ip, port) in s.connections:
             s.connections.remove((ip, port))
-        s.conn_time = int(time.time())
+        s.conn_time['lost'] = int(time.time())
         s.checkLagCall('stop')
         for sens in s.sensors.values():
             sens.connected = False
