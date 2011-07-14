@@ -154,10 +154,11 @@ class Connection(RawConnection):
 
         l = ""
         to_delete = []
+        l_scanner = []
 
         for scanner in [s for s in self.scanners.keys() if (self.scanners[s] == True \
             and s in self.locations)]:
-            l += "==%s\n" % scanner
+            l_scanner.append("==%s" % scanner)
             to_delete.append(scanner)
             loc = []
             for location in self.locations[scanner]:
@@ -169,8 +170,9 @@ class Connection(RawConnection):
                 else:
                     loc.append(','.join([time.strftime('%Y%m%d-%H%M%S-%Z',
                         time.localtime(location[0])), '', 'NULL', '']))
-            l += "\n".join(loc)
+            l_scanner.append("\n".join(loc))
 
+        l = '\n'.join(l_scanner)
         if len(l) > 0:
             self.server.output("move: Posting location: %s" % l)
             self.request_post('scanner/location', process, l,
@@ -208,13 +210,15 @@ class Connection(RawConnection):
             self.getScanners()
 
         to_delete = []
+        m_scanner = []
         for scanner in [s for s in self.scanners.keys() if (self.scanners[s] == True \
             and s in self.measurements)]:
             if len(self.measurements[scanner]) > 0:
-                m += "==%s\n" % scanner
-                m += "\n".join(self.measurements[scanner])
+                m_scanner.append("==%s" % scanner)
+                m_scanner.append("\n".join(self.measurements[scanner]))
                 to_delete.append(scanner)
 
+        m = '\n'.join(m_scanner)
         if len(m) > 0:
             self.request_post('measurement', process, m,
                 {'Content-Type': 'text/plain'})
