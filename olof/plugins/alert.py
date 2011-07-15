@@ -167,7 +167,7 @@ class Alert(object):
         String = {Info: 'Info', Warning: 'Warning', Alert: 'Alert', Fire: 'Fire'}
 
     def __init__(self, origin, type, module=None, etime=None, message=None,
-                 info=0, warning=5, alert=15, fire=30):
+                 info=1, warning=5, alert=20, fire=45):
         self.origin = origin
         self.type = type
         self.module = module
@@ -214,7 +214,7 @@ class Plugin(olof.core.Plugin):
         self.mailer = Mailer()
 
         self.mailer.addAlert(Alert('Server', Alert.Type.ServerStartup,
-            info=0, warning=None, alert=None, fire=None))
+            info=1, warning=None, alert=None, fire=None))
 
     def connectionMade(self, hostname, ip, port):
         alerts = self.mailer.getAlerts(hostname, [Alert.Type.ScannerDisconnect,
@@ -222,10 +222,11 @@ class Plugin(olof.core.Plugin):
         self.mailer.removeAlerts(alerts)
 
         self.mailer.addAlert(Alert(hostname, Alert.Type.ScannerConnect,
-                info=0, warning=None, alert=None, fire=None))
+                info=1, warning=None, alert=None, fire=None))
 
     def connectionLost(self, hostname, ip, port):
-        a = self.mailer.getAlerts(hostname, [Alert.Type.GyridDisconnect])
+        a = self.mailer.getAlerts(hostname, [Alert.Type.GyridDisconnect,
+            Alert.Type.SensorDisconnect])
         self.mailer.removeAlerts(a)
 
         a = self.mailer.getAlerts(hostname, [Alert.Type.ScannerDisconnect])
@@ -240,7 +241,7 @@ class Plugin(olof.core.Plugin):
                 Alert.Type.SensorConnect], sensor_mac)
             self.mailer.removeAlerts(a)
             self.mailer.addAlert(Alert(hostname, Alert.Type.SensorConnect,
-                sensor_mac, info=0, warning=None, alert=None, fire=None))
+                sensor_mac, info=1, warning=None, alert=None, fire=None))
         elif info == 'stopped_scanning':
             self.mailer.addAlert(Alert(hostname, Alert.Type.SensorDisconnect,
                 sensor_mac))
@@ -252,10 +253,10 @@ class Plugin(olof.core.Plugin):
                     Alert.Type.GyridConnect])
                 self.mailer.removeAlerts(a)
                 self.mailer.addAlert(Alert(hostname, Alert.Type.GyridConnect,
-                    info=0, warning=None, alert=None, fire=None))
+                    info=1, warning=None, alert=None, fire=None))
             elif info == 'disconnected':
                 self.mailer.addAlert(Alert(hostname, Alert.Type.GyridDisconnect,
-                    info=0, warning=2, alert=5, fire=10))
+                    info=1, warning=5, alert=10, fire=20))
 
     def infoFeed(self, hostname, timestamp, info):
         pass
