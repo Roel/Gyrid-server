@@ -484,7 +484,7 @@ class AuthenticationRealm(object):
             raise NotImplementedError()
 
 def formatNumber(number):
-    if type(number) is int:
+    if (type(number) is int) or (type(number) is long):
         return '{:,.0f}'.format(number).replace(',', '<span class="thousandSep"></span>')
     elif type(number) is float:
         return '{:,.2f}'.format(number).replace(',', '<span class="thousandSep"></span>')
