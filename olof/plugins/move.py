@@ -141,17 +141,18 @@ class Connection(RawConnection):
             self.scanners[sensor] = False
 
         if not sensor in self.locations:
-            self.locations[sensor] = [[timestamp, coordinates, description]]
+            self.locations[sensor] = [[(timestamp, coordinates, description), False]]
             self.server.output("move: Adding location for %s at %s: %s (%s)" % (sensor, timestamp, description, coordinates))
         else:
-            if not [timestamp, coordinates, description] in self.locations[sensor]:
-                self.locations[sensor].append([timestamp, coordinates, description])
+            if not (timestamp, coordinates, description) in [i[0] for i in self.locations[sensor]]:
+                self.locations[sensor].append([(timestamp, coordinates, description), False])
                 self.server.output("move: Adding location for %s at %s: %s (%s)" % (sensor, timestamp, description, coordinates))
 
     def postLocations(self):
         def process(r):
             for scanner in to_delete:
-                del(self.locations[scanner])
+                for l in self.locations[scanner]:
+                    l[1] = True
 
         l = ""
         to_delete = []
@@ -162,7 +163,7 @@ class Connection(RawConnection):
             l_scanner.append("==%s" % scanner)
             to_delete.append(scanner)
             loc = []
-            for location in self.locations[scanner]:
+            for location in [l[0] for l in self.locations[scanner] if l[1] == False]:
                 if location[1] != None:
                     loc.append(','.join([time.strftime('%Y%m%d-%H%M%S-%Z',
                         time.localtime(location[0])),
