@@ -202,7 +202,7 @@ class Scanner(object):
                 #    ("http://www.openstreetmap.org/?mlat=%s&mlon=%s&zoom=15&layers=M" % (self.lat, self.lon)), self.location)
                 loc = '<span title="%s">%s</span>' % (self.location_description, self.location) if self.location_description != None else self.location
                 html += '<a href="%s">%s</a><img src="static/icons/marker.png">' % (
-                    ("http://maps.google.be/maps?f=q&source=s_q&hl=nl&geocode=&q=loc:%s,%s(%s)" % (self.lat, self.lon, self.hostname)), loc)
+                    ("http://maps.google.be/maps?z=17&q=loc:%s,%s(%s)" % (self.lat, self.lon, self.hostname)), loc)
             html += '</div><div style="clear: both;"></div><div class="block_content" onclick="goTo(\'#navigation_block\')">'
 
             if self.location_description:
