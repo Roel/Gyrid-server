@@ -11,6 +11,7 @@ Module that handles the communication with the Move REST API.
 
 from twisted.internet import reactor, task, threads
 
+import copy
 import os
 import cPickle as pickle
 import time
@@ -90,9 +91,9 @@ class RawConnection(object):
 
         try:
             if self.opener:
-                resp = self.opener.open(req, timeout=120)
+                resp = self.opener.open(req, timeout=40)
             else:
-                resp = urllib2.urlopen(req, timeout=120)
+                resp = urllib2.urlopen(req, timeout=40)
             return resp.readlines()
         except:
             return None
@@ -102,7 +103,7 @@ class Connection(RawConnection):
         locations={}):
         RawConnection.__init__(self, url, user, password, urllib2.HTTPDigestAuthHandler)
         self.server = server
-        self.scanners = {}
+        self.scanners    = {}
         self.getScanners()
 
         self.measurements = measurements
@@ -197,13 +198,19 @@ class Connection(RawConnection):
 
     def postMeasurements(self):
         def process(r):
-            if r != None:
+            if r != None and type(r) is list and len(r) == len(to_delete):
                 self.measureCount['uploads'] += 1
                 self.measureCount['last_upload'] = int(time.time())
-                for i in to_delete:
-                    self.measureCount['uploaded'] += len(self.measurements[i])
-                    self.measureCount['cached'] -= len(self.measurements[i])
-                    self.measurements[i] = []
+                for i in range(len(r)):
+                    scanner = to_delete.pop(0)
+                    move_lines = int(r.pop(0).strip().split(',')[1])
+                    uploaded_lines = scanner[1]
+
+                    if move_lines == uploaded_lines:
+                        self.measureCount['uploaded'] += uploaded_lines
+                        self.measureCount['cached'] -= uploaded_lines
+                        for l in self.measurements_uploaded[scanner[0]]:
+                            self.measurements[scanner[0]].remove(l)
 
         m = ""
         if False in self.scanners.values():
@@ -211,12 +218,14 @@ class Connection(RawConnection):
 
         to_delete = []
         m_scanner = []
+        self.measurements_uploaded = {}
         for scanner in [s for s in self.scanners.keys() if (self.scanners[s] == True \
             and s in self.measurements)]:
-            if len(self.measurements[scanner]) > 0:
+            self.measurements_uploaded[scanner] = copy.deepcopy(self.measurements[scanner])
+            if len(self.measurements_uploaded[scanner]) > 0:
                 m_scanner.append("==%s" % scanner)
-                m_scanner.append("\n".join(self.measurements[scanner]))
-                to_delete.append(scanner)
+                m_scanner.append("\n".join(self.measurements_uploaded[scanner]))
+                to_delete.append((scanner, len(self.measurements_uploaded[scanner])))
 
         m = '\n'.join(m_scanner)
         if len(m) > 0:
@@ -244,9 +253,9 @@ class Plugin(olof.core.Plugin):
         f.close()
 
         measureCount = {'last_upload': -1,
-                        'uploads': -1,
-                        'uploaded': -1,
-                        'cached': -1}
+                        'uploads': 0,
+                        'uploaded': 0,
+                        'cached': 0}
         measurements = {}
         locations = {}
 
