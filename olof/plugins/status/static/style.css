@@ -148,7 +148,7 @@ div #footer {
     line-height: 150%;
 }
 
-.block:hover {
+.block_content:hover {
     cursor: pointer;
 }
 

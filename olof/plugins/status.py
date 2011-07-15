@@ -203,7 +203,7 @@ class Scanner(object):
                 loc = '<span title="%s">%s</span>' % (self.location_description, self.location) if self.location_description != None else self.location
                 html += '<a href="%s">%s</a><img src="static/icons/marker.png">' % (
                     ("http://maps.google.be/maps?f=q&source=s_q&hl=nl&geocode=&q=loc:%s,%s(%s)" % (self.lat, self.lon, self.hostname)), loc)
-            html += '</div><div style="clear: both;"></div><div class="block_content">'
+            html += '</div><div style="clear: both;"></div><div class="block_content" onclick="goTo(\'#navigation_block\')">'
 
             if self.location_description:
                 html += '<div class="block_data_location">%s</div>' % self.location_description
@@ -288,7 +288,7 @@ class Scanner(object):
             html += '</div>'
             return html
 
-        html = '<div id="%(h)s" class="block" onclick="goTo(\'#navigation_block\')"><div class="block_title"><h3>%(h)s</h3></div>' % {'h': self.hostname}
+        html = '<div id="%(h)s" class="block"><div class="block_title"><h3>%(h)s</h3></div>' % {'h': self.hostname}
         html += render_location()
 
         if len(self.connections) >= 1:
