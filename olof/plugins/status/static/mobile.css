@@ -155,12 +155,21 @@ div #footer {
     float: left;
 }
 
-.block_topright {
+.block_topright, .block_data_location {
     float: right;
     text-align: right;
 }
 
-.block_data {
+.block_data_location {
+    width: 100%;
+    margin-bottom: 1ex;
+    margin-top: -1ex;
+    margin-right: 31px;
+    color: #a0a0a0;
+    font-size: 8pt;
+}
+
+.block_data,  {
     float: left;
     margin-top: 2px;
     min-width: 50%;

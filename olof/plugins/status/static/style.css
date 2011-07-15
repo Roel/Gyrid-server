@@ -165,6 +165,10 @@ div #footer {
     text-align: right;
 }
 
+.block_data_location {
+    display: none;
+}
+
 .block_data_attr {
     margin-left: 12px;
     color: #a0a0a0;
