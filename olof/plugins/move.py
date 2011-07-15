@@ -160,6 +160,8 @@ class Connection(RawConnection):
 
         for scanner in [s for s in self.scanners.keys() if (self.scanners[s] == True \
             and s in self.locations)]:
+            if len([True for l in self.locations[scanner] if l[1] == False]) == 0:
+                continue
             l_scanner.append("==%s" % scanner)
             to_delete.append(scanner)
             loc = []
