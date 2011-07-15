@@ -134,11 +134,11 @@ class Mailer(object):
                             alert.getMessageBody(level)])
                 alert.markSent(level)
 
-            al = sorted(alert.action.keys())
-            nextLevels = al[al.index(level)+1:]
-            if len([a for a in nextLevels if alert.action[a][0] == None]) == \
-                len(nextLevels):
-                to_delete.append(alert)
+                al = sorted(alert.action.keys())
+                nextLevels = al[al.index(level)+1:]
+                if len([a for a in nextLevels if alert.action[a][0] == None]) == \
+                    len(nextLevels):
+                    to_delete.append(alert)
 
         self.removeAlerts(to_delete)
 
