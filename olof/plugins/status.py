@@ -157,8 +157,12 @@ class Scanner(object):
 
     def getMVBalance(self):
         def process(r):
-            self.mv_balance = pickle.loads("".join(r))
-            self.mv_updated = int(time.time())
+            if r != None:
+                try:
+                    self.mv_balance = pickle.loads("".join(r))
+                    self.mv_updated = int(time.time())
+                except:
+                    pass
 
         if self.msisdn:
             self.mv_conn.request_get('sim_balance.pickle?msisdn=%s' % self.msisdn, process)
