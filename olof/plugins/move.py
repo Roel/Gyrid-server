@@ -37,8 +37,9 @@ class ExtRequest(urllib2.Request):
             return self.method
 
 class RawConnection(object):
-    def __init__(self, base_url, username=None, password=None, authHandler=None):
+    def __init__(self, base_url, timeout=40, username=None, password=None, authHandler=None):
         self.base_url = base_url
+        self.timeout = timeout
         self.username = username
         self.url = urlparse.urlparse(base_url)
 
@@ -91,9 +92,9 @@ class RawConnection(object):
 
         try:
             if self.opener:
-                resp = self.opener.open(req, timeout=40)
+                resp = self.opener.open(req, timeout=self.timeout)
             else:
-                resp = urllib2.urlopen(req, timeout=40)
+                resp = urllib2.urlopen(req, timeout=self.timeout)
             return resp.readlines()
         except:
             return None
@@ -101,11 +102,12 @@ class RawConnection(object):
 class Connection(RawConnection):
     def __init__(self, server, url, user, password, measurements={}, measureCount={},
         locations={}):
-        RawConnection.__init__(self, url, user, password, urllib2.HTTPDigestAuthHandler)
+        RawConnection.__init__(self, url, 180, user, password, urllib2.HTTPDigestAuthHandler)
         self.server = server
-        self.scanners    = {}
+        self.scanners = {}
         self.getScanners()
 
+        self.requestRunning = False
         self.measurements = measurements
         if len(measureCount) == 0:
             self.measureCount = {'uploads': 0, 'cached': 0, 'uploaded': 0,
@@ -154,6 +156,9 @@ class Connection(RawConnection):
                 for l in self.locations[scanner]:
                     l[1] = True
 
+        if self.requestRunning:
+            return
+
         l = ""
         to_delete = []
         l_scanner = []
@@ -201,6 +206,7 @@ class Connection(RawConnection):
 
     def postMeasurements(self):
         def process(r):
+            self.requestRunning = False
             if r != None and type(r) is list and len(r) == len(to_delete):
                 self.measureCount['uploads'] += 1
                 self.measureCount['last_upload'] = int(time.time())
@@ -214,6 +220,9 @@ class Connection(RawConnection):
                         self.measureCount['cached'] -= uploaded_lines
                         for l in self.measurements_uploaded[scanner[0]]:
                             self.measurements[scanner[0]].remove(l)
+
+        if self.requestRunning:
+            return
 
         m = ""
         if False in self.scanners.values():
@@ -232,6 +241,7 @@ class Connection(RawConnection):
 
         m = '\n'.join(m_scanner)
         if len(m) > 0:
+            self.requestRunning = True
             self.request_post('measurement', process, m,
                 {'Content-Type': 'text/plain'})
 
