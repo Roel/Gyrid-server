@@ -415,6 +415,8 @@ class ContentResource(resource.Resource):
                 st = p.getStatus()
                 if 'status' in st[0] and st[0]['status'] == 'error':
                     html += '<img src="static/icons/puzzle-red.png">%s' % p.name
+                elif 'status' in st[0] and st[0]['status'] == 'disabled':
+                    html += '<img src="static/icons/puzzle-grey.png">%s' % p.name
                 else:
                     html += '<img src="static/icons/puzzle.png">%s' % p.name
                 for i in st:
