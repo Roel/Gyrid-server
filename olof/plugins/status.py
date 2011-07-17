@@ -314,14 +314,21 @@ class Scanner(object):
     def render_navigation(self):
         lag = [(self.lag[i][0]/self.lag[i][1]) for i in sorted(
                 self.lag.keys()) if (i <= 15 and self.lag[i][1] > 0)]
+        t = int(time.time())
         html = '<div class="navigation_item" onclick="goTo(\'#%s\')">' % self.hostname
         html += '<div class="navigation_link">%s</div>' % self.hostname
         if len(self.connections) == 0 or not self.gyrid_connected:
+            # Not connected
             html += '<div class="navigation_status_bad"></div>'
         elif len([s for s in self.sensors.values() if s.connected == True]) == 0:
+            # No sensors connected
+            html += '<div class="navigation_status_bad"></div>'
+        elif len([s for s in self.sensors.values() if (s.last_inquiry == None or t-s.last_inquiry >= 80)]) == len(self.sensors):
+            # No recent inquiry
             html += '<div class="navigation_status_bad"></div>'
         elif len([i for i in lag[1:] if i >= 5]) > 0 or \
             ('data' in self.mv_balance and self.mv_balance['data']/1024.0/1024.0 <= 200):
+            # Laggy connection or MV balance low
             html += '<div class="navigation_status_ugly"></div>'
         else:
             html += '<div class="navigation_status_good"></div>'
