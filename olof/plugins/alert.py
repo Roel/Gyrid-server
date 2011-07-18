@@ -216,7 +216,14 @@ class Plugin(olof.core.Plugin):
         self.mailer.addAlert(Alert('Server', Alert.Type.ServerStartup,
             info=1, warning=None, alert=None, fire=None))
 
+        self.connections = {}
+
     def connectionMade(self, hostname, ip, port):
+        if not hostname in self.connections:
+            self.connections[hostname] = [(ip, port)]
+        else:
+            self.connections[hostname].append((ip, port))
+
         alerts = self.mailer.getAlerts(hostname, [Alert.Type.ScannerDisconnect,
             Alert.Type.ScannerConnect])
         self.mailer.removeAlerts(alerts)
@@ -225,15 +232,19 @@ class Plugin(olof.core.Plugin):
                 info=1, warning=None, alert=None, fire=None))
 
     def connectionLost(self, hostname, ip, port):
-        a = self.mailer.getAlerts(hostname, [Alert.Type.GyridDisconnect,
-            Alert.Type.SensorDisconnect])
-        self.mailer.removeAlerts(a)
+        if hostname in self.connections and (ip, port) in self.connections[hostname]:
+            self.connections[hostname].remove((ip, port))
 
-        a = self.mailer.getAlerts(hostname, [Alert.Type.ScannerDisconnect])
-        if len(a) == 0:
-            self.mailer.addAlert(Alert(hostname, Alert.Type.ScannerDisconnect))
-        else:
-            a[0].etime = int(time.time())
+        if len(self.connections[hostname] == 0):
+            a = self.mailer.getAlerts(hostname, [Alert.Type.GyridDisconnect,
+                Alert.Type.SensorDisconnect])
+            self.mailer.removeAlerts(a)
+
+            a = self.mailer.getAlerts(hostname, [Alert.Type.ScannerDisconnect])
+            if len(a) == 0:
+                self.mailer.addAlert(Alert(hostname, Alert.Type.ScannerDisconnect))
+            else:
+                a[0].etime = int(time.time())
 
     def stateFeed(self, hostname, timestamp, sensor_mac, info):
         if info == 'started_scanning':
