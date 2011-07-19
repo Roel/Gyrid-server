@@ -96,13 +96,16 @@ class RawConnection(object):
             else:
                 resp = urllib2.urlopen(req, timeout=self.timeout)
             return resp.readlines()
+        except urllib2.HTTPError as e:
+            return e
         except:
             return None
 
 class Connection(RawConnection):
-    def __init__(self, server, url, user, password, measurements={}, measureCount={},
+    def __init__(self, plugin, server, url, user, password, measurements={}, measureCount={},
         locations={}):
         RawConnection.__init__(self, url, 180, user, password, urllib2.HTTPDigestAuthHandler)
+        self.plugin = plugin
         self.server = server
         self.scanners = {}
         self.getScanners()
@@ -152,11 +155,12 @@ class Connection(RawConnection):
 
     def postLocations(self):
         def process(r):
-            for scanner in to_delete:
-                for l in self.locations[scanner]:
-                    l[1] = True
+            if r != None and not 'error' in str(r).lower():
+                for scanner in to_delete:
+                    for l in self.locations[scanner]:
+                        l[1] = True
 
-        if self.requestRunning:
+        if self.requestRunning or not self.plugin.upload_enabled:
             return
 
         l = ""
@@ -206,6 +210,7 @@ class Connection(RawConnection):
 
     def postMeasurements(self):
         def process(r):
+            print "Request done."
             self.requestRunning = False
             if r != None and type(r) is list and len(r) == len(to_delete):
                 self.measureCount['uploads'] += 1
@@ -216,12 +221,17 @@ class Connection(RawConnection):
                     uploaded_lines = scanner[1]
 
                     if move_lines == uploaded_lines:
+                        print "Upload for scanner %s: OK" % scanner[0]
                         self.measureCount['uploaded'] += uploaded_lines
                         self.measureCount['cached'] -= uploaded_lines
                         for l in self.measurements_uploaded[scanner[0]]:
                             self.measurements[scanner[0]].remove(l)
+                    else:
+                        print "Upload for scanner %s: FAIL" % scanner[0]
+            else:
+                print "Upload failed: %s" % str(r)
 
-        if self.requestRunning:
+        if self.requestRunning or not self.plugin.upload_enabled:
             return
 
         m = ""
@@ -231,10 +241,14 @@ class Connection(RawConnection):
         to_delete = []
         m_scanner = []
         self.measurements_uploaded = {}
+        print "---"
+        print "Posting measurements..."
         for scanner in [s for s in self.scanners.keys() if (self.scanners[s] == True \
             and s in self.measurements)]:
             self.measurements_uploaded[scanner] = copy.deepcopy(self.measurements[scanner])
+
             if len(self.measurements_uploaded[scanner]) > 0:
+                print "  Adding %i measurements for scanner %s..." % (len(self.measurements_uploaded[scanner]), scanner)
                 m_scanner.append("==%s" % scanner)
                 m_scanner.append("\n".join(self.measurements_uploaded[scanner]))
                 to_delete.append((scanner, len(self.measurements_uploaded[scanner])))
@@ -242,6 +256,7 @@ class Connection(RawConnection):
         m = '\n'.join(m_scanner)
         if len(m) > 0:
             self.requestRunning = True
+            print "Sending request with %i lines..." % len(m_scanner)
             self.request_post('measurement', process, m,
                 {'Content-Type': 'text/plain'})
 
@@ -258,12 +273,10 @@ class Plugin(olof.core.Plugin):
         olof.core.Plugin.__init__(self, server, "Move")
         self.buffer = []
         self.last_session_id = None
+        self.upload_enabled = False
 
-        f = open('olof/plugins/move/move.conf', 'r')
-        for l in f:
-            ls = l.strip().split(',')
-            self.__dict__[ls[0]] = ls[1]
-        f.close()
+        t = task.LoopingCall(self.readConf)
+        t.start(10)
 
         measureCount = {'last_upload': -1,
                         'uploads': 0,
@@ -284,6 +297,9 @@ class Plugin(olof.core.Plugin):
             f = open("olof/plugins/move/measurements.pickle", "rb")
             try:
                 measurements = pickle.load(f)
+                for s in measurements:
+                    if type(measurements[s]) is not set:
+                        measurements[s] = set(measurements[s])
             except:
                 pass
             f.close()
@@ -296,8 +312,17 @@ class Plugin(olof.core.Plugin):
                 pass
             f.close()
 
-        self.conn = Connection(self.server, self.url, self.user, self.password,
+        self.conn = Connection(self, self.server, self.url, self.user, self.password,
             measurements, measureCount, locations)
+
+    def readConf(self):
+        f = open('olof/plugins/move/move.conf', 'r')
+        m = {'True': True, 'False': False, 'true': True, 'false': False, '1': True, '0': False}
+        for l in f:
+            ls = l.strip().split(',')
+            ls[1] = m.get(ls[1], ls[1])
+            self.__dict__[ls[0]] = ls[1]
+        f.close()
 
     def unload(self):
         f = open("olof/plugins/move/measureCount.pickle", "wb")
@@ -315,7 +340,10 @@ class Plugin(olof.core.Plugin):
     def getStatus(self):
         r = []
 
-        if self.conn.measureCount['last_upload'] < 0:
+        if self.upload_enabled == False:
+            r.append({'status': 'disabled'})
+            r.append({'id': 'uploading disabled'})
+        elif self.conn.measureCount['last_upload'] < 0:
             r.append({'status': 'error'})
             r.append({'id': 'no upload'})
 
