@@ -243,12 +243,14 @@ class Connection(RawConnection):
         self.measurements_uploaded = {}
         print "---"
         print "Posting measurements..."
+        linecount = 0
         for scanner in [s for s in self.scanners.keys() if (self.scanners[s] == True \
             and s in self.measurements)]:
             self.measurements_uploaded[scanner] = copy.deepcopy(self.measurements[scanner])
 
             if len(self.measurements_uploaded[scanner]) > 0:
                 print "  Adding %i measurements for scanner %s..." % (len(self.measurements_uploaded[scanner]), scanner)
+                linecount += len(self.measurements_uploaded[scanner])
                 m_scanner.append("==%s" % scanner)
                 m_scanner.append("\n".join(self.measurements_uploaded[scanner]))
                 to_delete.append((scanner, len(self.measurements_uploaded[scanner])))
@@ -256,7 +258,7 @@ class Connection(RawConnection):
         m = '\n'.join(m_scanner)
         if len(m) > 0:
             self.requestRunning = True
-            print "Sending request with %i lines..." % len(m_scanner)
+            print "Sending request with %i lines..." % linecount
             self.request_post('measurement', process, m,
                 {'Content-Type': 'text/plain'})
 
