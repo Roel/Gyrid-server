@@ -202,7 +202,7 @@ class Connection(RawConnection):
         tm = str(timestamp)
         decSec = tm[tm.find('.')+1:]
         decSec += "0" * (3-len(decSec))
-        self.measurements[sensor].append(','.join([
+        self.measurements[sensor].add(','.join([
             time.strftime('%Y%m%d-%H%M%S.%%s-%Z', time.localtime(
             timestamp)) % decSec, mac, str(deviceclass),
             str(rssi)]))
