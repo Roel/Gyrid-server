@@ -76,8 +76,11 @@ class Scanner(object):
             ls = l.strip().split(',')
             self.__dict__[ls[0]] = ls[1]
         f.close()
-        self.mv_conn = RawConnection(self.url, self.user, self.password,
-            urllib2.HTTPBasicAuthHandler)
+        self.mv_conn = RawConnection(
+            base_url = self.url,
+            username = self.user,
+            password = self.password,
+            authHandler = urllib2.HTTPBasicAuthHandler)
 
         self.location = None
         self.location_description = None
@@ -255,6 +258,13 @@ class Scanner(object):
                     html = '<div class="block_data"><img src="static/icons/shield-red.png">SIM balance'
                 elif mb <= 500:
                     html = '<div class="block_data"><img src="static/icons/shield-yellow.png">SIM balance'
+                elif 'is_expired' in self.mv_balance and self.mv_balance['is_expired']:
+                    html = '<div class="block_data"><img src="static/icons/shield-red.png">SIM balance'
+                elif 'valid_until' in self.mv_balance and not self.mv_balance['is_expired']:
+                    if int(time.strftime('%s', time.strptime(self.mv_balance['valid_until'], '%Y-%m-%d %H:%M:%S'))) - int(time.time()) <= 60*60*24*7:
+                        html = '<div class="block_data"><img src="static/icons/shield-yellow.png">SIM balance'
+                    else:
+                        return ''
                 else:
                     return ''
                 html += '<span class="block_data_attr"><b>data</b> %s MB</span>' % formatNumber(mb)
@@ -305,8 +315,10 @@ class Scanner(object):
                     html += sensor.render()
             else:
                 html += render_notconnected(self.gyrid_disconnect_time, " to Gyrid")
+                html += render_balance()
         else:
             html += render_notconnected(self.conn_time.get('lost', None))
+            html += render_balance()
 
         html += '</div></div>'
         return html
