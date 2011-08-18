@@ -193,7 +193,7 @@ class Connection(RawConnection):
 
     def addMeasurement(self, sensor, timestamp, mac, deviceclass, rssi):
         if not sensor in self.measurements:
-            self.measurements[sensor] = []
+            self.measurements[sensor] = set()
 
         if not sensor in self.scanners:
             self.addScanner(sensor, 'test scanner')
