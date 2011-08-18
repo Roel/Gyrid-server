@@ -39,7 +39,7 @@ class ExtRequest(urllib2.Request):
 class RawConnection(object):
     def __init__(self, base_url, timeout=40, username=None, password=None, authHandler=None):
         self.base_url = base_url
-        self.timeout = timeout
+        self.timeout = float(timeout)
         self.username = username
         self.url = urlparse.urlparse(base_url)
 
