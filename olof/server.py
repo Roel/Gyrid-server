@@ -210,7 +210,8 @@ class Olof(object):
         self.plugins_with_errors = {}
 
         self.output("Starting Gyrid Server")
-        commit = git.Repo('.').commits()[0]
+        repo = git.Repo('.')
+        commit = repo.commits(repo.active_branch)[0]
         self.git_commit = commit.id
         self.git_date = int(time.strftime('%s', commit.committed_date))
 
