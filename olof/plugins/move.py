@@ -199,7 +199,7 @@ class Connection(RawConnection):
             self.addScanner(sensor, 'test scanner')
             self.scanners[sensor] = False
 
-        tm = str(timestamp)
+        tm = "%0.3f" % timestamp
         decSec = tm[tm.find('.')+1:]
         decSec += "0" * (3-len(decSec))
         self.measurements[sensor].add(','.join([
