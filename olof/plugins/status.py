@@ -338,9 +338,8 @@ class Scanner(object):
         elif len([s for s in self.sensors.values() if (s.last_inquiry == None or t-s.last_inquiry >= 80)]) == len(self.sensors):
             # No recent inquiry
             html += '<div class="navigation_status_bad"></div>'
-        elif len([i for i in lag[1:] if i >= 5]) > 0 or \
-            ('data' in self.mv_balance and self.mv_balance['data']/1024.0/1024.0 <= 200):
-            # Laggy connection or MV balance low
+        elif len([i for i in lag[1:] if i >= 5]) > 0:
+            # Laggy connection
             html += '<div class="navigation_status_ugly"></div>'
         else:
             html += '<div class="navigation_status_good"></div>'
