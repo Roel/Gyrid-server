@@ -7,13 +7,13 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width">
 
-    <link rel="stylesheet" href="static/style.css" media="screen and (min-device-width: 681px)" type="text/css" />
-    <link rel="stylesheet" href="static/mobile.css" media="only screen and (max-device-width: 680px)" type="text/css" />
-    <link rel="stylesheet" href="static/mobile.css" media="handheld" type="text/css" />
-    <link rel="stylesheet" href="static/mobile.css" media="handheld, only screen and (max-width: 680px), only screen and (max-device-width: 680px)" type="text/css" />
-    <link rel="icon" type="image/png" href="static/icons/monitor-window-flow.png">
+    <link rel="stylesheet" href="/status/static/style.css" media="screen and (min-device-width: 681px)" type="text/css" />
+    <link rel="stylesheet" href="/status/static/mobile.css" media="only screen and (max-device-width: 680px)" type="text/css" />
+    <link rel="stylesheet" href="/static/mobile.css" media="handheld" type="text/css" />
+    <link rel="stylesheet" href="/status/static/mobile.css" media="handheld, only screen and (max-width: 680px), only screen and (max-device-width: 680px)" type="text/css" />
+    <link rel="icon" type="image/png" href="/status/static/icons/monitor-window-flow.png">
 
-    <script type="text/javascript" src="static/jquery.js"></script>
+    <script type="text/javascript" src="/status/static/jquery.js"></script>
 
     <script type="text/javascript">
         function goTo(anchor) {
@@ -32,7 +32,7 @@
         function getContent(){
             $.ajax({
                 type: "GET",
-                url: "content",
+                url: "/status/content",
 
                 async: true,
                 cache: false,
@@ -58,8 +58,8 @@
 </head>
 
 <body>
-    <div><p id="header"><img src="static/logos/header.png"/></p></div>
-    <div id="logo"><p><img src="static/logos/logo.png"/></p></div>
+    <div><p id="header"><img src="/status/static/logos/header.png"/></p></div>
+    <div id="logo"><p><img src="/status/static/logos/logo.png"/></p></div>
 
     <div id="content"></div>
 </body>
