@@ -348,6 +348,8 @@ class Plugin(olof.core.Plugin):
         elif self.conn.measureCount['last_upload'] < 0:
             r.append({'status': 'error'})
             r.append({'id': 'no upload'})
+        else:
+            r.append({'status': 'ok'})
 
         if self.conn.measureCount['last_upload'] > 0:
             r.append({'id': 'last upload', 'time': self.conn.measureCount['last_upload']})

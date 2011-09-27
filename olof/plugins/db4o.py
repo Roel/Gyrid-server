@@ -146,7 +146,8 @@ class Plugin(olof.core.Plugin):
             r = [{'status': 'error'},
                 {'id': 'disconnected', 'time': self.conn_time}]
         elif self.connected == True:
-            r = [{'id': 'connected', 'time': self.conn_time}]
+            r = [{'status': 'ok'},
+                {'id': 'connected', 'time': self.conn_time}]
 
         if len(cl) > 0:
             r.append(cl)
