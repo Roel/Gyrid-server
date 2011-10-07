@@ -263,6 +263,25 @@ class Olof(object):
     def getDeviceclass(self, mac):
         return self.mac_dc.get(mac, -1)
 
+    def check_disk_access(self, locations):
+        access = True
+
+        for file in locations:
+            if not os.path.exists(os.path.dirname(file)):
+                os.makedirs(os.path.dirname(file))
+            elif (os.path.exists(file)) and (os.access(file, os.W_OK) == False):
+                sys.stderr.write("Gyrid: Error: Needs write access to %s\n" \
+                    % file)
+                access = False
+            elif (not os.path.exists(file)) and (os.access(os.path.dirname(
+                file), os.W_OK) == False):
+                sys.stderr.write("Gyrid: Error: Needs write access to %s\n" \
+                    % file)
+                access = False
+
+        if not access:
+            sys.exit(1)
+
     def output(self, message):
         d = {'time': time.strftime('%Y%m%d-%H%M%S-%Z'),
              'message': message}

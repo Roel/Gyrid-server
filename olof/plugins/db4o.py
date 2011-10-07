@@ -99,12 +99,15 @@ class Plugin(olof.core.Plugin):
         olof.core.Plugin.__init__(self, server, "Db4o")
         self.host = 'localhost'
         self.port = 5001
-        self.cache_file = '/var/tmp/gyrid-server-db4o.cache'
-        self.cache = open(self.cache_file, 'r')
-        self.cached_lines = 0
-        for line in self.cache:
-            self.cached_lines += 1
-        self.cache.close()
+        self.cache_file = '/var/cache/gyrid-server/db4o.cache'
+        if os.path.isfile(self.cache_file):
+            self.cache = open(self.cache_file, 'r')
+            self.cached_lines = 0
+            for line in self.cache:
+                self.cached_lines += 1
+            self.cache.close()
+
+        self.server.check_disk_access([self.cache_file])
         self.cache = open(self.cache_file, 'a')
 
         self.connected = False
@@ -180,7 +183,7 @@ class Plugin(olof.core.Plugin):
         if module == 'scanner' and hostname in self.server.location_provider.new_locations:
             for sensor in self.server.location_provider.new_locations[hostname][Location.Sensors]:
                 if sensor != Location.Sensor:
-                    
+
                     self.addLocation(sensor, id, description,
                         self.server.location_provider.new_locations[hostname][Location.Sensors][sensor][Location.X],
                         self.server.location_provider.new_locations[hostname][Location.Sensors][sensor][Location.Y])
