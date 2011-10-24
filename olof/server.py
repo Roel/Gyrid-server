@@ -22,6 +22,7 @@ import zlib
 import cPickle as pickle
 
 import olof.locationprovider
+import olof.data.whitelist
 
 def verifyCallback(connection, x509, errnum, errdepth, ok):
     if not ok:

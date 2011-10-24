@@ -363,6 +363,9 @@ class Plugin(olof.core.Plugin):
         return r
 
     def locationUpdate(self, hostname, module, timestamp, id, description, coordinates):
+        if not olof.data.whitelist.match(hostname):
+            return
+
         if module == 'sensor':
             return
 
@@ -389,5 +392,6 @@ class Plugin(olof.core.Plugin):
             self.conn.addLocation(module, timestamp, coordinates, '%s - %s' % (id, description))
 
     def dataFeedRssi(self, hostname, timestamp, sensor_mac, mac, rssi):
-        deviceclass = self.server.getDeviceclass(mac)
-        self.conn.addMeasurement(sensor_mac, timestamp, mac, deviceclass, rssi)
+        if olof.data.whitelist.match(hostname):
+            deviceclass = self.server.getDeviceclass(mac)
+            self.conn.addMeasurement(sensor_mac, timestamp, mac, deviceclass, rssi)

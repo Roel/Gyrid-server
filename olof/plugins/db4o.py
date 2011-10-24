@@ -164,34 +164,37 @@ class Plugin(olof.core.Plugin):
                 '%s|%s' % (id, sensor), description, "%0.6f" % x, "%0.6f" % y]))
 
     def addScanSetup(self, hostname, sensor, id, timestamp):
-        if not [hostname, sensor, id, timestamp, 1] in self.scanSetups:
-            self.server.output('db4o: Adding ScanSetup for %s at %i: %s' % \
-                (hostname, timestamp, '%s|%s' % (id, sensor)))
-            self.scanSetups.append([hostname, sensor, id, timestamp, 1])
-            self.inet_factory.sendLine(','.join(['installScannerSetup',
-                hostname, sensor, '%s|%s' % (id, sensor), str(int(timestamp*1000))]))
+        if olof.data.whitelist.match(hostname):
+            if not [hostname, sensor, id, timestamp, 1] in self.scanSetups:
+                self.server.output('db4o: Adding ScanSetup for %s at %i: %s' % \
+                    (hostname, timestamp, '%s|%s' % (id, sensor)))
+                self.scanSetups.append([hostname, sensor, id, timestamp, 1])
+                self.inet_factory.sendLine(','.join(['installScannerSetup',
+                    hostname, sensor, '%s|%s' % (id, sensor), str(int(timestamp*1000))]))
 
     def removeScanSetup(self, hostname, sensor, id, timestamp):
-        if not [hostname, sensor, id, timestamp, 0] in self.scanSetups:
-            self.server.output('db4o: Removing ScanSetup for %s at %i: %s' % \
-                (hostname, timestamp, '%s|%s' % (id, sensor)))
-            self.scanSetups.append([hostname, sensor, id, timestamp, 0])
-            self.inet_factory.sendLine(','.join(['removeScannerSetup',
-                hostname, sensor, '%s|%s' % (id, sensor), str(int(timestamp*1000))]))
+        if olof.data.whitelist.match(hostname):
+            if not [hostname, sensor, id, timestamp, 0] in self.scanSetups:
+                self.server.output('db4o: Removing ScanSetup for %s at %i: %s' % \
+                    (hostname, timestamp, '%s|%s' % (id, sensor)))
+                self.scanSetups.append([hostname, sensor, id, timestamp, 0])
+                self.inet_factory.sendLine(','.join(['removeScannerSetup',
+                    hostname, sensor, '%s|%s' % (id, sensor), str(int(timestamp*1000))]))
 
     def locationUpdate(self, hostname, module, timestamp, id, description, coordinates):
-        if module == 'scanner' and hostname in self.server.location_provider.new_locations:
-            for sensor in self.server.location_provider.new_locations[hostname][Location.Sensors]:
-                if sensor != Location.Sensor:
+        if olof.data.whitelist.match(hostname):
+            if module == 'scanner' and hostname in self.server.location_provider.new_locations:
+                for sensor in self.server.location_provider.new_locations[hostname][Location.Sensors]:
+                    if sensor != Location.Sensor:
 
-                    self.addLocation(sensor, id, description,
-                        self.server.location_provider.new_locations[hostname][Location.Sensors][sensor][Location.X],
-                        self.server.location_provider.new_locations[hostname][Location.Sensors][sensor][Location.Y])
+                        self.addLocation(sensor, id, description,
+                            self.server.location_provider.new_locations[hostname][Location.Sensors][sensor][Location.X],
+                            self.server.location_provider.new_locations[hostname][Location.Sensors][sensor][Location.Y])
 
-                    if Location.TimeInstall in self.server.location_provider.new_locations[hostname][Location.Times]:
-                        self.addScanSetup(hostname, sensor, id, timestamp)
-                    if Location.TimeUninstall in self.server.location_provider.new_locations[hostname][Location.Times]:
-                        self.removeScanSetup(hostname, sensor, id, timestamp)
+                        if Location.TimeInstall in self.server.location_provider.new_locations[hostname][Location.Times]:
+                            self.addScanSetup(hostname, sensor, id, timestamp)
+                        if Location.TimeUninstall in self.server.location_provider.new_locations[hostname][Location.Times]:
+                            self.removeScanSetup(hostname, sensor, id, timestamp)
 
         if module not in ['sensor', 'scanner']:
             if coordinates != None:
@@ -201,16 +204,19 @@ class Plugin(olof.core.Plugin):
                 self.removeScanSetup(hostname, module, id, timestamp)
 
     def stateFeed(self, hostname, timestamp, sensor_mac, info):
-        if info == 'new_inquiry':
-            self.inet_factory.sendLine(','.join([hostname, 'INFO',
-                str(int(timestamp*1000)), 'new_inquiry', sensor_mac]))
+        if olof.data.whitelist.match(hostname):
+            if info == 'new_inquiry':
+                self.inet_factory.sendLine(','.join([hostname, 'INFO',
+                    str(int(timestamp*1000)), 'new_inquiry', sensor_mac]))
 
     def dataFeedCell(self, hostname, timestamp, sensor_mac, mac, deviceclass,
              move):
-        self.inet_factory.sendLine(','.join([hostname, sensor_mac, mac,
-            str(deviceclass), str(int(timestamp*1000)), move]))
+        if olof.data.whitelist.match(hostname):
+            self.inet_factory.sendLine(','.join([hostname, sensor_mac, mac,
+                str(deviceclass), str(int(timestamp*1000)), move]))
 
     def dataFeedRssi(self, hostname, timestamp, sensor_mac, mac, rssi):
-        deviceclass = str(self.server.getDeviceclass(mac))
-        self.inet_factory.sendLine(','.join([hostname, sensor_mac, mac,
-            deviceclass, str(int(timestamp*1000)), str(rssi)]))
+        if olof.data.whitelist.match(hostname):
+            deviceclass = str(self.server.getDeviceclass(mac))
+            self.inet_factory.sendLine(','.join([hostname, sensor_mac, mac,
+                deviceclass, str(int(timestamp*1000)), str(rssi)]))

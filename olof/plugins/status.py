@@ -302,7 +302,10 @@ class Scanner(object):
             html += '</div>'
             return html
 
-        html = '<div id="%(h)s" class="block"><div class="block_title"><h3>%(h)s</h3></div>' % {'h': self.hostname}
+        if olof.data.whitelist.match(self.hostname):
+            html = '<div id="%(h)s" class="block"><div class="block_title"><h3>%(h)s</h3></div>' % {'h': self.hostname}
+        else:
+            html = '<div id="%(h)s" class="block_blacklist"><div class="block_title"><h3>%(h)s</h3></div>' % {'h': self.hostname}
         html += render_location()
 
         if len(self.connections) >= 1:
@@ -327,7 +330,10 @@ class Scanner(object):
         lag = [(self.lag[i][0]/self.lag[i][1]) for i in sorted(
                 self.lag.keys()) if (i <= 15 and self.lag[i][1] > 0)]
         t = int(time.time())
-        html = '<div class="navigation_item" onclick="goTo(\'#%s\')">' % self.hostname
+        if olof.data.whitelist.match(self.hostname):
+            html = '<div class="navigation_item" onclick="goTo(\'#%s\')">' % self.hostname
+        else:
+            html = '<div class="navigation_item_blacklist" onclick="goTo(\'#%s\')">' % self.hostname
         html += '<div class="navigation_link">%s</div>' % self.hostname
         if len(self.connections) == 0 or not self.gyrid_connected:
             # Not connected

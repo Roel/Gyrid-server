@@ -88,7 +88,7 @@ div #footer {
     margin-left: -10px;
 }
 
-.navigation_item {
+.navigation_item, .navigation_item_blacklist {
     border: 1px dotted #40BFC7;
     margin-top: 10px;
     margin-left: 10px;
@@ -99,7 +99,11 @@ div #footer {
     display: inline-block;
 }
 
-.navigation_item:hover {
+.navigation_item_blacklist {
+    background-color: #F1F1F1;
+}
+
+.navigation_item:hover, .navigation_item_blacklist:hover {
     background-color: #E0FDFF;
     cursor: pointer;
 }
@@ -140,12 +144,16 @@ div #footer {
     background-color: #FFEC88;
 }
 
-.block, #server_block {
+.block, #server_block, .block_blacklist {
     margin-top: 20px;
     padding: 5px;
     border: 1px dotted #c0c0c0;
     background-color: #ffffff;
     line-height: 150%;
+}
+
+.block_blacklist {
+    background-color: #F1F1F1;
 }
 
 .block_content:hover {

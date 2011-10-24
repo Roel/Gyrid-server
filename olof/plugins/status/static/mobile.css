@@ -85,7 +85,7 @@ div #footer {
     margin: 0 auto;
 }
 
-.navigation_item {
+.navigation_item, .navigation_item_blacklist {
     border: 1px dotted #40BFC7;
     margin-top: 10px;
     margin-left: 6px;
@@ -96,7 +96,11 @@ div #footer {
     display: inline-block;
 }
 
-.navigation_item:active {
+.navigation_item_blacklist {
+    background-color: #F1F1F1;
+}
+
+.navigation_item:active, .navigation_item_blacklist:active {
     background-color: #E0FDFF;
     cursor: pointer;
 }
@@ -137,7 +141,7 @@ div #footer {
     background-color: #FFEC88;
 }
 
-.block, #server_block {
+.block, #server_block, .block_blacklist {
     margin-top: 10px;
     padding: 5px;
     border: 1px dotted #c0c0c0;
@@ -145,6 +149,10 @@ div #footer {
     line-height: 150%;
     overflow: hidden;
     clear: both;
+}
+
+.block_blacklist {
+    background-color: #F1F1F1;
 }
 
 .block_content {
