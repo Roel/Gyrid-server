@@ -276,7 +276,10 @@ class Scanner(object):
 
         def render_balance():
             if 'data' in self.mv_balance:
-                mb = self.mv_balance['data']/1024.0/1024.0
+                try:
+                    mb = self.mv_balance['data']/1024.0/1024.0
+                except:
+                    return ''
                 if mb <= 200:
                     html = '<div class="block_data"><img src="/status/static/icons/shield-red.png">SIM balance'
                 elif mb <= 500:
