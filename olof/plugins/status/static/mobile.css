@@ -196,6 +196,12 @@ div #footer {
 .block_topright, .block_data_location {
     float: right;
     text-align: right;
+    margin-right: 11px;
+}
+
+.block_topright_server {
+    float: right;
+    text-align: right;
 }
 
 .block_data_location {
