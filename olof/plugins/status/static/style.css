@@ -1,8 +1,11 @@
+@import url(http://fonts.googleapis.com/css?family=Abel);
+
 body {
     width: 1006px;
     margin: 0 auto;
     background-color: #fbf8f1;
-    font: normal 12pt Arial,Sans-serif;
+    font: normal 12pt Arial;
+    font-family: 'Abel', sans-serif;
     color: #474747;
 }
 
@@ -22,6 +25,7 @@ a:hover {
 
 #title {
     font: bold 16pt Arial,Sans-serif;
+    font-family: inherit;
     font-variant: small-caps;
     text-shadow: #C3C3C3 0px 2px 3px;
     margin-top: 10px;
@@ -37,6 +41,7 @@ h3 a:hover {
 
 #updated {
     font: bold 16pt Arial,Sans-serif;
+    font-family: inherit;
     margin-top: 10px;
     margin-bottom: 10px;
     float: right;
