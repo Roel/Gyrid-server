@@ -521,15 +521,17 @@ class Plugin(olof.core.Plugin):
     def __init__(self, server):
         olof.core.Plugin.__init__(self, server)
         self.root = RootResource()
-        self.root.putChild("", self.root)
+
+        status_resource = self.root
+        self.root.putChild("status", status_resource)
 
         portal = Portal(AuthenticationRealm(self), [FilePasswordDB(
             'olof/plugins/status/data/auth.password')])
         credfac = BasicCredentialFactory("Gyrid Server")
-        resource = HTTPAuthSessionWrapper(portal, [credfac])
-        self.root.putChild("content", resource)
+        rsrc = HTTPAuthSessionWrapper(portal, [credfac])
+        status_resource.putChild("content", rsrc)
 
-        self.root.putChild("static",
+        status_resource.putChild("static",
             StaticResource("olof/plugins/status/static/"))
 
         if os.path.isfile("olof/plugins/status/data/obj.pickle"):
