@@ -59,6 +59,9 @@ def prettydate(d, prefix="", suffix=" ago"):
     return '<span title="%s">%s</span>' % (time.strftime('%a %Y%m%d-%H%M%S-%Z',
         time.localtime(t)), r)
 
+class ScannerStatus:
+    Good, Bad, Ugly = range(3)
+
 class Scanner(object):
     def __init__(self, hostname):
         self.hostname = hostname
@@ -105,6 +108,26 @@ class Scanner(object):
         self.checkMVBalance_call = task.LoopingCall(reactor.callInThread,
             self.getMVBalance)
         self.checkMVBalanceCall('start')
+
+    def getStatus(self):
+        lag = [(self.lag[i][0]/self.lag[i][1]) for i in sorted(
+                self.lag.keys()) if (i <= 15 and self.lag[i][1] > 0)]
+        t = int(time.time())
+
+        if len(self.connections) == 0 or not self.gyrid_connected:
+            # Not connected
+            return ScannerStatus.Bad
+        elif len([s for s in self.sensors.values() if s.connected == True]) == 0:
+            # No sensors connected
+            return ScannerStatus.Bad
+        elif len([s for s in self.sensors.values() if (s.last_inquiry == None or t-s.last_inquiry >= 80)]) == len(self.sensors):
+            # No recent inquiry
+            return ScannerStatus.Bad
+        elif len([i for i in lag[1:] if i >= 5]) > 0:
+            # Laggy connection
+            return ScannerStatus.Ugly
+        else:
+            return ScannerStatus.Good
 
     def checkLagCall(self, action):
         if action == 'start':
@@ -302,10 +325,15 @@ class Scanner(object):
             html += '</div>'
             return html
 
-        if olof.data.whitelist.match(self.hostname):
-            html = '<div id="%(h)s" class="block"><div class="block_title"><h3>%(h)s</h3></div>' % {'h': self.hostname}
-        else:
-            html = '<div id="%(h)s" class="block_blacklist"><div class="block_title"><h3>%(h)s</h3></div>' % {'h': self.hostname}
+        sd = {ScannerStatus.Good: 'block_status_good', ScannerStatus.Bad: 'block_status_bad', ScannerStatus.Ugly: 'block_status_ugly'}
+        d = {'h': self.hostname, 'status': sd[self.getStatus()]}
+        bl = not olof.data.whitelist.match(self.hostname)
+        html = '<div id="%(h)s" class="block">' % d
+
+        if bl:
+            html += '<div class="blacklist_overlay">'
+
+        html += '<div class="%(status)s"><div class="block_title"><h3>%(h)s</h3></div>' % d
         html += render_location()
 
         if len(self.connections) >= 1:
@@ -323,33 +351,29 @@ class Scanner(object):
             html += render_notconnected(self.conn_time.get('lost', None))
             html += render_balance()
 
-        html += '</div></div>'
+        html += '</div></div></div>'
+        if bl:
+            html += '</div>'
         return html
 
     def render_navigation(self):
-        lag = [(self.lag[i][0]/self.lag[i][1]) for i in sorted(
-                self.lag.keys()) if (i <= 15 and self.lag[i][1] > 0)]
-        t = int(time.time())
-        if olof.data.whitelist.match(self.hostname):
-            html = '<div class="navigation_item" onclick="goTo(\'#%s\')">' % self.hostname
-        else:
-            html = '<div class="navigation_item_blacklist" onclick="goTo(\'#%s\')">' % self.hostname
+        bl = not olof.data.whitelist.match(self.hostname)
+        html = '<div class="navigation_item" onclick="goTo(\'#%s\')">' % self.hostname
+
+        if bl:
+            html += '<div class="blacklist_overlay">'
+
         html += '<div class="navigation_link">%s</div>' % self.hostname
-        if len(self.connections) == 0 or not self.gyrid_connected:
-            # Not connected
+
+        if self.getStatus() == ScannerStatus.Bad:
             html += '<div class="navigation_status_bad"></div>'
-        elif len([s for s in self.sensors.values() if s.connected == True]) == 0:
-            # No sensors connected
-            html += '<div class="navigation_status_bad"></div>'
-        elif len([s for s in self.sensors.values() if (s.last_inquiry == None or t-s.last_inquiry >= 80)]) == len(self.sensors):
-            # No recent inquiry
-            html += '<div class="navigation_status_bad"></div>'
-        elif len([i for i in lag[1:] if i >= 5]) > 0:
-            # Laggy connection
+        elif self.getStatus() == ScannerStatus.Ugly:
             html += '<div class="navigation_status_ugly"></div>'
-        else:
+        elif self.getStatus() == ScannerStatus.Good:
             html += '<div class="navigation_status_good"></div>'
         html += '</div>'
+        if bl:
+            html += '</div>'
         return html
 
 class Sensor(object):
@@ -405,7 +429,7 @@ class ContentResource(resource.Resource):
 
     def render_server(self):
         html = '<div id="server_block" onclick="goTo(\'top\')"><div class="block_title"><h3>Server</h3></div>'
-        html += '<div class="block_topright">%s<img src="/status/static/icons/clock-arrow.png"></div>' % prettydate(self.plugin.plugin_uptime, suffix="")
+        html += '<div class="block_topright_server">%s<img src="/status/static/icons/clock-arrow.png"></div>' % prettydate(self.plugin.plugin_uptime, suffix="")
         html += '<div style="clear: both;"></div>'
         html += '<div class="block_content">'
 

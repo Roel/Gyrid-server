@@ -88,7 +88,7 @@ div #footer {
     margin-left: -10px;
 }
 
-.navigation_item, .navigation_item_blacklist {
+.navigation_item {
     border: 1px dotted #40BFC7;
     margin-top: 10px;
     margin-left: 10px;
@@ -99,11 +99,18 @@ div #footer {
     display: inline-block;
 }
 
-.navigation_item_blacklist {
-    background-color: #F1F1F1;
+.blacklist_overlay {
+    display: inherit;
+    background-color: #E4E4E4;
+    filter: alpha(opacity=60); /* IE */
+    opacity: 0.6; /* Safari, Opera */
+    -moz-opacity: 0.60; /* FireFox */
+    z-index: 20;
+    height: 100%;
+    width: 100%;
 }
 
-.navigation_item:hover, .navigation_item_blacklist:hover {
+.navigation_item:hover {
     background-color: #E0FDFF;
     cursor: pointer;
 }
@@ -120,12 +127,37 @@ div #footer {
     border: none;
 }
 
+#server_block {
+    margin-top: 20px;
+    padding: 5px;
+    border: 1px dotted #c0c0c0;
+    background-color: #ffffff;
+    line-height: 150%;
+}
+
+.block {
+    margin-top: 20px;
+    border: 1px dotted #c0c0c0;
+    background-color: #ffffff;
+}
+
+.block_status_good, .block_status_bad, .block_status_ugly {
+    width: 100%;
+    height: 100%;
+    padding: 5px;
+    line-height: 150%;
+}
+
 .navigation_status_good {
     margin-top: -2.5ex;
     height: 8px;
     width: 100%;
     vertical-align: bottom;
     background-color: #D1F856;
+}
+
+.block_status_good {
+    border-left: 6px solid #D1F856;
 }
 
 .navigation_status_bad {
@@ -136,6 +168,10 @@ div #footer {
     background-color: #F86D56;
 }
 
+.block_status_bad {
+    border-left: 6px solid #F86D56;
+}
+
 .navigation_status_ugly {
     margin-top: -2.5ex;
     height: 8px;
@@ -144,16 +180,8 @@ div #footer {
     background-color: #FFEC88;
 }
 
-.block, #server_block, .block_blacklist {
-    margin-top: 20px;
-    padding: 5px;
-    border: 1px dotted #c0c0c0;
-    background-color: #ffffff;
-    line-height: 150%;
-}
-
-.block_blacklist {
-    background-color: #F1F1F1;
+.block_status_ugly {
+    border-left: 6px solid #FFEC88;
 }
 
 .block_content:hover {
@@ -169,6 +197,12 @@ div #footer {
 }
 
 .block_topright {
+    float: right;
+    text-align: right;
+    margin-right: 11px;
+}
+
+.block_topright_server {
     float: right;
     text-align: right;
 }
