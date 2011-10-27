@@ -1,11 +1,9 @@
-@import url(http://fonts.googleapis.com/css?family=Abel);
-
 body {
     width: 1006px;
     margin: 0 auto;
     background-color: #fbf8f1;
-    font: normal 12pt Arial;
-    font-family: 'Abel', sans-serif;
+    font: normal 11pt Arial;
+    font-family: 'UbuntuLight', sans-serif;
     color: #474747;
 }
 
@@ -51,7 +49,7 @@ h3 a:hover {
 }
 
 h3 {
-    font-size: 12pt;
+    font-size: 11pt;
     padding: 2px;
     font-weight: bold;
     margin-top: 0px;
