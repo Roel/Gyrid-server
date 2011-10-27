@@ -2,8 +2,7 @@ body {
     width: 1006px;
     margin: 0 auto;
     background-color: #fbf8f1;
-    font: normal 11pt Arial;
-    font-family: 'UbuntuLight', sans-serif;
+    font: normal 12pt Arial;
     color: #474747;
 }
 
@@ -49,7 +48,7 @@ h3 a:hover {
 }
 
 h3 {
-    font-size: 11pt;
+    font-size: 12pt;
     padding: 2px;
     font-weight: bold;
     margin-top: 0px;
