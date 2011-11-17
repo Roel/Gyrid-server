@@ -100,9 +100,9 @@ class Plugin(olof.core.Plugin):
         self.host = 'localhost'
         self.port = 5001
         self.cache_file = '/var/cache/gyrid-server/db4o.cache'
+        self.cached_lines = 0
         if os.path.isfile(self.cache_file):
             self.cache = open(self.cache_file, 'r')
-            self.cached_lines = 0
             for line in self.cache:
                 self.cached_lines += 1
             self.cache.close()
