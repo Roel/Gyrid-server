@@ -19,7 +19,7 @@ import urllib2
 import urlparse
 
 import olof.core
-from olof.locationprovider import Location
+from olof.dataprovider import Location
 
 class ExtRequest(urllib2.Request):
     method = None
@@ -363,6 +363,9 @@ class Plugin(olof.core.Plugin):
         return r
 
     def locationUpdate(self, hostname, module, timestamp, id, description, coordinates):
+        self.server.output('move: received location update for %s, module %s' % (hostname, module))
+
+    def locationUpdate_old(self, hostname, module, timestamp, id, description, coordinates):
         if not olof.data.whitelist.match(hostname):
             return
 

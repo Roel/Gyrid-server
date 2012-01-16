@@ -9,7 +9,7 @@ import os
 import time
 
 import olof.core
-from olof.locationprovider import Location
+from olof.dataprovider import Location
 
 class InetClient(LineReceiver):
     def __init__(self, factory, plugin):
@@ -182,6 +182,9 @@ class Plugin(olof.core.Plugin):
                     hostname, sensor, '%s|%s' % (id, sensor), str(int(timestamp*1000))]))
 
     def locationUpdate(self, hostname, module, timestamp, id, description, coordinates):
+        self.server.output('db4o: received location update for %s, module %s' % (hostname, module))
+
+    def locationUpdate_old(self, hostname, module, timestamp, id, description, coordinates):
         if olof.data.whitelist.match(hostname):
             if module == 'scanner' and hostname in self.server.location_provider.new_locations:
                 for sensor in self.server.location_provider.new_locations[hostname][Location.Sensors]:

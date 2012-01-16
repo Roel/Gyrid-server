@@ -21,8 +21,8 @@ import zlib
 
 import cPickle as pickle
 
-import olof.locationprovider
-import olof.data.whitelist
+import olof.dataprovider
+import olof.datatypes
 
 def verifyCallback(connection, x509, errnum, errdepth, ok):
     if not ok:
@@ -225,9 +225,11 @@ class Olof(object):
                 self.mac_dc = {}
             f.close()
 
+        olof.datatypes.server = self
+
         self.load_plugins()
 
-        self.location_provider = olof.locationprovider.LocationProvider(self)
+        self.dataprovider = olof.dataprovider.DataProvider(self)
 
     def load_plugins(self):
         def load(filename, list):
@@ -252,7 +254,7 @@ class Olof(object):
                 load(os.path.join(home, 'olof', 'plugins', filename), self.plugins_inactive)
 
     def unload_plugins(self):
-        self.location_provider.unload()
+        self.dataprovider.unload()
 
         f = open('olof/data/mac_dc.pickle', 'wb')
         pickle.dump(self.mac_dc, f)
