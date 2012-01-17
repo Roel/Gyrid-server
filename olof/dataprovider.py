@@ -51,7 +51,7 @@ class DataProvider(object):
     def readProjects(self):
         self.new_projects = imp.load_source('l', os.getcwd() + "/olof/data/data.py").projects
         self.projects = copy.deepcopy(self.new_projects)
-        
+
     def parseLocations(self, locations):
         to_update = set()
         #locationUpdate(self, hostname, module, timestamp, id, description, coordinates)
@@ -79,6 +79,7 @@ class DataProvider(object):
                 print "LU 1"
                 for p in self.server.plugins:
                     p.locationUpdate(**args)
+                    p.newLocationUpdate(scannerobj.name, 'scanner', scannerobj)
 
                 # Push sensor updates
                 for sensor in scannerobj.sensors.values():
@@ -90,7 +91,8 @@ class DataProvider(object):
                     print "LU 2"
                     for p in self.server.plugins:
                         p.locationUpdate(**args)
-        
+                        p.newLocationUpdate(scannerobj.name, 'sensor', sensor)
+
         for scanner in self.locations:
             if scanner not in locations:
                 # Removed scanner

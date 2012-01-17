@@ -36,6 +36,9 @@ class Plugin(object):
     def locationUpdate(self, hostname, module, timestamp, id, description, coordinates):
         pass
 
+    def newLocationUpdate(self, hostname, module, obj):
+        pass
+
     def stateFeed(self, hostname, timestamp, sensor_mac, info):
         pass
 

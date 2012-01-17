@@ -161,10 +161,10 @@ class Plugin(olof.core.Plugin):
             self.server.output('db4o: Adding location %s|%s' % (id, sensor))
             self.locations.append([sensor, id, description, x, y])
             self.inet_factory.sendLine(','.join(['addLocation',
-                '%s|%s' % (id, sensor), description, "%0.6f" % x, "%0.6f" % y]))
+                '%s|%s' % (id, sensor), str(description), "%0.6f" % x, "%0.6f" % y]))
 
     def addScanSetup(self, hostname, sensor, id, timestamp):
-        if olof.data.whitelist.match(hostname):
+        #if olof.data.whitelist.match(hostname):
             if not [hostname, sensor, id, timestamp, 1] in self.scanSetups:
                 self.server.output('db4o: Adding ScanSetup for %s at %i: %s' % \
                     (hostname, timestamp, '%s|%s' % (id, sensor)))
@@ -173,16 +173,29 @@ class Plugin(olof.core.Plugin):
                     hostname, sensor, '%s|%s' % (id, sensor), str(int(timestamp*1000))]))
 
     def removeScanSetup(self, hostname, sensor, id, timestamp):
-        if olof.data.whitelist.match(hostname):
-            if not [hostname, sensor, id, timestamp, 0] in self.scanSetups:
-                self.server.output('db4o: Removing ScanSetup for %s at %i: %s' % \
-                    (hostname, timestamp, '%s|%s' % (id, sensor)))
-                self.scanSetups.append([hostname, sensor, id, timestamp, 0])
-                self.inet_factory.sendLine(','.join(['removeScannerSetup',
-                    hostname, sensor, '%s|%s' % (id, sensor), str(int(timestamp*1000))]))
+        #if olof.data.whitelist.match(hostname):
+        if not [hostname, sensor, id, timestamp, 0] in self.scanSetups:
+            self.server.output('db4o: Removing ScanSetup for %s at %i: %s' % \
+                (hostname, timestamp, '%s|%s' % (id, sensor)))
+            self.scanSetups.append([hostname, sensor, id, timestamp, 0])
+            self.inet_factory.sendLine(','.join(['removeScannerSetup',
+                hostname, sensor, '%s|%s' % (id, sensor), str(int(timestamp*1000))]))
 
-    def locationUpdate(self, hostname, module, timestamp, id, description, coordinates):
-        self.server.output('db4o: received location update for %s, module %s' % (hostname, module))
+    def newLocationUpdate(self, hostname, module, obj):
+        if module == 'scanner':
+            for sensor in obj.sensors.values():
+                self.addLocation(sensor.mac, obj.id, obj.description, sensor.lon, sensor.lat)
+                if sensor.start != None:
+                    self.addScanSetup(hostname, sensor.mac, obj.id, sensor.start)
+                if sensor.end != None:
+                    self.removeScanSetup(hostname, sensor.mac, obj.id, sensor.end)
+
+        elif module == 'sensor':
+            if (obj.lat == None or obj.lon == None) and obj.end != None:
+                self.removeScanSetup(hostname, obj.mac, obj.location.id, obj.end)
+            elif (obj.lat != None and obj.lon != None) and obj.start != None:
+                self.addLocation(obj.mac, obj.location.id, obj.location.description, obj.lon, obj.lat)
+                self.addScanSetup(hostname, obj.mac, obj.location.id, obj.start)
 
     def locationUpdate_old(self, hostname, module, timestamp, id, description, coordinates):
         if olof.data.whitelist.match(hostname):

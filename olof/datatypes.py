@@ -6,7 +6,7 @@ server = None
 
 def unixtime(timestamp, format='%Y%m%d-%H%M%S-%Z'):
     return time.mktime(time.strptime(timestamp, format))
-    
+
 class Location(object):
     def __init__(self, name, id, lat, lon):
         self.name = name
@@ -14,22 +14,23 @@ class Location(object):
         self.description = None
         self.lat = lat
         self.lon = lon
-        
+
         self.project = None
         self.sensors = {}
-        
+
     def add_sensor(self, sensor):
         if not sensor.mac in self.sensors:
             self.sensors[sensor.mac] = sensor
+            sensor.location = self
             if sensor.lat == None or sensor.lon == None:
                 sensor.lat = self.lat
                 sensor.lon = self.lon
-                
+
     def compare(self, location):
         if False in [self.__dict__[i] == location.__dict__[i] for i in [
             'id', 'description', 'lat', 'lon']]:
             # Something changed in the scanner details
-            
+
             args = {'hostname': str(location.name),
                     'id': str(location.id),
                     'description': str(location.description)}
@@ -46,6 +47,7 @@ class Location(object):
             print "LU 3"
             for p in server.plugins:
                 p.locationUpdate(**args)
+                p.newLocationUpdate(location.name, 'scanner', location)
 
             # Push sensor updates
             for sensor in location.sensors.values():
@@ -57,11 +59,12 @@ class Location(object):
                 print "LU 4"
                 for p in server.plugins:
                     p.locationUpdate(**args)
+                    p.newLocationUpdate(location.name, 'sensor', sensor)
 
         else:
             # Scanner details identical, compare sensors
             update = False
-            
+
             for sensor in self.sensors:
                 if sensor in location.sensors:
                     if not self.sensors[sensor] == location.sensors[sensor]:
@@ -70,7 +73,7 @@ class Location(object):
                 else:
                     update = True
                     print "SU 2"
-            
+
             for sensor in location.sensors:
                 if sensor in self.sensors:
                     if not self.sensors[sensor] == location.sensors[sensor]:
@@ -80,11 +83,11 @@ class Location(object):
                     update = True
                     print "SU 4"
 
-            if update:                    
+            if update:
                 args = {'hostname': str(location.name),
                         'id': str(location.id),
                         'description': str(location.description)}
-                        
+
                 if None not in [location.lon, location.lat] and location.sensors.values()[0].start != None:
                     args['coordinates'] = (float(location.lon), float(location.lat))
                     args['timestamp'] = location.sensors.values()[0].start
@@ -97,6 +100,7 @@ class Location(object):
                 print "LU 5"
                 for p in server.plugins:
                     p.locationUpdate(**args)
+                    p.newLocationUpdate(location.name, 'scanner', location)
 
                 # Push sensor updates
                 for sensor in location.sensors.values():
@@ -108,16 +112,18 @@ class Location(object):
                     print "LU 6"
                     for p in server.plugins:
                         p.locationUpdate(**args)
-                    
+                        p.newLocationUpdate(location.name, 'sensor', sensor)
+
 class Sensor(object):
     def __init__(self, mac):
         self.mac = mac
+        self.location = None
         self.lat = None
         self.lon = None
-        
+
         self.start = None
         self.end = None
-        
+
     def __eq__(self, sensor):
         return False not in [self.__dict__[i] == sensor.__dict__[i] for i in [
             'mac', 'lat', 'lon', 'start', 'end']]
@@ -125,22 +131,22 @@ class Sensor(object):
 class Project(object):
     def __init__(self, name):
         self.name = name
-        
+
         self.active = True
         self.disabled_plugins = []
-        
+
         self.locations = {}
-        
+
         self.start = None
         self.end = None
-                
+
     def is_active(self):
         if self.active == False:
             return False
-            
+
         elif self.active == True:
             now = int(time.time())
-            
+
             if self.start != None and self.end == None:
                 return now >= self.start
             elif self.start == None and self.end != None:
@@ -151,11 +157,11 @@ class Project(object):
                 return self.start <= now < self.end
             else:
                 return True
-                
+
     def add_location(self, location):
         self.locations[location.name] = location
         location.project = self
-         
+
 
 #DEPRECATED
 class Projects(object):
@@ -166,7 +172,7 @@ class Projects(object):
 
     def list_projects(self):
         return sorted([p.name for p in self.projects])
-        
+
     def get_project(self, projectname):
         return self.projects.get(projectname, None)
 

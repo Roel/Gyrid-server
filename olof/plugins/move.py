@@ -363,7 +363,30 @@ class Plugin(olof.core.Plugin):
         return r
 
     def locationUpdate(self, hostname, module, timestamp, id, description, coordinates):
-        self.server.output('move: received location update for %s, module %s' % (hostname, module))
+        #self.server.output('move: received location update for %s, module %s' % (hostname, module))
+        pass
+
+    def newLocationUpdate(self, hostname, module, obj):
+        self.server.output("move: received new-style location update")
+
+        if module == 'scanner':
+            for sensor in obj.sensors.values():
+                if sensor.start != None:
+                    desc = ' - '.join([i for i in [obj.id, obj.description] if i != None])
+                    self.conn.addLocation(sensor.mac, sensor.start, (sensor.lon, sensor.lat), desc)
+                if sensor.end != None:
+                    desc = ' - '.join([i for i in [obj.id, obj.description] if i != None])
+                    self.conn.addLocation(sensor.mac, sensor.end, None, desc)
+
+        elif module == 'sensor':
+            if (obj.lat == None or obj.lon == None) and obj.end != None:
+                timestamp = obj.end
+                desc = ' - '.join([i for i in [obj.location.id, obj.location.description] if i != None])
+                self.conn.addLocation(obj.mac, timestamp, (obj.lon, obj.lat), desc)
+            elif (obj.lat != None and obj.lon != None) and obj.start != None:
+                timestamp = obj.start
+                desc = ' - '.join([i for i in [obj.location.id, obj.location.description] if i != None])
+                self.conn.addLocation(obj.mac, timestamp, (obj.lon, obj.lat), desc)
 
     def locationUpdate_old(self, hostname, module, timestamp, id, description, coordinates):
         if not olof.data.whitelist.match(hostname):
