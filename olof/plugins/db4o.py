@@ -168,16 +168,14 @@ class Plugin(olof.core.Plugin):
                 '%s|%s' % (id, sensor), str(description), "%0.6f" % x, "%0.6f" % y]))
 
     def addScanSetup(self, hostname, sensor, id, timestamp):
-        #if olof.data.whitelist.match(hostname):
-            if not [hostname, sensor, id, timestamp, 1] in self.scanSetups:
-                self.server.output('db4o: Adding ScanSetup for %s at %i: %s' % \
-                    (hostname, timestamp, '%s|%s' % (id, sensor)))
-                self.scanSetups.append([hostname, sensor, id, timestamp, 1])
-                self.inet_factory.sendLine(','.join(['installScannerSetup',
-                    hostname, sensor, '%s|%s' % (id, sensor), str(int(timestamp*1000))]))
+        if not [hostname, sensor, id, timestamp, 1] in self.scanSetups:
+            self.server.output('db4o: Adding ScanSetup for %s at %i: %s' % \
+                (hostname, timestamp, '%s|%s' % (id, sensor)))
+            self.scanSetups.append([hostname, sensor, id, timestamp, 1])
+            self.inet_factory.sendLine(','.join(['installScannerSetup',
+                hostname, sensor, '%s|%s' % (id, sensor), str(int(timestamp*1000))]))
 
     def removeScanSetup(self, hostname, sensor, id, timestamp):
-        #if olof.data.whitelist.match(hostname):
         if not [hostname, sensor, id, timestamp, 0] in self.scanSetups:
             self.server.output('db4o: Removing ScanSetup for %s at %i: %s' % \
                 (hostname, timestamp, '%s|%s' % (id, sensor)))
@@ -202,19 +200,16 @@ class Plugin(olof.core.Plugin):
                 self.addScanSetup(hostname, obj.mac, obj.location.id, obj.start)
 
     def stateFeed(self, hostname, timestamp, sensor_mac, info):
-        if olof.data.whitelist.match(hostname):
-            if info == 'new_inquiry':
-                self.inet_factory.sendLine(','.join([hostname, 'INFO',
-                    str(int(timestamp*1000)), 'new_inquiry', sensor_mac]))
+        if info == 'new_inquiry':
+            self.inet_factory.sendLine(','.join([hostname, 'INFO',
+                str(int(timestamp*1000)), 'new_inquiry', sensor_mac]))
 
     def dataFeedCell(self, hostname, timestamp, sensor_mac, mac, deviceclass,
              move):
-        if olof.data.whitelist.match(hostname):
-            self.inet_factory.sendLine(','.join([hostname, sensor_mac, mac,
-                str(deviceclass), str(int(timestamp*1000)), move]))
+        self.inet_factory.sendLine(','.join([hostname, sensor_mac, mac,
+            str(deviceclass), str(int(timestamp*1000)), move]))
 
     def dataFeedRssi(self, hostname, timestamp, sensor_mac, mac, rssi):
-        if olof.data.whitelist.match(hostname):
-            deviceclass = str(self.server.getDeviceclass(mac))
-            self.inet_factory.sendLine(','.join([hostname, sensor_mac, mac,
-                deviceclass, str(int(timestamp*1000)), str(rssi)]))
+        deviceclass = str(self.server.getDeviceclass(mac))
+        self.inet_factory.sendLine(','.join([hostname, sensor_mac, mac,
+            deviceclass, str(int(timestamp*1000)), str(rssi)]))

@@ -36,35 +36,14 @@ class Location(object):
             'id', 'description', 'lat', 'lon']]:
             # Something changed in the scanner details
 
-            args = {'hostname': str(location.name),
-                    'id': str(location.id),
-                    'description': str(location.description)}
-
-            if None not in [location.lon, location.lat] and location.sensors.values()[0].start != None:
-                args['coordinates'] = (float(location.lon), float(location.lat))
-                args['timestamp'] = location.sensors.values()[0].start
-            elif None in [location.lon, location.lat] or location.sensors.values()[0].end != None:
-                args['coordinates'] = None
-                args['timestamp'] = location.sensors.values()[0].end
-
             # Push scanner update
-            args['module'] = 'scanner'
-            print "LU 3"
             for p in server.plugins:
-                p.locationUpdate(**args)
-                p.newLocationUpdate(location.name, 'scanner', location)
+                p.locationUpdate(location.name, 'scanner', location)
 
             # Push sensor updates
             for sensor in location.sensors.values():
-                args['module'] = str(sensor.mac)
-                if None in [sensor.lat, sensor.lon]:
-                    args['coordinates'] = None
-                else:
-                    args['coordinates'] = (float(sensor.lon), float(sensor.lat))
-                print "LU 4"
                 for p in server.plugins:
-                    p.locationUpdate(**args)
-                    p.newLocationUpdate(location.name, 'sensor', sensor)
+                    p.locationUpdate(location.name, 'sensor', sensor)
 
         else:
             # Scanner details identical, compare sensors
@@ -74,50 +53,25 @@ class Location(object):
                 if sensor in location.sensors:
                     if not self.sensors[sensor] == location.sensors[sensor]:
                         update = True
-                        print "SU 1"
                 else:
                     update = True
-                    print "SU 2"
 
             for sensor in location.sensors:
                 if sensor in self.sensors:
                     if not self.sensors[sensor] == location.sensors[sensor]:
                         update = True
-                        print "SU 3"
                 else:
                     update = True
-                    print "SU 4"
 
             if update:
-                args = {'hostname': str(location.name),
-                        'id': str(location.id),
-                        'description': str(location.description)}
-
-                if None not in [location.lon, location.lat] and location.sensors.values()[0].start != None:
-                    args['coordinates'] = (float(location.lon), float(location.lat))
-                    args['timestamp'] = location.sensors.values()[0].start
-                elif None in [location.lon, location.lat] or location.sensors.values()[0].end != None:
-                    args['coordinates'] = None
-                    args['timestamp'] = location.sensors.values()[0].end
-
                 # Push scanner update
-                args['module'] = 'scanner'
-                print "LU 5"
                 for p in server.plugins:
-                    p.locationUpdate(**args)
-                    p.newLocationUpdate(location.name, 'scanner', location)
+                    p.locationUpdate(location.name, 'scanner', location)
 
                 # Push sensor updates
                 for sensor in location.sensors.values():
-                    args['module'] = str(sensor.mac)
-                    if None in [sensor.lat, sensor.lon]:
-                        args['coordinates'] = None
-                    else:
-                        args['coordinates'] = (float(sensor.lon), float(sensor.lat))
-                    print "LU 6"
                     for p in server.plugins:
-                        p.locationUpdate(**args)
-                        p.newLocationUpdate(location.name, 'sensor', sensor)
+                        p.locationUpdate(location.name, 'sensor', sensor)
 
 class Sensor(object):
     def __init__(self, mac):

@@ -848,19 +848,6 @@ class Plugin(olof.core.Plugin):
         for sens in s.sensors.values():
             sens.connected = False
 
-    def locationUpdate(self, hostname, module, timestamp, id, description, coordinates):
-        if module != 'scanner':
-            return
-
-        s = self.getScanner(hostname)
-        if coordinates != None:
-            s.lon = coordinates[0]
-            s.lat = coordinates[1]
-            s.location = id
-            s.location_description = description
-        else:
-            s.lon = s.lat = s.location = s.location_description = None
-
     def sysStateFeed(self, hostname, module, info):
         s = self.getScanner(hostname)
         if module == 'gyrid':
