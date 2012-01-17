@@ -2,7 +2,7 @@
 #
 # This file belongs to Gyrid Server.
 #
-# Copyright (C) 2011  Roel Huybrechts
+# Copyright (C) 2011-2012  Roel Huybrechts
 # All rights reserved.
 
 """
@@ -19,7 +19,6 @@ import urllib2
 import urlparse
 
 import olof.core
-from olof.dataprovider import Location
 
 class ExtRequest(urllib2.Request):
     method = None
@@ -362,13 +361,7 @@ class Plugin(olof.core.Plugin):
 
         return r
 
-    def locationUpdate(self, hostname, module, timestamp, id, description, coordinates):
-        #self.server.output('move: received location update for %s, module %s' % (hostname, module))
-        pass
-
-    def newLocationUpdate(self, hostname, module, obj):
-        self.server.output("move: received new-style location update")
-
+    def locationUpdate(self, hostname, module, obj):
         if module == 'scanner':
             for sensor in obj.sensors.values():
                 if sensor.start != None:
@@ -387,35 +380,6 @@ class Plugin(olof.core.Plugin):
                 timestamp = obj.start
                 desc = ' - '.join([i for i in [obj.location.id, obj.location.description] if i != None])
                 self.conn.addLocation(obj.mac, timestamp, (obj.lon, obj.lat), desc)
-
-    def locationUpdate_old(self, hostname, module, timestamp, id, description, coordinates):
-        if not olof.data.whitelist.match(hostname):
-            return
-
-        if module == 'sensor':
-            return
-
-        elif module == 'scanner':
-            for sensor in self.server.location_provider.new_locations[hostname][Location.Sensors]:
-                if sensor != Location.Sensor:
-                    if Location.TimeInstall in self.server.location_provider.new_locations[hostname][Location.Times]:
-                        self.conn.addLocation(sensor, float(time.strftime('%s', time.strptime(
-                            self.server.location_provider.new_locations[hostname][Location.Times][Location.TimeInstall],
-                            '%Y%m%d-%H%M%S-%Z'))),
-                            (self.server.location_provider.new_locations[hostname][Location.Sensors][sensor][Location.X],
-                             self.server.location_provider.new_locations[hostname][Location.Sensors][sensor][Location.Y]),
-                            '%s - %s' % (self.server.location_provider.new_locations[hostname][Location.ID],
-                            self.server.location_provider.new_locations[hostname][Location.Description]))
-                    if Location.TimeUninstall in self.server.location_provider.new_locations[hostname][Location.Times]:
-                        self.conn.addLocation(sensor,
-                            float(time.strftime('%s', time.strptime(
-                            self.server.location_provider.new_locations[hostname][Location.Times][Location.TimeUninstall],
-                            '%Y%m%d-%H%M%S-%Z'))),
-                            None, '%s - %s' % (self.server.location_provider.new_locations[hostname][Location.ID],
-                            self.server.location_provider.new_locations[hostname][Location.Description]))
-
-        else:
-            self.conn.addLocation(module, timestamp, coordinates, '%s - %s' % (id, description))
 
     def dataFeedRssi(self, hostname, timestamp, sensor_mac, mac, rssi):
         if olof.data.whitelist.match(hostname):

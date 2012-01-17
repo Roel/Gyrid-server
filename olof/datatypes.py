@@ -1,4 +1,9 @@
-#from olof.locationprovider import Project, Location
+#-*- coding: utf-8 -*-
+#
+# This file belongs to Gyrid Server.
+#
+# Copyright (C) 2011-2012  Roel Huybrechts
+# All rights reserved.
 
 import time
 
@@ -161,27 +166,3 @@ class Project(object):
     def add_location(self, location):
         self.locations[location.name] = location
         location.project = self
-
-
-#DEPRECATED
-class Projects(object):
-    def __init__(self, server, location_provider):
-        self.server = server
-        self.locations = location_provider.locations
-        self.projects = location_provider.projects
-
-    def list_projects(self):
-        return sorted([p.name for p in self.projects])
-
-    def get_project(self, projectname):
-        return self.projects.get(projectname, None)
-
-    def hostname_enabled(self, hostname):
-        if hostname in self.locations:
-            if Location.Project in self.locations[hostname]:
-                return self.enabled(self.locations[hostname][Location.Project])
-            else:
-                return False
-        else:
-            return False
-

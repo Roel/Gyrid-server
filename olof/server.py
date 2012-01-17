@@ -2,7 +2,7 @@
 #
 # This file belongs to Gyrid Server.
 #
-# Copyright (C) 2011  Roel Huybrechts
+# Copyright (C) 2011-2012  Roel Huybrechts
 # All rights reserved.
 
 from OpenSSL import SSL

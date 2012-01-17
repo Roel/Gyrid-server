@@ -2,7 +2,7 @@
 #
 # This file belongs to Gyrid Server.
 #
-# Copyright (C) 2011  Roel Huybrechts
+# Copyright (C) 2011-2012  Roel Huybrechts
 # All rights reserved.
 
 """
@@ -33,10 +33,7 @@ class Plugin(object):
     def connectionLost(self, hostname, ip, port):
         pass
 
-    def locationUpdate(self, hostname, module, timestamp, id, description, coordinates):
-        pass
-
-    def newLocationUpdate(self, hostname, module, obj):
+    def locationUpdate(self, hostname, module, obj):
         pass
 
     def stateFeed(self, hostname, timestamp, sensor_mac, info):

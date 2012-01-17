@@ -1,4 +1,9 @@
-#!/usr/bin/python
+#-*- coding: utf-8 -*-
+#
+# This file belongs to Gyrid Server.
+#
+# Copyright (C) 2011-2012  Roel Huybrechts
+# All rights reserved.
 
 from twisted.internet import reactor
 from twisted.internet.protocol import ReconnectingClientFactory
@@ -9,7 +14,6 @@ import os
 import time
 
 import olof.core
-from olof.dataprovider import Location
 
 class InetClient(LineReceiver):
     def __init__(self, factory, plugin):
@@ -181,7 +185,7 @@ class Plugin(olof.core.Plugin):
             self.inet_factory.sendLine(','.join(['removeScannerSetup',
                 hostname, sensor, '%s|%s' % (id, sensor), str(int(timestamp*1000))]))
 
-    def newLocationUpdate(self, hostname, module, obj):
+    def locationUpdate(self, hostname, module, obj):
         if module == 'scanner':
             for sensor in obj.sensors.values():
                 self.addLocation(sensor.mac, obj.id, obj.description, sensor.lon, sensor.lat)
@@ -196,28 +200,6 @@ class Plugin(olof.core.Plugin):
             elif (obj.lat != None and obj.lon != None) and obj.start != None:
                 self.addLocation(obj.mac, obj.location.id, obj.location.description, obj.lon, obj.lat)
                 self.addScanSetup(hostname, obj.mac, obj.location.id, obj.start)
-
-    def locationUpdate_old(self, hostname, module, timestamp, id, description, coordinates):
-        if olof.data.whitelist.match(hostname):
-            if module == 'scanner' and hostname in self.server.location_provider.new_locations:
-                for sensor in self.server.location_provider.new_locations[hostname][Location.Sensors]:
-                    if sensor != Location.Sensor:
-
-                        self.addLocation(sensor, id, description,
-                            self.server.location_provider.new_locations[hostname][Location.Sensors][sensor][Location.X],
-                            self.server.location_provider.new_locations[hostname][Location.Sensors][sensor][Location.Y])
-
-                        if Location.TimeInstall in self.server.location_provider.new_locations[hostname][Location.Times]:
-                            self.addScanSetup(hostname, sensor, id, timestamp)
-                        if Location.TimeUninstall in self.server.location_provider.new_locations[hostname][Location.Times]:
-                            self.removeScanSetup(hostname, sensor, id, timestamp)
-
-        if module not in ['sensor', 'scanner']:
-            if coordinates != None:
-                self.addLocation(module, id, description, coordinates[0], coordinates[1])
-                self.addScanSetup(hostname, module, id, timestamp)
-            else:
-                self.removeScanSetup(hostname, module, id, timestamp)
 
     def stateFeed(self, hostname, timestamp, sensor_mac, info):
         if olof.data.whitelist.match(hostname):
