@@ -31,6 +31,14 @@ class Location(object):
                 sensor.lat = self.lat
                 sensor.lon = self.lon
 
+    def is_active(self, plugin):
+        if self.project == None:
+            return False
+        elif self.project.is_active and (plugin not in self.project.disabled_plugins):
+            return True
+        else:
+            return False
+
     def compare(self, location):
         if False in [self.__dict__[i] == location.__dict__[i] for i in [
             'id', 'description', 'lat', 'lon']]:
@@ -38,12 +46,14 @@ class Location(object):
 
             # Push scanner update
             for p in server.plugins:
-                p.locationUpdate(location.name, 'scanner', location)
+                if location.is_active(p.filename):
+                    p.locationUpdate(location.name, 'scanner', location)
 
             # Push sensor updates
             for sensor in location.sensors.values():
                 for p in server.plugins:
-                    p.locationUpdate(location.name, 'sensor', sensor)
+                    if location.is_active(p.filename):
+                        p.locationUpdate(location.name, 'sensor', sensor)
 
         else:
             # Scanner details identical, compare sensors
@@ -66,12 +76,14 @@ class Location(object):
             if update:
                 # Push scanner update
                 for p in server.plugins:
-                    p.locationUpdate(location.name, 'scanner', location)
+                    if location.is_active(p.filename):
+                        p.locationUpdate(location.name, 'scanner', location)
 
                 # Push sensor updates
                 for sensor in location.sensors.values():
                     for p in server.plugins:
-                        p.locationUpdate(location.name, 'sensor', sensor)
+                        if location.is_active(p.filename):
+                            p.locationUpdate(location.name, 'sensor', sensor)
 
 class Sensor(object):
     def __init__(self, mac):

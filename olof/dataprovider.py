@@ -45,6 +45,12 @@ class DataProvider(object):
         self.new_projects = imp.load_source('l', os.getcwd() + "/olof/data/data.py").projects
         self.projects = copy.deepcopy(self.new_projects)
 
+    def isActive(self, hostname, plugin):
+        if (hostname in self.locations) and (self.locations[hostname].is_active(plugin)):
+            return True
+        else:
+            return False
+
     def parseLocations(self, locations):
         for scanner in locations:
             if scanner in self.locations:
@@ -54,12 +60,14 @@ class DataProvider(object):
                 # New scanner
                 scannerobj = locations[scanner]
                 for p in self.server.plugins:
-                    p.locationUpdate(scannerobj.name, 'scanner', scannerobj)
+                    if scannerobj.is_active(p.filename):
+                        p.locationUpdate(scannerobj.name, 'scanner', scannerobj)
 
                 # Push sensor updates
                 for sensor in scannerobj.sensors.values():
                     for p in self.server.plugins:
-                        p.locationUpdate(scannerobj.name, 'sensor', sensor)
+                        if scannerobj.is_active(p.filename):
+                            p.locationUpdate(scannerobj.name, 'sensor', sensor)
 
         for scanner in self.locations:
             if scanner not in locations:

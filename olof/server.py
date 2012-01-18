@@ -84,6 +84,7 @@ class GyridServerProtocol(LineReceiver):
 
     def process(self, line):
         ll = line.strip().split(',')
+        dp = self.factory.dataprovider
 
         if ll[0] == 'MSG':
             ll[1] = ll[1].strip()
@@ -97,7 +98,8 @@ class GyridServerProtocol(LineReceiver):
                     return
                 else:
                     for p in self.factory.server.plugins:
-                        p.connectionMade(**args)
+                        if dp.isActive(self.hostname, p.filename):
+                            p.connectionMade(**args)
 
                 for l in self.buffer:
                     if not 'hostname' in l:
@@ -113,7 +115,8 @@ class GyridServerProtocol(LineReceiver):
                         return
                     else:
                         for p in self.factory.server.plugins:
-                            p.uptime(**args)
+                            if dp.isActive(self.hostname, p.filename):
+                                p.uptime(**args)
                 else:
                     self.buffer.append(line)
             elif ll[1] == 'gyrid':
@@ -126,7 +129,8 @@ class GyridServerProtocol(LineReceiver):
                         return
                     else:
                         for p in self.factory.server.plugins:
-                            p.sysStateFeed(**args)
+                            if dp.isActive(self.hostname, p.filename):
+                                p.sysStateFeed(**args)
                 else:
                     self.buffer.append(line)
             elif len(ll) == 2 and ll[1] == 'keepalive':
@@ -149,7 +153,8 @@ class GyridServerProtocol(LineReceiver):
                         return
                     else:
                         for p in self.factory.server.plugins:
-                            p.stateFeed(**args)
+                            if dp.isActive(self.hostname, p.filename):
+                                p.stateFeed(**args)
                 elif len(ll) == 5:
                     try:
                         mac = str(ll[2])
@@ -169,7 +174,8 @@ class GyridServerProtocol(LineReceiver):
                             return
                         else:
                             for p in self.factory.server.plugins:
-                                p.dataFeedCell(**args)
+                                if dp.isActive(self.hostname, p.filename):
+                                    p.dataFeedCell(**args)
                 elif len(ll) == 4:
                     try:
                         args = {'hostname': str(self.hostname),
@@ -181,7 +187,8 @@ class GyridServerProtocol(LineReceiver):
                         return
                     else:
                         for p in self.factory.server.plugins:
-                            p.dataFeedRssi(**args)
+                            if dp.isActive(self.hostname, p.filename):
+                                p.dataFeedRssi(**args)
                 elif len(ll) == 3 and ll[0] == 'INFO':
                     try:
                         args = {'hostname': str(self.hostname),
@@ -191,7 +198,8 @@ class GyridServerProtocol(LineReceiver):
                         return
                     else:
                         for p in self.factory.server.plugins:
-                            p.infoFeed(**args)
+                            if dp.isActive(self.hostname, p.filename):
+                                p.infoFeed(**args)
 
 
 class GyridServerFactory(Factory):
@@ -236,6 +244,7 @@ class Olof(object):
             name = os.path.basename(filename)[:-3]
             try:
                 plugin = imp.load_source(name, filename).Plugin(self)
+                plugin.filename = name
             except Exception, e:
                 self.plugins_with_errors[name] = (e, traceback.format_exc())
                 sys.stderr.write("Error while loading plugin %s: %s\n" % (name, e))

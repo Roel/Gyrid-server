@@ -15,6 +15,7 @@ class Plugin(object):
     """
     def __init__(self, server, name=None):
         self.server = server
+        self.filename = None
         self.name = name
         self.output = self.server.output
 
