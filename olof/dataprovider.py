@@ -47,6 +47,12 @@ class DataProvider(object):
         self.new_projects = imp.load_source('l', os.getcwd() + "/olof/data/data.py").projects
         self.projects = copy.deepcopy(self.new_projects)
 
+    def getProjectName(self, hostname):
+        if hostname in self.locations:
+            return self.locations[hostname].project
+        else:
+            return None
+
     def isActive(self, hostname, plugin):
         if plugin in olof.datatypes.ENABLED_PLUGINS:
             return True

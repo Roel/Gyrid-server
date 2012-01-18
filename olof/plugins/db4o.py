@@ -206,10 +206,14 @@ class Plugin(olof.core.Plugin):
 
     def dataFeedCell(self, hostname, timestamp, sensor_mac, mac, deviceclass,
              move):
-        self.inet_factory.sendLine(','.join([hostname, sensor_mac, mac,
-            str(deviceclass), str(int(timestamp*1000)), move]))
+        dp = self.server.dataprovider
+        self.inet_factory.sendLine(','.join([str(dp.getProjectName(hostname),
+            hostname, sensor_mac, mac, str(deviceclass),
+            str(int(timestamp*1000)), move]))
 
     def dataFeedRssi(self, hostname, timestamp, sensor_mac, mac, rssi):
+        dp = self.server.dataprovider
         deviceclass = str(self.server.getDeviceclass(mac))
-        self.inet_factory.sendLine(','.join([hostname, sensor_mac, mac,
-            deviceclass, str(int(timestamp*1000)), str(rssi)]))
+        self.inet_factory.sendLine(','.join([str(dp.getProjectName(hostname),
+            hostname, sensor_mac, mac, str(deviceclass),
+            str(int(timestamp*1000)), str(rssi)]))
