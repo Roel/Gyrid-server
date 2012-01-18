@@ -26,8 +26,8 @@ h1, #title p {
     font-variant: small-caps;
     margin-top: 12px;
     float: right;
-    min-width: 50%;
-    max-width: 50%;
+    min-width: 30%;
+    max-width: 30%;
 }
 
 .h2-outline {
