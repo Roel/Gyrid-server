@@ -84,7 +84,7 @@ class GyridServerProtocol(LineReceiver):
 
     def process(self, line):
         ll = line.strip().split(',')
-        dp = self.factory.dataprovider
+        dp = self.factory.server.dataprovider
 
         if ll[0] == 'MSG':
             ll[1] = ll[1].strip()
