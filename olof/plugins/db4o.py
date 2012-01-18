@@ -216,4 +216,4 @@ class Plugin(olof.core.Plugin):
         deviceclass = str(self.server.getDeviceclass(mac))
         self.inet_factory.sendLine(','.join([str(dp.getProjectName(hostname),
             hostname, sensor_mac, mac, str(deviceclass),
-            str(int(timestamp*1000)), str(rssi)]))
+            str(int(timestamp*1000)), str(rssi)])))
