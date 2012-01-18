@@ -31,7 +31,7 @@ import urlparse
 
 import olof.core
 import olof.plugins.status.macvendor as macvendor
-import olof.plugins.tools.RestConnection
+from olof.tools import RESTConnection
 
 def prettydate(d, prefix="", suffix=" ago"):
     t = d
@@ -80,7 +80,7 @@ class Scanner(object):
             ls = l.strip().split(',')
             self.__dict__[ls[0]] = ls[1]
         f.close()
-        self.mv_conn = olof.tools.RestConnection(
+        self.mv_conn = RESTConnection(
             base_url = self.url,
             username = self.user,
             password = self.password,

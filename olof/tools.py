@@ -23,7 +23,7 @@ class ExtRequest(urllib2.Request):
         else:
             return self.method
 
-class RestConnection(object):
+class RESTConnection(object):
     def __init__(self, base_url, timeout=40, username=None, password=None, authHandler=None):
         self.base_url = base_url
         self.timeout = float(timeout)

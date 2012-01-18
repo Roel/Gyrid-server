@@ -18,12 +18,12 @@ import time
 import urllib2
 
 import olof.core
-import olof.tools.RestConnection
+from olof.tools import RESTConnection
 
-class Connection(olof.tools.RestConnection):
+class Connection(RESTConnection):
     def __init__(self, plugin, server, url, user, password, measurements={}, measureCount={},
         locations={}):
-        olof.tools.RestConnection.__init__(self, url, 180, user, password, urllib2.HTTPDigestAuthHandler)
+        RESTConnection.__init__(self, url, 180, user, password, urllib2.HTTPDigestAuthHandler)
         self.plugin = plugin
         self.server = server
         self.scanners = {}
