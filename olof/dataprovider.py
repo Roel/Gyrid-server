@@ -49,7 +49,7 @@ class DataProvider(object):
 
     def getProjectName(self, hostname):
         if hostname in self.locations:
-            return self.locations[hostname].project
+            return self.locations[hostname].project.name
         else:
             return None
 
