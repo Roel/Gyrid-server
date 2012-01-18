@@ -38,7 +38,7 @@ class Location(object):
             return True
         elif self.project == None:
             return False
-        elif self.project.is_active and (plugin not in self.project.disabled_plugins):
+        elif self.project.is_active() and (plugin not in self.project.disabled_plugins):
             return True
         else:
             return False
