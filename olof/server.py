@@ -64,6 +64,7 @@ class GyridServerProtocol(LineReceiver):
 
     def connectionLost(self, reason):
         if self.hostname != None:
+            dp = self.factory.server.dataprovider
             try:
                 args = {'hostname': str(self.hostname),
                         'ip': str(self.transport.getPeer().host),
