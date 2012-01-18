@@ -72,7 +72,8 @@ class GyridServerProtocol(LineReceiver):
                 return
             else:
                 for p in self.factory.server.plugins:
-                    p.connectionLost(**args)
+                    if dp.isActive(self.hostname, p.filename):
+                        p.connectionLost(**args)
 
     def checksum(self, data):
         return hex(abs(zlib.crc32(data)))[2:]
