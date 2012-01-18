@@ -9,6 +9,8 @@ import time
 
 server = None
 
+ENABLED_PLUGINS = ['debug', 'status']
+
 def unixtime(timestamp, format='%Y%m%d-%H%M%S-%Z'):
     return time.mktime(time.strptime(timestamp, format))
 
@@ -32,7 +34,9 @@ class Location(object):
                 sensor.lon = self.lon
 
     def is_active(self, plugin):
-        if self.project == None:
+        if plugin in ENABLED_PLUGINS:
+            return True
+        elif self.project == None:
             return False
         elif self.project.is_active and (plugin not in self.project.disabled_plugins):
             return True

@@ -13,6 +13,8 @@ import imp
 import os
 import time
 
+import olof.datatypes
+
 class DataProvider(object):
     def __init__(self, server):
         self.server = server
@@ -46,7 +48,9 @@ class DataProvider(object):
         self.projects = copy.deepcopy(self.new_projects)
 
     def isActive(self, hostname, plugin):
-        if (hostname in self.locations) and (self.locations[hostname].is_active(plugin)):
+        if plugin in olof.datatypes.ENABLED_PLUGINS:
+            return True
+        elif (hostname in self.locations) and (self.locations[hostname].is_active(plugin)):
             return True
         else:
             return False
