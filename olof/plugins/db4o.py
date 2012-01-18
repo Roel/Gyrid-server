@@ -200,9 +200,11 @@ class Plugin(olof.core.Plugin):
                 self.addScanSetup(hostname, obj.mac, obj.location.id, obj.start)
 
     def stateFeed(self, hostname, timestamp, sensor_mac, info):
+        dp = self.server.dataprovider
         if info == 'new_inquiry':
-            self.inet_factory.sendLine(','.join([hostname, 'INFO',
-                str(int(timestamp*1000)), 'new_inquiry', sensor_mac]))
+            self.inet_factory.sendLine(','.join([str(dp.getProjectName(hostname)),
+                hostname, 'INFO', str(int(timestamp*1000)), 'new_inquiry',
+                sensor_mac]))
 
     def dataFeedCell(self, hostname, timestamp, sensor_mac, mac, deviceclass,
              move):
