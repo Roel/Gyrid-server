@@ -17,6 +17,7 @@ import olof.core
 
 class InetClient(LineReceiver):
     def __init__(self, factory, plugin):
+        self.delimiter = '\n'
         self.factory = factory
         self.plugin = plugin
 
