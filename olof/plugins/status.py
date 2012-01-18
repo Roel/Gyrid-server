@@ -616,7 +616,8 @@ class ContentResource(resource.Resource):
         # Projectless scanners
         projectless_scanners = sorted([s for s in self.plugin.scanners if self.plugin.scanners[s].project == None])
         if len(projectless_scanners) > 0:
-            html += '<div class="h2-outline" id="No-project"><h2 onclick="goTo(\'#server_block\')">No project</h2></div>'
+            html += '<div class="h2-outline" id="No-project"><h2 onclick="goTo(\'#server_block\')">No project</h2><div class="block_content">'
+            html += '<div class="block_data"><img src="/status/static/icons/radar-grey.png">Inactive</div></div></div>'
             html += '<div id="navigation_block">'
             for scanner in projectless_scanners:
                 s = self.plugin.scanners[scanner]
