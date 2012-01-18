@@ -594,7 +594,7 @@ class ContentResource(resource.Resource):
         return self.render_POST(request)
 
     def render_POST(self, request):
-        html = '<div id="title"><h1>Gyrid Server status panel</h1></div><div id="updated">%s</div>' % time.strftime('%H:%M:%S')
+        html = '<div id="title"><h1>Gyrid dashboard</h1></div><div id="updated">%s</div>' % time.strftime('%H:%M:%S')
         html += '<div style="clear: both;"></div>'
 
         html += self.render_server()
