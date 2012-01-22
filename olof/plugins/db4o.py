@@ -34,6 +34,9 @@ class InetClient(LineReceiver):
             self.plugin.cache.close()
         self.plugin.cache = open(self.plugin.cache_file, 'a')
 
+    def lineReceived(self, line):
+        pass
+
     def sendLine(self, line):
         if self.transport != None and self.plugin.connected:
             LineReceiver.sendLine(self, line.strip())
