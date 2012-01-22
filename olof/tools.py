@@ -5,6 +5,8 @@
 # Copyright (C) 2011-2012  Roel Huybrechts
 # All rights reserved.
 
+from twisted.internet import threads
+
 import urllib2
 import urlparse
 

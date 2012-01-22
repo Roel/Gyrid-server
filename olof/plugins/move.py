@@ -9,7 +9,7 @@
 Module that handles the communication with the Move REST API.
 """
 
-from twisted.internet import reactor, task, threads
+from twisted.internet import reactor, task
 
 import copy
 import os
