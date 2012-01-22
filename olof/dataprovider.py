@@ -53,10 +53,13 @@ class DataProvider(object):
         else:
             return None
 
-    def isActive(self, hostname, plugin):
+    def isActive(self, hostname, plugin, timestamp=None):
+        if timestamp == None:
+            timestamp = int(time.time())
+
         if plugin in olof.datatypes.ENABLED_PLUGINS:
             return True
-        elif (hostname in self.locations) and (self.locations[hostname].is_active(plugin)):
+        elif (hostname in self.locations) and (self.locations[hostname].is_active(plugin, timestamp)):
             return True
         else:
             return False

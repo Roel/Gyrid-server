@@ -155,7 +155,7 @@ class GyridServerProtocol(LineReceiver):
                         return
                     else:
                         for p in self.factory.server.plugins:
-                            if dp.isActive(self.hostname, p.filename):
+                            if dp.isActive(self.hostname, p.filename, args['timestamp']):
                                 p.stateFeed(**args)
                 elif len(ll) == 5:
                     try:
@@ -176,7 +176,7 @@ class GyridServerProtocol(LineReceiver):
                             return
                         else:
                             for p in self.factory.server.plugins:
-                                if dp.isActive(self.hostname, p.filename):
+                                if dp.isActive(self.hostname, p.filename, args['timestamp']):
                                     p.dataFeedCell(**args)
                 elif len(ll) == 4:
                     try:
@@ -189,7 +189,7 @@ class GyridServerProtocol(LineReceiver):
                         return
                     else:
                         for p in self.factory.server.plugins:
-                            if dp.isActive(self.hostname, p.filename):
+                            if dp.isActive(self.hostname, p.filename, args['timestamp']):
                                 p.dataFeedRssi(**args)
                 elif len(ll) == 3 and ll[0] == 'INFO':
                     try:
@@ -200,7 +200,7 @@ class GyridServerProtocol(LineReceiver):
                         return
                     else:
                         for p in self.factory.server.plugins:
-                            if dp.isActive(self.hostname, p.filename):
+                            if dp.isActive(self.hostname, p.filename, args['timestamp']):
                                 p.infoFeed(**args)
 
 

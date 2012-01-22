@@ -33,12 +33,14 @@ class Location(object):
                 sensor.lat = self.lat
                 sensor.lon = self.lon
 
-    def is_active(self, plugin):
+    def is_active(self, plugin, timestamp=None):
+        if timestamp == None:
+            timestamp = int(time.time())
         if plugin in ENABLED_PLUGINS:
             return True
         elif self.project == None:
             return False
-        elif self.project.is_active() and (plugin not in self.project.disabled_plugins):
+        elif self.project.is_active(timestamp) and (plugin not in self.project.disabled_plugins):
             return True
         else:
             return False
@@ -115,21 +117,22 @@ class Project(object):
         self.start = None
         self.end = None
 
-    def is_active(self):
+    def is_active(self, timestamp=None):
         if self.active == False:
             return False
 
         elif self.active == True:
-            now = int(time.time())
+            if timestamp == None:
+                timestamp = int(time.time())
 
             if self.start != None and self.end == None:
-                return now >= self.start
+                return timestamp >= self.start
             elif self.start == None and self.end != None:
-                return now < self.end
+                return timestamp < self.end
             elif self.start != None and self.end != None:
                 if self.end <= self.start:
                     raise ValueError("Start should predate end.")
-                return self.start <= now < self.end
+                return self.start <= timestamp < self.end
             else:
                 return True
 
