@@ -80,11 +80,6 @@ class Scanner(object):
             ls = l.strip().split(',')
             self.__dict__[ls[0]] = ls[1]
         f.close()
-        self.mv_conn = RESTConnection(
-            base_url = self.url,
-            username = self.user,
-            password = self.password,
-            authHandler = urllib2.HTTPBasicAuthHandler)
 
         self.location = None
         self.location_description = None
@@ -101,6 +96,12 @@ class Scanner(object):
         self.conn_time = {}
         self.connections = set()
         self.lag = {1: [0, 0], 5: [0, 0], 15: [0, 0]}
+
+        self.mv_conn = RESTConnection(
+            base_url = self.url,
+            username = self.user,
+            password = self.password,
+            authHandler = urllib2.HTTPBasicAuthHandler)
 
         self.checkLag_call = task.LoopingCall(reactor.callInThread,
             self.checkLag)
