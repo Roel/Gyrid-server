@@ -83,48 +83,41 @@ class Plugin(olof.core.Plugin):
             ss.unload()
 
     def getScanSetup(self, hostname, sensor_mac):
-        if olof.data.whitelist.match(hostname):
-            if not (hostname, sensor_mac) in self.scanSetups:
-                ss = ScanSetup(hostname, sensor_mac)
-                self.scanSetups[(hostname, sensor_mac)] = ss
-            else:
-                ss = self.scanSetups[(hostname, sensor_mac)]
-            return ss
+        if not (hostname, sensor_mac) in self.scanSetups:
+            ss = ScanSetup(hostname, sensor_mac)
+            self.scanSetups[(hostname, sensor_mac)] = ss
+        else:
+            ss = self.scanSetups[(hostname, sensor_mac)]
+        return ss
 
     def getScanner(self, hostname):
-        if olof.data.whitelist.match(hostname):
-            if not (hostname, None) in self.scanSetups:
-                sc = Scanner(hostname)
-                self.scanSetups[(hostname, None)] = sc
-            else:
-                sc = self.scanSetups[(hostname, None)]
-            return sc
+        if not (hostname, None) in self.scanSetups:
+            sc = Scanner(hostname)
+            self.scanSetups[(hostname, None)] = sc
+        else:
+            sc = self.scanSetups[(hostname, None)]
+        return sc
 
     def connectionMade(self, hostname, ip, port):
-        if olof.data.whitelist.match(hostname):
-            sc = self.getScanner(hostname)
-            sc.logConnection(time.time(), ip, port, 'made')
+        sc = self.getScanner(hostname)
+        sc.logConnection(time.time(), ip, port, 'made')
 
     def connectionLost(self, hostname, ip, port):
-        if olof.data.whitelist.match(hostname):
-            sc = self.getScanner(hostname)
-            try:
-                sc.logConnection(time.time(), ip, port, 'lost')
-            except ValueError:
-                pass
+        sc = self.getScanner(hostname)
+        try:
+            sc.logConnection(time.time(), ip, port, 'lost')
+        except ValueError:
+            pass
 
     def infoFeed(self, hostname, timestamp, info):
-        if olof.data.whitelist.match(hostname):
-            sc = self.getScanner(hostname)
-            sc.logInfo(timestamp, info)
+        sc = self.getScanner(hostname)
+        sc.logInfo(timestamp, info)
 
     def dataFeedCell(self, hostname, timestamp, sensor_mac, mac, deviceclass,
             move):
-        if olof.data.whitelist.match(hostname):
-            ss = self.getScanSetup(hostname, sensor_mac)
-            ss.logCell(timestamp, mac, deviceclass, move)
+        ss = self.getScanSetup(hostname, sensor_mac)
+        ss.logCell(timestamp, mac, deviceclass, move)
 
     def dataFeedRssi(self, hostname, timestamp, sensor_mac, mac, rssi):
-        if olof.data.whitelist.match(hostname):
-            ss = self.getScanSetup(hostname, sensor_mac)
-            ss.logRssi(timestamp, mac, rssi)
+        ss = self.getScanSetup(hostname, sensor_mac)
+        ss.logRssi(timestamp, mac, rssi)

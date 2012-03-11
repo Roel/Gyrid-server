@@ -2,7 +2,7 @@
 #
 # This file belongs to Gyrid Server.
 #
-# Copyright (C) 2011  Roel Huybrechts
+# Copyright (C) 2011-2012  Roel Huybrechts
 # All rights reserved.
 
 from OpenSSL import SSL
@@ -21,8 +21,8 @@ import zlib
 
 import cPickle as pickle
 
-import olof.locationprovider
-import olof.data.whitelist
+import olof.dataprovider
+import olof.datatypes
 
 def verifyCallback(connection, x509, errnum, errdepth, ok):
     if not ok:
@@ -64,6 +64,7 @@ class GyridServerProtocol(LineReceiver):
 
     def connectionLost(self, reason):
         if self.hostname != None:
+            dp = self.factory.server.dataprovider
             try:
                 args = {'hostname': str(self.hostname),
                         'ip': str(self.transport.getPeer().host),
@@ -72,7 +73,8 @@ class GyridServerProtocol(LineReceiver):
                 return
             else:
                 for p in self.factory.server.plugins:
-                    p.connectionLost(**args)
+                    if dp.isActive(self.hostname, p.filename):
+                        p.connectionLost(**args)
 
     def checksum(self, data):
         return hex(abs(zlib.crc32(data)))[2:]
@@ -84,6 +86,7 @@ class GyridServerProtocol(LineReceiver):
 
     def process(self, line):
         ll = line.strip().split(',')
+        dp = self.factory.server.dataprovider
 
         if ll[0] == 'MSG':
             ll[1] = ll[1].strip()
@@ -97,7 +100,8 @@ class GyridServerProtocol(LineReceiver):
                     return
                 else:
                     for p in self.factory.server.plugins:
-                        p.connectionMade(**args)
+                        if dp.isActive(self.hostname, p.filename):
+                            p.connectionMade(**args)
 
                 for l in self.buffer:
                     if not 'hostname' in l:
@@ -113,7 +117,8 @@ class GyridServerProtocol(LineReceiver):
                         return
                     else:
                         for p in self.factory.server.plugins:
-                            p.uptime(**args)
+                            if dp.isActive(self.hostname, p.filename):
+                                p.uptime(**args)
                 else:
                     self.buffer.append(line)
             elif ll[1] == 'gyrid':
@@ -126,7 +131,8 @@ class GyridServerProtocol(LineReceiver):
                         return
                     else:
                         for p in self.factory.server.plugins:
-                            p.sysStateFeed(**args)
+                            if dp.isActive(self.hostname, p.filename):
+                                p.sysStateFeed(**args)
                 else:
                     self.buffer.append(line)
             elif len(ll) == 2 and ll[1] == 'keepalive':
@@ -149,7 +155,8 @@ class GyridServerProtocol(LineReceiver):
                         return
                     else:
                         for p in self.factory.server.plugins:
-                            p.stateFeed(**args)
+                            if dp.isActive(self.hostname, p.filename, args['timestamp']):
+                                p.stateFeed(**args)
                 elif len(ll) == 5:
                     try:
                         mac = str(ll[2])
@@ -169,7 +176,8 @@ class GyridServerProtocol(LineReceiver):
                             return
                         else:
                             for p in self.factory.server.plugins:
-                                p.dataFeedCell(**args)
+                                if dp.isActive(self.hostname, p.filename, args['timestamp']):
+                                    p.dataFeedCell(**args)
                 elif len(ll) == 4:
                     try:
                         args = {'hostname': str(self.hostname),
@@ -181,7 +189,8 @@ class GyridServerProtocol(LineReceiver):
                         return
                     else:
                         for p in self.factory.server.plugins:
-                            p.dataFeedRssi(**args)
+                            if dp.isActive(self.hostname, p.filename, args['timestamp']):
+                                p.dataFeedRssi(**args)
                 elif len(ll) == 3 and ll[0] == 'INFO':
                     try:
                         args = {'hostname': str(self.hostname),
@@ -191,7 +200,8 @@ class GyridServerProtocol(LineReceiver):
                         return
                     else:
                         for p in self.factory.server.plugins:
-                            p.infoFeed(**args)
+                            if dp.isActive(self.hostname, p.filename, args['timestamp']):
+                                p.infoFeed(**args)
 
 
 class GyridServerFactory(Factory):
@@ -225,15 +235,18 @@ class Olof(object):
                 self.mac_dc = {}
             f.close()
 
+        olof.datatypes.server = self
+
         self.load_plugins()
 
-        self.location_provider = olof.locationprovider.LocationProvider(self)
+        self.dataprovider = olof.dataprovider.DataProvider(self)
 
     def load_plugins(self):
         def load(filename, list):
             name = os.path.basename(filename)[:-3]
             try:
                 plugin = imp.load_source(name, filename).Plugin(self)
+                plugin.filename = name
             except Exception, e:
                 self.plugins_with_errors[name] = (e, traceback.format_exc())
                 sys.stderr.write("Error while loading plugin %s: %s\n" % (name, e))
@@ -252,7 +265,7 @@ class Olof(object):
                 load(os.path.join(home, 'olof', 'plugins', filename), self.plugins_inactive)
 
     def unload_plugins(self):
-        self.location_provider.unload()
+        self.dataprovider.unload()
 
         f = open('olof/data/mac_dc.pickle', 'wb')
         pickle.dump(self.mac_dc, f)

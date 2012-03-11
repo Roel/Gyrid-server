@@ -31,7 +31,7 @@ import urlparse
 
 import olof.core
 import olof.plugins.status.macvendor as macvendor
-from olof.plugins.move import RawConnection
+from olof.tools import RESTConnection
 
 def prettydate(d, prefix="", suffix=" ago"):
     t = d
@@ -65,6 +65,7 @@ class ScannerStatus:
 class Scanner(object):
     def __init__(self, hostname):
         self.hostname = hostname
+        self.project = None
         self.host_uptime = None
         self.sensors = {}
         self.lagData = []
@@ -79,7 +80,7 @@ class Scanner(object):
             ls = l.strip().split(',')
             self.__dict__[ls[0]] = ls[1]
         f.close()
-        self.mv_conn = RawConnection(
+        self.mv_conn = RESTConnection(
             base_url = self.url,
             username = self.user,
             password = self.password,
@@ -233,7 +234,11 @@ class Scanner(object):
                 loc = '<span title="%s">%s</span>' % (self.location_description, self.location) if self.location_description != None else self.location
                 html += '<a href="%s">%s</a><img src="/status/static/icons/marker.png">' % (
                     ("http://maps.google.be/maps?z=17&q=loc:%s,%s(%s)" % (self.lat, self.lon, self.hostname)), loc)
-            html += '</div><div style="clear: both;"></div><div class="block_content" onclick="goTo(\'#navigation_block\')">'
+            if self.project == None:
+                goto = 'No-project'
+            else:
+                goto = self.project.name.replace(' ','-')
+            html += '</div><div style="clear: both;"></div><div class="block_content" onclick="goTo(\'#%s\')">' % goto
 
             if self.location_description:
                 html += '<div class="block_data_location">%s</div>' % self.location_description
@@ -330,7 +335,7 @@ class Scanner(object):
 
         sd = {ScannerStatus.Good: 'block_status_good', ScannerStatus.Bad: 'block_status_bad', ScannerStatus.Ugly: 'block_status_ugly'}
         d = {'h': self.hostname, 'status': sd[self.getStatus()]}
-        bl = not olof.data.whitelist.match(self.hostname)
+        bl = False
         html = '<div id="%(h)s" class="block">' % d
 
         if bl:
@@ -360,7 +365,7 @@ class Scanner(object):
         return html
 
     def render_navigation(self):
-        bl = not olof.data.whitelist.match(self.hostname)
+        bl = False
         html = '<div class="navigation_item" onclick="goTo(\'#%s\')">' % self.hostname
 
         if bl:
@@ -431,7 +436,7 @@ class ContentResource(resource.Resource):
         self.plugin = plugin
 
     def render_server(self):
-        html = '<div id="server_block" onclick="goTo(\'top\')"><div class="block_title"><h3>Server</h3></div>'
+        html = '<div id="server_block"><div class="block_title"><h3>Server</h3></div>'
         html += '<div class="block_topright_server">%s<img src="/status/static/icons/clock-arrow.png"></div>' % prettydate(self.plugin.plugin_uptime, suffix="")
         html += '<div style="clear: both;"></div>'
         html += '<div class="block_content">'
@@ -479,6 +484,97 @@ class ContentResource(resource.Resource):
         html += '</div></div>'
         return html
 
+    def render_project_list(self):
+
+        def render_project(p):
+            html = '<div class="block_data">'
+            if p.is_active():
+                html += '<img src="/status/static/icons/radar.png">'
+                html += '<a href="#" onclick="goTo(\'#%s\')">%s</a>' % (p.name.replace(' ','-'), p.name)
+                html += '<span class="block_data_attr">active</span>'
+            else:
+                html += '<img src="/status/static/icons/radar-grey.png">'
+                html += '<a href="#" onclick="goTo(\'#%s\')">%s</a>' % (p.name.replace(' ','-'), p.name)
+                html += '<span class="block_data_attr">inactive</span>'
+            if p.start:
+                html += '<span class="block_data_attr"><b>start</b> %s</span>' % prettydate(p.start)
+            if p.end:
+                html += '<span class="block_data_attr"><b>end</b> %s</span>' % prettydate(p.end)
+            if len(p.disabled_plugins) > 0:
+                html += '<span class="block_data_attr"><b>disabled</b> %s</span>' % ', '.join(sorted(p.disabled_plugins))
+            html += '</div>'
+            return html
+
+        projects = self.plugin.server.dataprovider.projects
+        if len(projects) <= 1:
+            return ""
+
+        html = '<div id="server_block"><div class="block_title"><h3>Projects</h3></div>'
+        html += '<div style="clear: both;"></div>'
+        html += '<div class="block_content">'
+
+        # Active projects
+        for p_name in sorted([p.name for p in projects.values() if p.is_active()]):
+            html += render_project(projects[p_name])
+
+        # Inactive projects
+        for p_name in sorted([p.name for p in projects.values() if not p.is_active()]):
+            html += render_project(projects[p_name])
+
+        html += '</div></div>'
+        return html
+
+    def render_project(self, project):
+        html = '<div class="h2-outline" id="%s"><h2 onclick="goTo(\'#server_block\')">%s</h2><div class="block_content">' % (project.name.replace(' ','-'), project.name)
+
+        html += '<div class="block_data">'
+        if project.is_active():
+            html += '<img src="/status/static/icons/radar.png">Active'
+        else:
+            html += '<img src="/status/static/icons/radar-grey.png">Inactive'
+        if project.start:
+            html += '<span class="block_data_attr"><b>start</b> %s</span>' % prettydate(project.start)
+        if project.end:
+            html += '<span class="block_data_attr"><b>end</b> %s</span>' % prettydate(project.end)
+        html += '</div>'
+
+        if len(project.disabled_plugins) > 0:
+            html += '<div class="block_data"><img src="/status/static/icons/puzzle-grey.png">Disabled plugins'
+            html += '<span class="block_data_attr">%s</span>' % ', '.join(sorted(project.disabled_plugins))
+            html += '</div>'
+
+        if len(project.locations) == 0:
+            html += '</div></div>'
+            return html
+
+        scanner_status = {ScannerStatus.Good: 0, ScannerStatus.Bad: 0, ScannerStatus.Ugly: 0}
+        for location in project.locations.values():
+            s = self.plugin.match(location)
+            scanner_status[s.getStatus()] += 1
+
+        if len(project.locations) >= 8 and (scanner_status[ScannerStatus.Bad] > 0 or scanner_status[ScannerStatus.Ugly] > 0):
+            html += '<div class="block_data"><img src="/status/static/icons/traffic-light-single.png">Scanner status'
+            html += '<span class="block_data_attr"><b>total</b> %s</span>' % formatNumber(len(project.locations))
+            html += '<span class="block_data_attr"><b>online</b> %s – %i%%</span>' % (formatNumber(scanner_status[ScannerStatus.Good]),
+                scanner_status[ScannerStatus.Good]*100/len(project.locations))
+            html += '<span class="block_data_attr"><b>offline</b> %s – %i%%</span>' % (formatNumber(scanner_status[ScannerStatus.Bad]),
+                scanner_status[ScannerStatus.Bad]*100/len(project.locations))
+            html += '<span class="block_data_attr"><b>attention</b> %s – %i%%</span>' % (formatNumber(scanner_status[ScannerStatus.Ugly]),
+                scanner_status[ScannerStatus.Ugly]*100/len(project.locations))
+            html += '</div>'
+
+        html += '</div></div>'
+
+        html += '<div id="navigation_block">'
+        for location in sorted(project.locations.keys()):
+            html += self.plugin.match(project.locations[location]).render_navigation()
+        html += '</div>'
+
+        for location in sorted(project.locations.keys()):
+            html += self.plugin.match(project.locations[location]).render()
+
+        return html
+
     def render_navigation(self):
         html = '<div id="navigation_block">'
         for s in sorted(self.plugin.scanners.keys()):
@@ -489,7 +585,7 @@ class ContentResource(resource.Resource):
     def render_footer(self):
         html = '<div id="footer"><p>Gyrid Server version <span title="%s">%s</span>.</p>' % (self.plugin.server.git_commit,
             time.strftime('%Y-%m-%d', time.localtime(self.plugin.server.git_date)))
-        html += '<p>© 2011 Universiteit Gent, Roel Huybrechts. '
+        html += '<p>© 2011-2012 Universiteit Gent, Roel Huybrechts. '
         html += '<br>Icons by <a href="http://p.yusukekamiyamane.com/">Yusuke Kamiyamane</a>.</p>'
         html += '</div>'
         return html
@@ -498,14 +594,43 @@ class ContentResource(resource.Resource):
         return self.render_POST(request)
 
     def render_POST(self, request):
-        html = '<div id="title">Gyrid Server status panel</div><div id="updated">%s</div>' % time.strftime('%H:%M:%S')
+        html = '<div id="title"><h1>Gyrid dashboard</h1></div><div id="updated">%s</div>' % time.strftime('%H:%M:%S')
         html += '<div style="clear: both;"></div>'
 
         html += self.render_server()
-        html += self.render_navigation()
+        html += self.render_project_list()
 
-        for scanner in sorted(self.plugin.scanners.keys()):
-            html += self.plugin.scanners[scanner].render()
+        projects = self.plugin.server.dataprovider.projects
+        self.plugin.match_all()
+        #for location in self.plugin.server.dataprovider.locations:
+        #    self.plugin.match(location)
+
+        # Active projects
+        for p_name in sorted([p.name for p in projects.values() if p.is_active()]):
+            html += self.render_project(projects[p_name])
+
+        # Inactive projects
+        for p_name in sorted([p.name for p in projects.values() if not p.is_active()]):
+            html += self.render_project(projects[p_name])
+
+        # Projectless scanners
+        projectless_scanners = sorted([s for s in self.plugin.scanners if self.plugin.scanners[s].project == None])
+        if len(projectless_scanners) > 0:
+            html += '<div class="h2-outline" id="No-project"><h2 onclick="goTo(\'#server_block\')">No project</h2><div class="block_content">'
+            html += '<div class="block_data"><img src="/status/static/icons/radar-grey.png">Inactive</div></div></div>'
+            html += '<div id="navigation_block">'
+            for scanner in projectless_scanners:
+                s = self.plugin.scanners[scanner]
+                html += s.render_navigation()
+            html += '</div>'
+            for scanner in projectless_scanners:
+                s = self.plugin.scanners[scanner]
+                html += s.render()
+
+        #html += self.render_navigation()
+
+        #for scanner in sorted(self.plugin.scanners.keys()):
+        #    html += self.plugin.scanners[scanner].render()
 
         html += self.render_footer()
 
@@ -548,15 +673,17 @@ class Plugin(olof.core.Plugin):
     def __init__(self, server):
         olof.core.Plugin.__init__(self, server)
         self.root = RootResource()
-        self.root.putChild("", self.root)
+
+        status_resource = self.root
+        self.root.putChild("status", status_resource)
 
         portal = Portal(AuthenticationRealm(self), [FilePasswordDB(
             'olof/plugins/status/data/auth.password')])
         credfac = BasicCredentialFactory("Gyrid Server")
-        resource = HTTPAuthSessionWrapper(portal, [credfac])
-        self.root.putChild("content", resource)
+        rsrc = HTTPAuthSessionWrapper(portal, [credfac])
+        status_resource.putChild("content", rsrc)
 
-        self.root.putChild("static",
+        status_resource.putChild("static",
             StaticResource("olof/plugins/status/static/"))
 
         if os.path.isfile("olof/plugins/status/data/obj.pickle"):
@@ -590,6 +717,29 @@ class Plugin(olof.core.Plugin):
         t.start(120)
 
         reactor.listenTCP(8080, tserver.Site(self.root))
+
+    def match(self, location):
+        s = self.getScanner(location.name)
+        if s != None:
+            s.project = location.project
+            s.lon = location.lon
+            s.lat = location.lat
+            s.location = location.id
+            s.location_description = location.description
+        return s
+
+    def match_all(self):
+        for l in self.server.dataprovider.locations.values():
+            self.match(l)
+
+        for s in self.scanners.values():
+            found_location = False
+            for l in self.server.dataprovider.locations.values():
+                if l.name == s.hostname:
+                    found_location = True
+                    break
+            if not found_location:
+                s.project = None
 
     def _distance(self, lat1, lon1, lat2, lon2):
         R = 6370
@@ -698,19 +848,6 @@ class Plugin(olof.core.Plugin):
         s.conn_time['lost'] = int(time.time())
         for sens in s.sensors.values():
             sens.connected = False
-
-    def locationUpdate(self, hostname, module, timestamp, id, description, coordinates):
-        if module != 'scanner':
-            return
-
-        s = self.getScanner(hostname)
-        if coordinates != None:
-            s.lon = coordinates[0]
-            s.lat = coordinates[1]
-            s.location = id
-            s.location_description = description
-        else:
-            s.lon = s.lat = s.location = s.location_description = None
 
     def sysStateFeed(self, hostname, module, info):
         s = self.getScanner(hostname)

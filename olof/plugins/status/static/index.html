@@ -2,7 +2,7 @@
 <html>
 
 <head>
-    <title>Gyrid Server status panel</title>
+    <title>UGent — Gyrid dashboard</title>
 
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width">
@@ -11,25 +11,37 @@
     <link rel="stylesheet" href="/status/static/mobile.css" media="only screen and (max-device-width: 680px)" type="text/css" />
     <link rel="stylesheet" href="/status/static/mobile.css" media="handheld" type="text/css" />
     <link rel="stylesheet" href="/status/static/mobile.css" media="handheld, only screen and (max-width: 680px), only screen and (max-device-width: 680px)" type="text/css" />
-    <link rel="icon" type="image/png" href="/status/static/icons/monitor-window-flow.png">
+    <link rel="icon" type="image/png" href="/status/static/icons/monitor-window-bluetooth.png">
 
     <script type="text/javascript" src="/status/static/jquery.js"></script>
 
     <script type="text/javascript">
+        var connected = true;
+
         function goTo(anchor) {
               if ($('#header').css('display') == 'block') {
                 anim = 150;
               } else {
                 anim = 0;
               }
-              $('html, body').animate({ scrollTop: $(anchor).offset().top - $(anchor).css('margin-top').replace('px', '') }, anim);
+              $('html, body').animate({ scrollTop: $(anchor).offset().top - $(anchor).css('margin-top').replace('px', '') + 2 }, anim);
         };
 
         function toTop() {
-              $('html, body').animate({ scrollTop: 0 }, 0);
+              if ($('#header').css('display') == 'block') {
+                anim = 150;
+              } else {
+                anim = 0;
+              }
+              $('html, body').animate({ scrollTop: 0 }, anim);
         };
 
         function getContent(){
+            if ($('#header').css('display') == 'block') {
+                $("#spinner").find('img').css('left',
+                    ((window.innerWidth-1000)/2)+850);
+            }
+            if (connected) { $("#spinner").find('img').fadeIn(); }
             $.ajax({
                 type: "GET",
                 url: "/status/content",
@@ -40,12 +52,16 @@
 
                 success: function(data){
                     $("#content").html(data);
+                    $("#spinner").find('img').fadeOut('slow');
+                    connected = true;
                     setTimeout('getContent()', 10000);
                 },
 
                 error: function(data){
                     $("#content").html(
-                        '<p id="title">Failed to connect to Gyrid Server</p>');
+                        '<div id="title"><p>Failed to connect to Gyrid Server</p></div>');
+                    $("#spinner").find('img').fadeOut('slow');
+                    connected = false;
                     setTimeout('getContent()', 10000);
                 },
             });
@@ -58,9 +74,14 @@
 </head>
 
 <body>
-    <div><p id="header"><img src="/status/static/logos/header.png"/></p></div>
+    <div id="header"><img src="/status/static/logos/header.png"/>
+        <p>
+            <a href="http://geoweb.ugent.be/">Department of Geography</a> —
+            <a href="http://cartogis.ugent.be/">CartoGIS</a>
+        </p>
+    </div>
+    <div id="spinner"><img src="/status/static/icons/spinner.gif"></div>
     <div id="logo"><p><img src="/status/static/logos/logo.png"/></p></div>
-
     <div id="content"></div>
 </body>
 

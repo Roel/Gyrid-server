@@ -2,7 +2,7 @@
 #
 # This file belongs to Gyrid Server.
 #
-# Copyright (C) 2011  Roel Huybrechts
+# Copyright (C) 2011-2012  Roel Huybrechts
 # All rights reserved.
 
 """
@@ -15,6 +15,7 @@ class Plugin(object):
     """
     def __init__(self, server, name=None):
         self.server = server
+        self.filename = None
         self.name = name
         self.output = self.server.output
 
@@ -33,7 +34,7 @@ class Plugin(object):
     def connectionLost(self, hostname, ip, port):
         pass
 
-    def locationUpdate(self, hostname, module, timestamp, id, description, coordinates):
+    def locationUpdate(self, hostname, module, obj):
         pass
 
     def stateFeed(self, hostname, timestamp, sensor_mac, info):
