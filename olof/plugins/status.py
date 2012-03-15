@@ -69,11 +69,11 @@ class Scanner(object):
         self.host_uptime = None
         self.sensors = {}
         self.lagData = []
-        self.connections = set()
         self.ip_provider = {}
         self.msisdn = None
         self.mv_balance = {}
         self.mv_updated = None
+        self.lastConnected = None
 
         f = open('olof/plugins/status/data/mobilevikings.conf', 'r')
         for l in f:
@@ -110,6 +110,12 @@ class Scanner(object):
         self.checkMVBalance_call = task.LoopingCall(reactor.callInThread,
             self.getMVBalance)
         self.checkMVBalanceCall('start')
+
+    def isOld(self):
+        if self.lastConnected == None:
+            return False
+        else:
+            return (int(time.time()) - self.lastConnected) > 7*24*60*60
 
     def getStatus(self):
         lag = [(self.lag[i][0]/self.lag[i][1]) for i in sorted(
@@ -614,8 +620,14 @@ class ContentResource(resource.Resource):
         for p_name in sorted([p.name for p in projects.values() if not p.is_active()]):
             html += self.render_project(projects[p_name])
 
+        # Clean old scanners
+        to_delete = [s for s in self.plugin.scanners if self.plugin.scanners[s].isOld()]
+        for i in to_delete:
+            del(self.plugin.scanners[i])
+
         # Projectless scanners
         projectless_scanners = sorted([s for s in self.plugin.scanners if self.plugin.scanners[s].project == None])
+
         if len(projectless_scanners) > 0:
             html += '<div class="h2-outline" id="No-project"><h2 onclick="goTo(\'#server_block\')">No project</h2><div class="block_content">'
             html += '<div class="block_data"><img src="/status/static/icons/radar-grey.png">Inactive</div></div></div>'
@@ -841,12 +853,14 @@ class Plugin(olof.core.Plugin):
         s.gyrid_uptime = None
         s.host_uptime = None
         s.gyrid_connected = True
+        s.lastConnected = int(time.time())
 
     def connectionLost(self, hostname, ip, port):
         s = self.getScanner(hostname)
         if (ip, port) in s.connections:
             s.connections.remove((ip, port))
         s.conn_time['lost'] = int(time.time())
+        s.lastConnected = int(time.time())
         for sens in s.sensors.values():
             sens.connected = False
 
