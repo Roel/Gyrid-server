@@ -284,22 +284,22 @@ class Olof(object):
             if not os.path.exists(os.path.dirname(file)):
                 os.makedirs(os.path.dirname(file))
             elif (os.path.exists(file)) and (os.access(file, os.W_OK) == False):
-                sys.stderr.write("Gyrid: Error: Needs write access to %s\n" \
-                    % file)
+                self.output("Error: Needs write access to %s" \
+                    % file, sys.stderr)
                 access = False
             elif (not os.path.exists(file)) and (os.access(os.path.dirname(
                 file), os.W_OK) == False):
-                sys.stderr.write("Gyrid: Error: Needs write access to %s\n" \
-                    % file)
+                self.output("Error: Needs write access to %s" \
+                    % file, sys.stderr)
                 access = False
 
         if not access:
             sys.exit(1)
 
-    def output(self, message):
+    def output(self, message, channel=sys.stdout):
         d = {'time': time.strftime('%Y%m%d-%H%M%S-%Z'),
              'message': message}
-        sys.stdout.write("%(time)s Gyrid Server: %(message)s.\n" % d)
+        channel.write("%(time)s Gyrid Server: %(message)s.\n" % d)
 
     def run(self):
         self.output("Listening on TCP port %s" % self.port)
