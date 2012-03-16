@@ -732,12 +732,12 @@ class Plugin(olof.core.Plugin):
         reactor.listenTCP(8080, tserver.Site(self.root))
 
     def match(self, location):
-        s = self.getScanner(location.name)
+        s = self.getScanner(location.id)
         if s != None:
             s.project = location.project
             s.lon = location.lon
             s.lat = location.lat
-            s.location = location.id
+            s.location = location.name
             s.location_description = location.description
         return s
 
@@ -748,7 +748,7 @@ class Plugin(olof.core.Plugin):
         for s in self.scanners.values():
             found_location = False
             for l in self.server.dataprovider.locations.values():
-                if l.name == s.hostname:
+                if l.id == s.hostname:
                     found_location = True
                     break
             if not found_location:

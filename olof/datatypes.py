@@ -15,9 +15,9 @@ def unixtime(timestamp, format='%Y%m%d-%H%M%S-%Z'):
     return time.mktime(time.strptime(timestamp, format))
 
 class Location(object):
-    def __init__(self, name, id, lat, lon):
-        self.name = name
+    def __init__(self, id, name, lat, lon):
         self.id = id
+        self.name = name
         self.description = None
         self.lat = lat
         self.lon = lon
@@ -47,19 +47,19 @@ class Location(object):
 
     def compare(self, location):
         if False in [self.__dict__[i] == location.__dict__[i] for i in [
-            'id', 'description', 'lat', 'lon']]:
+            'name', 'description', 'lat', 'lon']]:
             # Something changed in the scanner details
 
             # Push scanner update
             for p in server.plugins:
                 if location.is_active(p.filename):
-                    p.locationUpdate(location.name, 'scanner', location)
+                    p.locationUpdate(location.id, 'scanner', location)
 
             # Push sensor updates
             for sensor in location.sensors.values():
                 for p in server.plugins:
                     if location.is_active(p.filename):
-                        p.locationUpdate(location.name, 'sensor', sensor)
+                        p.locationUpdate(location.id, 'sensor', sensor)
 
         else:
             # Scanner details identical, compare sensors
@@ -83,13 +83,13 @@ class Location(object):
                 # Push scanner update
                 for p in server.plugins:
                     if location.is_active(p.filename):
-                        p.locationUpdate(location.name, 'scanner', location)
+                        p.locationUpdate(location.id, 'scanner', location)
 
                 # Push sensor updates
                 for sensor in location.sensors.values():
                     for p in server.plugins:
                         if location.is_active(p.filename):
-                            p.locationUpdate(location.name, 'sensor', sensor)
+                            p.locationUpdate(location.id, 'sensor', sensor)
 
 class Sensor(object):
     def __init__(self, mac):
@@ -137,5 +137,5 @@ class Project(object):
                 return True
 
     def add_location(self, location):
-        self.locations[location.name] = location
+        self.locations[location.id] = location
         location.project = self
