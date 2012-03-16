@@ -9,5 +9,8 @@
 from olof import server
 
 if __name__ == '__main__':
+    """
+    Make the Olof object and start running.
+    """
     s = server.Olof()
     s.run()

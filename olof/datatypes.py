@@ -5,17 +5,44 @@
 # Copyright (C) 2011-2012  Roel Huybrechts
 # All rights reserved.
 
+"""
+Module that defines the datatypes that can be used in data/data.py to define
+scanner setups at specific projects, times and locations.
+"""
+
 import time
 
+# A reference to the main Olof server object. This reference is made at runtime.
 server = None
 
+# Plugins that cannot be disabled by the user in data/data.py
 ENABLED_PLUGINS = ['debug', 'status']
 
 def unixtime(timestamp, format='%Y%m%d-%H%M%S-%Z'):
+    """
+    Convert the given timestamp to UNIX time.
+
+    @param   timestamp   The timestamp to convert.
+    @param   format      The format of the timestamp.
+    @return              The equivalent UNIX time of the given timestamp.
+    """
     return time.mktime(time.strptime(timestamp, format))
 
 class Location(object):
+    """
+    Class that represents a location, meaning a scanner at a specific
+    geographic location.
+    """
     def __init__(self, id, name, lat, lon):
+        """
+        Initialisation.
+
+        @param   id      The id of the location, i.e. the hostname of the scanner. Unique among Locations.
+        @param   name    The name of the location, a short description of the geographical location of the scanner.
+                           Unique among Locations.
+        @param   lat     The geographical latitude coördinate in WGS84.
+        @param   lon     The geographical longitude coördinate in WGS84.
+        """
         self.id = id
         self.name = name
         self.description = None
@@ -26,6 +53,11 @@ class Location(object):
         self.sensors = {}
 
     def add_sensor(self, sensor):
+        """
+        Add a Bluetooth sensor to this location.
+
+        @param   sensor   The Sensor object to add.
+        """
         if not sensor.mac in self.sensors:
             self.sensors[sensor.mac] = sensor
             sensor.location = self
@@ -34,6 +66,13 @@ class Location(object):
                 sensor.lon = self.lon
 
     def is_active(self, plugin, timestamp=None):
+        """
+        Check if the given plugin is active for this location at the given timestamp.
+
+        @param   plugin      The name of the plugin.
+        @param   timestamp   The timestamp to check in UNIX time.
+        @return              True if the plugin is active at the given time, else False.
+        """
         if timestamp == None:
             timestamp = int(time.time())
         if plugin in ENABLED_PLUGINS:
@@ -46,6 +85,12 @@ class Location(object):
             return False
 
     def compare(self, location):
+        """
+        Compare the given Location object to this location. This is used to compare a new instance of the same location
+        and push out locationUpdate signals when changes are detected.
+
+        @param   location   The Location object to compare.
+        """
         if False in [self.__dict__[i] == location.__dict__[i] for i in [
             'name', 'description', 'lat', 'lon']]:
             # Something changed in the scanner details
@@ -92,7 +137,15 @@ class Location(object):
                             p.locationUpdate(location.id, 'sensor', sensor)
 
 class Sensor(object):
+    """
+    Class that represents a Bluetooth sensor.
+    """
     def __init__(self, mac):
+        """
+        Initialisation.
+
+        @param   mac   The MAC-address of the Bluetooth sensor.
+        """
         self.mac = mac
         self.location = None
         self.lat = None
@@ -102,11 +155,24 @@ class Sensor(object):
         self.end = None
 
     def __eq__(self, sensor):
+        """
+        Compare another Sensor object to this sensor.
+
+        @return   True if all fields are equal, else False.
+        """
         return False not in [self.__dict__[i] == sensor.__dict__[i] for i in [
             'mac', 'lat', 'lon', 'start', 'end']]
 
 class Project(object):
+    """
+    Class that represents a project.
+    """
     def __init__(self, name):
+        """
+        Initialisation.
+
+        @param   name   The name of the project.
+        """
         self.name = name
 
         self.active = True
@@ -118,6 +184,12 @@ class Project(object):
         self.end = None
 
     def is_active(self, timestamp=None):
+        """
+        Check if the project is active at the given timestamp.
+
+        @param   timestamp   The timestamp to check, in UNIX time.
+        @return              True if the project is active, else False.
+        """
         if self.active == False:
             return False
 
@@ -137,5 +209,10 @@ class Project(object):
                 return True
 
     def add_location(self, location):
+        """
+        Add a Location to this project.
+
+        @param   location   The Location object to add.
+        """
         self.locations[location.id] = location
         location.project = self
