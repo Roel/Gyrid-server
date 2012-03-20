@@ -22,9 +22,9 @@ def unixtime(timestamp, format='%Y%m%d-%H%M%S-%Z'):
     """
     Convert the given timestamp to UNIX time.
 
-    @param   timestamp   The timestamp to convert.
-    @param   format      The format of the timestamp.
-    @return              The equivalent UNIX time of the given timestamp.
+    @param   timestamp (str)   The timestamp to convert.
+    @param   format (str)      The format of the timestamp.
+    @return  (float)           The equivalent UNIX time of the given timestamp.
     """
     return time.mktime(time.strptime(timestamp, format))
 
@@ -37,11 +37,11 @@ class Location(object):
         """
         Initialisation.
 
-        @param   id      The id of the location, i.e. the hostname of the scanner. Unique among Locations.
-        @param   name    The name of the location, a short description of the geographical location of the scanner.
-                           Unique among Locations.
-        @param   lat     The geographical latitude coördinate in WGS84.
-        @param   lon     The geographical longitude coördinate in WGS84.
+        @param   id (str)      The id of the location, i.e. the hostname of the scanner. Unique among Locations.
+        @param   name (str)    The name of the location, a short description of the geographical location of the
+                                 scanner. Unique among Locations.
+        @param   lat (float)   The geographical latitude coördinate in WGS84.
+        @param   lon (float)   The geographical longitude coördinate in WGS84.
         """
         self.id = id
         self.name = name
@@ -56,7 +56,7 @@ class Location(object):
         """
         Add a Bluetooth sensor to this location.
 
-        @param   sensor   The Sensor object to add.
+        @param   sensor (Sensor)   The Sensor object to add.
         """
         if not sensor.mac in self.sensors:
             self.sensors[sensor.mac] = sensor
@@ -69,9 +69,9 @@ class Location(object):
         """
         Check if the given plugin is active for this location at the given timestamp.
 
-        @param   plugin      The name of the plugin.
-        @param   timestamp   The timestamp to check in UNIX time.
-        @return              True if the plugin is active at the given time, else False.
+        @param   plugin (str)       The name of the plugin.
+        @param   timestamp (float)  The timestamp to check in UNIX time.
+        @return  (bool)             True if the plugin is active at the given time, else False.
         """
         if timestamp == None:
             timestamp = int(time.time())
@@ -89,7 +89,7 @@ class Location(object):
         Compare the given Location object to this location. This is used to compare a new instance of the same location
         and push out locationUpdate signals when changes are detected.
 
-        @param   location   The Location object to compare.
+        @param   location (Location)   The Location object to compare.
         """
         if False in [self.__dict__[i] == location.__dict__[i] for i in [
             'name', 'description', 'lat', 'lon']]:
@@ -144,7 +144,7 @@ class Sensor(object):
         """
         Initialisation.
 
-        @param   mac   The MAC-address of the Bluetooth sensor.
+        @param   mac (str)   The MAC-address of the Bluetooth sensor.
         """
         self.mac = mac
         self.location = None
@@ -158,7 +158,7 @@ class Sensor(object):
         """
         Compare another Sensor object to this sensor.
 
-        @return   True if all fields are equal, else False.
+        @return (bool)  True if all fields are equal, else False.
         """
         return False not in [self.__dict__[i] == sensor.__dict__[i] for i in [
             'mac', 'lat', 'lon', 'start', 'end']]
@@ -171,7 +171,7 @@ class Project(object):
         """
         Initialisation.
 
-        @param   name   The name of the project.
+        @param   name (str)   The name of the project.
         """
         self.name = name
 
@@ -187,8 +187,8 @@ class Project(object):
         """
         Check if the project is active at the given timestamp.
 
-        @param   timestamp   The timestamp to check, in UNIX time.
-        @return              True if the project is active, else False.
+        @param   timestamp (float)   The timestamp to check, in UNIX time.
+        @return  (bool)              True if the project is active, else False.
         """
         if self.active == False:
             return False
@@ -212,7 +212,7 @@ class Project(object):
         """
         Add a Location to this project.
 
-        @param   location   The Location object to add.
+        @param   location (Location)   The Location object to add.
         """
         self.locations[location.id] = location
         location.project = self
