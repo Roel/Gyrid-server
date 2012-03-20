@@ -33,7 +33,7 @@ class Location(object):
     Class that represents a location, meaning a scanner at a specific
     geographic location.
     """
-    def __init__(self, id, name, lat, lon):
+    def __init__(self, id, name=None, lat=None, lon=None):
         """
         Initialisation.
 
