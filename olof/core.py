@@ -12,6 +12,9 @@ Module that provides the plugin interface.
 class Plugin(object):
     """
     This is the superclass interface for Olof plugins.
+
+    All methods have a default empty implementation. This allows for plugins to only implement the methods that are
+    needed.
     """
     def __init__(self, server, name=None):
         """
@@ -27,6 +30,17 @@ class Plugin(object):
         self.output = self.server.output
 
     def getStatus(self):
+        """
+        Used by the status plugin to render the status of this plugin.
+        This should return a list of dictionaries.
+
+        The first should only have one key: 'status', and its value should be either 'ok', 'error' or 'disabled'.
+
+        Further status items should be dict's too with at least one key: 'id', with its value being rendered as the name
+        of the status item. Additionally (and optionally) a second key can be added with more information for this item.
+        The name of the key depends on the type of information given: either 'str' for a string, 'time' for a UNIX
+        timestamp or 'int' for an integer value.
+        """
         return []
 
     def unload(self):
@@ -39,15 +53,22 @@ class Plugin(object):
         pass
 
     def uptime(self, hostname, host_uptime, gyrid_uptime):
+        """
+        Called when new uptime information is received from the scanner.
+
+        @param   hostname (str)       The hostname of the scanner.
+        @param   host_uptime (int)    The timestamp since when the scanner is last booted up, in UNIX time.
+        @param   gyrid_uptime (int)   The timestamp since when the Gyrid daemon in running, in UNIX time.
+        """
         pass
 
     def connectionMade(self, hostname, ip, port):
         """
         Called when a new connection is made with a scanner.
 
-        @param   hostname (str)  The hostname of the connected scanner.
-        @param   ip (str)        The IP-address of the connected scanner.
-        @param   port (int)      The TCP port from which the scanner is connected.
+        @param   hostname (str)   The hostname of the connected scanner.
+        @param   ip (str)         The IP-address of the connected scanner.
+        @param   port (int)       The TCP port from which the scanner is connected.
         """
         pass
 
@@ -62,15 +83,52 @@ class Plugin(object):
         pass
 
     def locationUpdate(self, hostname, module, obj):
+        """
+        Called when a new or updated Location is received from the data provider.
+
+        @param   hostname (str)   The hostname of the scanner.
+        @param   module (str)     The module of the new or updated location. Currently implemented:
+                                    "scanner": A new or updated location for a scanner.
+                                    "sensor": A new or updated location for a sensor.
+        @param   obj (Location)   The new or updated Location object. Location objects are defined in datatypes.py.
+        """
         pass
 
     def stateFeed(self, hostname, timestamp, sensor_mac, info):
+        """
+        Called when new structured status information is received for a specific sensor.
+
+        @param   hostname (str)      The hostname of the scanner.
+        @param   timestamp (float)   The timestamp of the status update, in UNIX time.
+        @param   sensor_mac (str)    The MAC-address of the respective Bluetooth sensor.
+        @param   info (str)          The status info. Currently implemented:
+                                       "new_inquiry": A new inquiry started on the sensor.
+                                       "started_scanning": Started scanning with the sensor.
+                                       "stopped_scanning": Stopped scanning with the sensor.
+        """
         pass
 
     def sysStateFeed(self, hostname, module, info):
+        """
+        Called when new structured general status information is received.
+
+        @param   hostname (str)   The hostname of the scanner.
+        @param   module (str)     The module the status info is valid for. Currently implemented:
+                                    "gyrid": Status info from the Gyrid daemon.
+        @param   info (str)       The status info. Currently implemented:
+                                    "connected": The Gyrid daemon connected to the networking middleware.
+                                    "disconnected": The Gyrid daemon disconnected from the networking middleware.
+        """
         pass
 
     def infoFeed(self, hostname, timestamp, info):
+        """
+        Called when a textual information message is received.
+
+        @param   hostname (str)      The hostname of the scanner.
+        @param   timestamp (float)   The timestamp of the info, in UNIX time.
+        @param   info (str)          The info that was received.
+        """
         pass
 
     def dataFeedCell(self, hostname, timestamp, sensor_mac, mac, deviceclass,
