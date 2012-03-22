@@ -69,13 +69,9 @@ class GyridServerProtocol(LineReceiver):
         """
         t = self.factory.timeout
         if self.last_keepalive < (int(time.time())-(t+0.1*t)):
-            #self.transport._writeDisconnected = True
             self.transport.loseConnection()
         else:
             self.sendLine('MSG,keepalive')
-
-    def sendLine(self, data):
-        LineReceiver.sendLine(self, data)
 
     def connectionLost(self, reason):
         """
@@ -109,8 +105,6 @@ class GyridServerProtocol(LineReceiver):
         """
         Called when a line was received. Process the line.
         """
-        #reactor.callInThread(self.process, line)
-        #print line
         self.process(line)
 
     def process(self, line):
