@@ -5,6 +5,10 @@
 # Copyright (C) 2011-2012  Roel Huybrechts
 # All rights reserved.
 
+"""
+Plugin that handles the connection with the Db4O database.
+"""
+
 from twisted.internet import reactor
 from twisted.internet.protocol import ReconnectingClientFactory
 from twisted.protocols.basic import LineReceiver
@@ -15,18 +19,33 @@ import time
 
 import olof.core
 
-class InetClient(LineReceiver):
+class Db4OClient(LineReceiver):
+    """
+    The class handling the connection with the Db4O server.
+    """
     def __init__(self, factory, plugin):
+        """
+        Initialisation.
+
+        @param   factory (t.i.p.ClientFactory)   Reference to a Twisted ClientFactory.
+        @param   plugin (olof.core.Plugin)       Reference to the main Db4O Plugin instance.
+        """
         self.delimiter = '\n'
         self.factory = factory
         self.plugin = plugin
 
     def connectionMade(self):
+        """
+        Push through the cache.
+        """
         self.plugin.connected = True
         self.plugin.conn_time = int(time.time())
         self.pushCache()
 
     def connectionLost(self, reason):
+        """
+        Open the cache.
+        """
         self.plugin.connected = False
         self.plugin.conn_time = int(time.time())
         if not self.plugin.cache.closed:
@@ -34,10 +53,10 @@ class InetClient(LineReceiver):
             self.plugin.cache.close()
         self.plugin.cache = open(self.plugin.cache_file, 'a')
 
-    def lineReceived(self, line):
-        pass
-
     def sendLine(self, line):
+        """
+        Try to send the line to the Db4O server. When not connected, cache the line.
+        """
         if self.transport != None and self.plugin.connected:
             LineReceiver.sendLine(self, line.strip())
         elif not self.plugin.connected and not self.plugin.cache.closed:
@@ -73,17 +92,16 @@ class InetClient(LineReceiver):
         self.plugin.cache = open(self.plugin.cache_file, 'w')
         self.plugin.cache.truncate()
         self.plugin.cache.close()
-        #self.plugin.cached_lines = 0
 
-class InetClientFactory(ReconnectingClientFactory):
+class Db4OClientFactory(ReconnectingClientFactory):
     """
-    The factory class of the inet client.
+    The factory class of the Db4O client.
     """
     def __init__(self, plugin):
         """
         Initialisation.
 
-        @param   network   Reference to a Network instance.
+        @param   plugin (olof.core.Plugin)   Reference to the main Db4O Plugin instance.
         """
         self.plugin = plugin
         self.maxDelay = 120
@@ -91,19 +109,33 @@ class InetClientFactory(ReconnectingClientFactory):
         self.buildProtocol(None)
 
     def sendLine(self, line):
+        """
+        Send a line via the Db4O client.
+
+        @param   line (str)   The line to send.
+        """
         if 'client' in self.__dict__ and self.client != None:
             self.client.sendLine(line)
 
     def buildProtocol(self, addr):
         """
-        Build the InetClient protocol, return an InetClient instance.
+        Build the Db4OClient protocol, return an Db4OClient instance.
         """
         self.resetDelay()
-        self.client = InetClient(self, self.plugin)
+        self.client = Db4OClient(self, self.plugin)
         return self.client
 
 class Plugin(olof.core.Plugin):
+    """
+    Main Db4O plugin class.
+    """
     def __init__(self, server):
+        """
+        Initialisation. Set up connection details and open cache file.
+        Read pickled location and scansetup data from disk.
+
+        Connect to the Db4O server.
+        """
         olof.core.Plugin.__init__(self, server, "Db4o")
         self.host = 'localhost'
         self.port = 5001
@@ -133,10 +165,13 @@ class Plugin(olof.core.Plugin):
             self.locations = pickle.load(f)
             f.close()
 
-        self.inet_factory = InetClientFactory(self)
-        reactor.connectTCP(self.host, self.port, self.inet_factory)
+        self.db4o_factory = Db4OClientFactory(self)
+        reactor.connectTCP(self.host, self.port, self.db4o_factory)
 
     def unload(self):
+        """
+        Unload. Save locations and scansetups to disk.
+        """
         f = open('olof/plugins/db4o/locations.pickle', 'wb')
         pickle.dump(self.locations, f)
         f.close()
@@ -146,6 +181,9 @@ class Plugin(olof.core.Plugin):
         f.close()
 
     def getStatus(self):
+        """
+        Return the current status of the Db4O connection and cache. For use in the status plugin.
+        """
         cl = {}
         if self.cached_lines > 0:
             cl = {'id': 'cached lines', 'int': self.cached_lines}
@@ -165,6 +203,15 @@ class Plugin(olof.core.Plugin):
         return r
 
     def addLocation(self, sensor, id, description, x, y):
+        """
+        Add a new location to the database. Only add if it is actually new.
+
+        @param   sensor (str)        The MAC-address of the Bluetooth sensor.
+        @param   id (str)            Unique ID (name) of the location.
+        @param   description (str)   Description of the location.
+        @param   x (float)           X-coordinate of the location.
+        @param   y (float)           Y-coordinate of the location.
+        """
         if not [sensor, id, description, x, y] in self.locations:
             self.server.output('db4o: Adding location %s|%s' % (id, sensor))
             self.locations.append([sensor, id, description, x, y])
@@ -172,6 +219,14 @@ class Plugin(olof.core.Plugin):
                 '%s|%s' % (id, sensor), str(description), "%0.6f" % x, "%0.6f" % y]))
 
     def addScanSetup(self, hostname, sensor, id, timestamp):
+        """
+        Add a new scansetup to the database.
+
+        @param   hostname (str)      Hostname of the scanner.
+        @param   sensor (str)        The MAC-address of the Bluetooth sensor.
+        @param   id (str)            Unique ID (name) of the location.
+        @param   timestamp (float)   Timestamp at which the scansetup is installed. In UNIX time.
+        """
         if not [hostname, sensor, id, timestamp, 1] in self.scanSetups:
             self.server.output('db4o: Adding ScanSetup for %s at %i: %s' % \
                 (hostname, timestamp, '%s|%s' % (id, sensor)))
@@ -180,6 +235,14 @@ class Plugin(olof.core.Plugin):
                 hostname, sensor, '%s|%s' % (id, sensor), str(int(timestamp*1000))]))
 
     def removeScanSetup(self, hostname, sensor, id, timestamp):
+        """
+        Remove a scansetup from the database.
+
+        @param   hostname (str)      Hostname of the scanner.
+        @param   sensor (str)        The MAC-address of the Bluetooth sensor.
+        @param   id (str)            Unique ID (name) of the location.
+        @param   timestamp (float)   Timestamp at which the scansetup is installed. In UNIX time.
+        """
         if not [hostname, sensor, id, timestamp, 0] in self.scanSetups:
             self.server.output('db4o: Removing ScanSetup for %s at %i: %s' % \
                 (hostname, timestamp, '%s|%s' % (id, sensor)))
@@ -188,6 +251,9 @@ class Plugin(olof.core.Plugin):
                 hostname, sensor, '%s|%s' % (id, sensor), str(int(timestamp*1000))]))
 
     def locationUpdate(self, hostname, module, obj):
+        """
+        Perform a location update. Add and remove locations and scansetups accordingly.
+        """
         if module == 'scanner':
             for sensor in obj.sensors.values():
                 self.addLocation(sensor.mac, obj.id, obj.description, sensor.lon, sensor.lat)
@@ -204,20 +270,28 @@ class Plugin(olof.core.Plugin):
                 self.addScanSetup(hostname, obj.mac, obj.location.id, obj.start)
 
     def stateFeed(self, hostname, timestamp, sensor_mac, info):
+        """
+        Send new_inquiry status messages to the Db4O server.
+        """
         dp = self.server.dataprovider
         if info == 'new_inquiry':
             self.inet_factory.sendLine(','.join([str(dp.getProjectName(hostname)),
                 hostname, 'INFO', str(int(timestamp*1000)), 'new_inquiry',
                 sensor_mac]))
 
-    def dataFeedCell(self, hostname, timestamp, sensor_mac, mac, deviceclass,
-             move):
+    def dataFeedCell(self, hostname, timestamp, sensor_mac, mac, deviceclass, move):
+        """
+        Send cell data to the Db4O server.
+        """
         dp = self.server.dataprovider
         self.inet_factory.sendLine(','.join([str(dp.getProjectName(hostname)),
             hostname, sensor_mac, mac, str(deviceclass),
             str(int(timestamp*1000)), move]))
 
     def dataFeedRssi(self, hostname, timestamp, sensor_mac, mac, rssi):
+        """
+        Send RSSI data to the Db4O server.
+        """
         dp = self.server.dataprovider
         deviceclass = str(self.server.getDeviceclass(mac))
         self.inet_factory.sendLine(','.join([str(dp.getProjectName(hostname)),
