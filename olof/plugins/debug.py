@@ -2,30 +2,33 @@
 #
 # This file belongs to Gyrid Server.
 #
-# Copyright (C) 2011  Roel Huybrechts
+# Copyright (C) 2011-2012  Roel Huybrechts
 # All rights reserved.
 
 """
-Module that handles the communication with the Move REST API.
+Plugin to print debug and information to the terminal.
 """
-
-from twisted.internet import task
-
-import time
-import urllib2
-import urlparse
 
 import olof.core
 
 class Plugin(olof.core.Plugin):
     """
-    Class that can interact with the Gyrid network component.
+    Main Debug plugin class.
     """
     def __init__(self, server):
+        """
+        Initialisation.
+        """
         olof.core.Plugin.__init__(self, server)
 
     def connectionMade(self, hostname, ip, port):
+        """
+        Print connection details to terminal.
+        """
         self.output("Connection made with %s (%s:%s)" % (hostname, ip, port))
 
     def connectionLost(self, hostname, ip, port):
+        """
+        Print connection details to terminal.
+        """
         self.output("Connection lost with %s (%s:%s)" % (hostname, ip, port))
