@@ -25,6 +25,11 @@ import olof.dataprovider
 import olof.datatypes
 
 def verifyCallback(connection, x509, errnum, errdepth, ok):
+    """
+    Check SSL certificates.
+
+    @return   (bool)   True when the certificates are valid, else False.
+    """
     if not ok:
         print 'invalid cert from subject:', x509.get_subject()
         return False
@@ -34,7 +39,13 @@ def verifyCallback(connection, x509, errnum, errdepth, ok):
     return True
 
 class GyridServerProtocol(LineReceiver):
+    """
+    The main Gyrid server protocol. This provides the interaction with the scanners.
+    """
     def connectionMade(self):
+        """
+        Called when a new connection is made with a scanner. Initialise the connection.
+        """
         self.last_keepalive = -1
         self.hostname = None
 
@@ -52,6 +63,10 @@ class GyridServerProtocol(LineReceiver):
         self.sendLine('MSG,keepalive')
 
     def keepalive(self):
+        """
+        Keepalive method. Close the connection when the last keepalive was longer ago than the timeout value, reply with
+        a keepalive otherwise.
+        """
         t = self.factory.timeout
         if self.last_keepalive < (int(time.time())-(t+0.1*t)):
             #self.transport._writeDisconnected = True
@@ -63,6 +78,11 @@ class GyridServerProtocol(LineReceiver):
         LineReceiver.sendLine(self, data)
 
     def connectionLost(self, reason):
+        """
+        Called when a connection has been lost.
+
+        @param   reason (str)   The reason why the connection has been lost.
+        """
         if self.hostname != None:
             dp = self.factory.server.dataprovider
             try:
@@ -77,14 +97,31 @@ class GyridServerProtocol(LineReceiver):
                         p.connectionLost(**args)
 
     def checksum(self, data):
+        """
+        Calculate the CRC32 checksum of the given data.
+
+        @param   data (str)   The data to check.
+        @return  (hex)        The absolute (positive) hexadecimal CRC32 checksum of the data.
+        """
         return hex(abs(zlib.crc32(data)))[2:]
 
     def lineReceived(self, line):
+        """
+        Called when a line was received. Process the line.
+        """
         #reactor.callInThread(self.process, line)
         #print line
         self.process(line)
 
     def process(self, line):
+        """
+        Process the line. The magic happens here!
+
+        Depending on the type of information received, the corresponding method is called for all plugins with the
+        correct arguments based on the received data.
+
+        @param   line (str)   The line to process.
+        """
         ll = line.strip().split(',')
         dp = self.factory.server.dataprovider
 
@@ -205,15 +242,31 @@ class GyridServerProtocol(LineReceiver):
 
 
 class GyridServerFactory(Factory):
+    """
+    The Gyrid server factory.
+    """
     protocol = GyridServerProtocol
 
     def __init__(self, server):
+        """
+        Initialisation.
+
+        @param   server (Olof)   Reference to main Olof server instance.
+        """
         self.server = server
         self.client_dict = {}
         self.timeout = 60
 
 class Olof(object):
+    """
+    Main Olof server class.
+    """
     def __init__(self):
+        """
+        Initialisation.
+
+        Read the MAC-adress:deviceclass dictionary from disk, load the plugins and the dataprovider.
+        """
         self.port = 2583
 
         self.plugins = []
@@ -242,6 +295,9 @@ class Olof(object):
         self.dataprovider = olof.dataprovider.DataProvider(self)
 
     def load_plugins(self):
+        """
+        Load the plugins. Called automatically on initialisation.
+        """
         def load(filename, list):
             name = os.path.basename(filename)[:-3]
             try:
@@ -265,6 +321,9 @@ class Olof(object):
                 load(os.path.join(home, 'olof', 'plugins', filename), self.plugins_inactive)
 
     def unload_plugins(self):
+        """
+        Unload the dataprovider and all the plugins. Save the MAC-address:deviceclass dictionary to disk.
+        """
         self.dataprovider.unload()
 
         f = open('olof/data/mac_dc.pickle', 'wb')
@@ -275,33 +334,54 @@ class Olof(object):
             p.unload()
 
     def getDeviceclass(self, mac):
+        """
+        Get the deviceclass that corresponds with the given MAC-address.
+
+        @param   mac (str)   The MAC-address to check.
+        @return  (int)       The deviceclass of the device with given MAC-address.
+        """
         return self.mac_dc.get(mac, -1)
 
-    def check_disk_access(self, locations):
+    def check_disk_access(self, paths):
+        """
+        Check read/write access to all given paths. Prints errors when read/write access is forbidden, and exits
+        with an exit code of 1 when not all paths have read/write access.
+
+        @param    paths (list)   A list of paths to check.
+        """
         access = True
 
-        for file in locations:
-            if not os.path.exists(os.path.dirname(file)):
-                os.makedirs(os.path.dirname(file))
-            elif (os.path.exists(file)) and (os.access(file, os.W_OK) == False):
+        for path in paths:
+            if not os.path.exists(os.path.dirname(path)):
+                os.makedirs(os.path.dirname(path))
+            elif (os.path.exists(path)) and (os.access(path, os.W_OK) == False):
                 self.output("Error: Needs write access to %s" \
-                    % file, sys.stderr)
+                    % path, sys.stderr)
                 access = False
-            elif (not os.path.exists(file)) and (os.access(os.path.dirname(
-                file), os.W_OK) == False):
+            elif (not os.path.exists(path)) and (os.access(os.path.dirname(
+                path), os.W_OK) == False):
                 self.output("Error: Needs write access to %s" \
-                    % file, sys.stderr)
+                    % path, sys.stderr)
                 access = False
 
         if not access:
             sys.exit(1)
 
     def output(self, message, channel=sys.stdout):
+        """
+        Write a message to the terminal output.
+
+        @param   message (str)   The message to write, without trailing punctuation or line-endings.
+        @param   channel         The channel to write the message to, by default sys.stdout
+        """
         d = {'time': time.strftime('%Y%m%d-%H%M%S-%Z'),
              'message': message}
         channel.write("%(time)s Gyrid Server: %(message)s.\n" % d)
 
     def run(self):
+        """
+        Start up the server reactor.
+        """
         self.output("Listening on TCP port %s" % self.port)
 
         gyridCtxFactory = ssl.DefaultOpenSSLContextFactory(
