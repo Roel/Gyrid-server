@@ -19,19 +19,17 @@ class Logger(object):
     Base logger superclass. Serves as common superclass for both Scanner and ScanSetup classes.
     Not intended to be instanciated directly.
     """
-    def __init__(self, server, hostname):
+    def __init__(self, plugin, hostname):
         """
         Initialisation. Sets the base logging directory and creates the full path if it doesn't exist yet.
 
-        @param   server (Olof)    Reference to main Olof server instance.
+        @param   plugin (Plugin)  Reference to main Logger plugin instance.
         @param   hostname (str)   Hostname of the scanner where the log data originates from.
         """
-        self.server = server
+        self.plugin = plugin
         self.hostname = hostname
         self.logBase = 'olof/plugins/logger'
-        self.project = self.server.dataProvider.getProjectName(self.hostname)
-        if self.project == None:
-            self.project = 'No-project'
+        self.project = self.plugin.getProject(self.hostname)
         self.logDir = '/'.join([self.logBase, self.project, self.hostname])
         self.logs = {}
 
@@ -59,11 +57,11 @@ class Scanner(Logger):
     Class that represents a logger for a specific scanner, logging only scanner-wide data, such as informational
     messages and connection data.
     """
-    def __init__(self, server, hostname):
+    def __init__(self, plugin, hostname):
         """
         Initialisation.
         """
-        Logger.__init__(self, server, hostname)
+        Logger.__init__(self, plugin, hostname)
 
         self.logFiles = ['messages', 'connections']
         self.logs = dict(zip(self.logFiles, [open('/'.join([
@@ -113,13 +111,13 @@ class ScanSetup(Logger):
     Class that represents a logger for a scanner-setup, i.e. a combination of a scanner and a Bluetooth sensor.
     This logger logs all Bluetooth data, such as cell-based and RSSI data.
     """
-    def __init__(self, server, hostname, sensor_mac):
+    def __init__(self, plugin, hostname, sensor_mac):
         """
         Initialisation.
 
         @param   sensor_mac (str)   The MAC-address of the Bluetooth sensor.
         """
-        Logger.__init__(self, server, hostname)
+        Logger.__init__(self, plugin, hostname)
         self.sensor = sensor_mac
 
         self.logFiles = ['scan', 'rssi']
@@ -171,6 +169,17 @@ class Plugin(olof.core.Plugin):
         for ss in self.scanSetups.values():
             ss.unload()
 
+    def getProject(self, hostname):
+        """
+        Get the name of the project associated with the given hostname.
+
+        @param    hostname (str)   The hostname to check.
+        @return   (str)            The name of the project the scanner with the given hostname belongs to.
+                                     'No-project' when the scanner is not attached to a project.
+        """
+        project = self.server.getProjectName(hostname)
+        return project if project != None else 'No-project'
+
     def getScanSetup(self, hostname, sensor_mac):
         """
         Get the ScanSetup for the given hostname and sensor. Create a new one when none available.
@@ -179,11 +188,12 @@ class Plugin(olof.core.Plugin):
         @param    sensor_mac (str)   The MAC-address of the Bluetooth sensor.
         @return   (ScanSetup)        The corresponding ScanSetup.
         """
-        if not (hostname, sensor_mac) in self.scanSetups:
+        project = self.getProject(hostname)
+        if not (project, hostname, sensor_mac) in self.scanSetups:
             ss = ScanSetup(self.server, hostname, sensor_mac)
-            self.scanSetups[(hostname, sensor_mac)] = ss
+            self.scanSetups[(project, hostname, sensor_mac)] = ss
         else:
-            ss = self.scanSetups[(hostname, sensor_mac)]
+            ss = self.scanSetups[(project, hostname, sensor_mac)]
         return ss
 
     def getScanner(self, hostname):
@@ -193,11 +203,12 @@ class Plugin(olof.core.Plugin):
         @param    hostname (str)   The hostname of the scanner.
         @return   (Scanner)        The corresponding Scanner.
         """
-        if not (hostname, None) in self.scanSetups:
+        project = self.getProject(hostname)
+        if not (project, hostname, None) in self.scanSetups:
             sc = Scanner(self.server, hostname)
-            self.scanSetups[(hostname, None)] = sc
+            self.scanSetups[(project, hostname, None)] = sc
         else:
-            sc = self.scanSetups[(hostname, None)]
+            sc = self.scanSetups[(project, hostname, None)]
         return sc
 
     def connectionMade(self, hostname, ip, port):
