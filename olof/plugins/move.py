@@ -101,7 +101,7 @@ class Connection(RESTConnection):
                         'EWKT', location[2]]))
                 else:
                     loc.append(','.join([time.strftime('%Y%m%d-%H%M%S-%Z',
-                        time.localtime(location[0])), '', 'NULL', '']))
+                        time.localtime(location[0])), 'NULL', 'NULL', 'NULL']))
             l_scanner.append("\n".join(loc))
 
         l = '\n'.join(l_scanner)
