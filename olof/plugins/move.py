@@ -12,8 +12,8 @@ Module that handles the communication with the Move REST API.
 from twisted.internet import reactor, task
 
 import copy
-import os
 import cPickle as pickle
+import os
 import time
 import urllib2
 
@@ -21,11 +21,26 @@ import olof.core
 from olof.tools import RESTConnection
 
 class Connection(RESTConnection):
-    def __init__(self, plugin, server, url, user, password, measurements={}, measureCount={},
-        locations={}):
+    """
+    Class that implements the REST connection with the Move database.
+    """
+    def __init__(self, plugin, url, user, password, measurements={}, measureCount={}, locations={}):
+        """
+        Initialisation.
+
+        Start looping calls that upload measurements and locations.
+
+        @param   plugin (Plugin)       Reference to main Move plugin instance.
+        @param   url (str)             Base URL of the Move REST interface.
+        @param   user (str)            Username to log in on the server.
+        @param   password (str)        Password to log in on the server.
+        @param   measurements (dict)   Cached measurements. Optional.
+        @param   measureCount (dict)   Cache statistics. Optional.
+        @param   locations (dict)      Cached location data. Optional.
+        """
         RESTConnection.__init__(self, url, 180, user, password, urllib2.HTTPDigestAuthHandler)
         self.plugin = plugin
-        self.server = server
+        self.server = self.plugin.server
         self.scanners = {}
         self.getScanners()
 
@@ -46,6 +61,11 @@ class Connection(RESTConnection):
         reactor.callLater(40, self.task_postL.start, 60, now=False)
 
     def getScanners(self):
+        """
+        Get the list of scanners from the Move database and update local scanner data.
+
+        @return   (str)   Result of the query.
+        """
         def process(r):
             if r != None:
                 for s in r:
@@ -56,23 +76,42 @@ class Connection(RESTConnection):
         self.request_get('scanner', process)
 
     def addScanner(self, mac, description):
+        """
+        Add a scanner to the Move database.
+
+        @param   mac (str)           Bluetooth MAC-address of the scanner.
+        @param   description (str)   Description of the scanner.
+        """
         self.request_post('scanner', None, '%s,%s' % (mac, description),
             {'Content-Type': 'text/plain'})
 
     def addLocation(self, sensor, timestamp, coordinates, description):
+        """
+        Add a location to the local location list.
+
+        @param   sensor (str)          MAC-address of the Bluetooth sensor.
+        @param   timestamp (int)       Timestamp of the time the scanner was added/removed. In UNIX time.
+        @param   coordinates (tuple)   Tuple containing the X and Y coordinates of the location respectively.
+        @param   description (str)     Description of the location.
+        """
         if not sensor in self.scanners:
             self.addScanner(sensor, 'test scanner')
             self.scanners[sensor] = False
 
         if not sensor in self.locations:
             self.locations[sensor] = [[(timestamp, coordinates, description), False]]
-            self.server.output("move: Adding location for %s at %s: %s (%s)" % (sensor, timestamp, description, coordinates))
+            self.server.output("move: Adding location for %s at %s: %s (%s)" % (sensor, timestamp, description,
+                coordinates))
         else:
             if not (timestamp, coordinates, description) in [i[0] for i in self.locations[sensor]]:
                 self.locations[sensor].append([(timestamp, coordinates, description), False])
-                self.server.output("move: Adding location for %s at %s: %s (%s)" % (sensor, timestamp, description, coordinates))
+                self.server.output("move: Adding location for %s at %s: %s (%s)" % (sensor, timestamp, description,
+                    coordinates))
 
     def postLocations(self):
+        """
+        Upload the pending location updates to the Move database.
+        """
         def process(r):
             if r != None and not 'error' in str(r).lower():
                 for scanner in to_delete:
@@ -111,6 +150,15 @@ class Connection(RESTConnection):
                 {'Content-Type': 'text/plain'})
 
     def addMeasurement(self, sensor, timestamp, mac, deviceclass, rssi):
+        """
+        Add a measurement to the local measurement list.
+
+        @param   sensor (str)        MAC-address of the Bluetooth sensor that detected the device.
+        @param   timestamp (int)     Timestamp of the detection. In UNIX time.
+        @param   mac (str)           Bluetooth MAC-address of the detected device.
+        @param   deviceclass (int)   Deviceclass of the detected Bluetooth device.
+        @param   rssi (int)          Value for the Received Signal Strength Indication for the detection.
+        """
         if not sensor in self.measurements:
             self.measurements[sensor] = set()
 
@@ -128,6 +176,9 @@ class Connection(RESTConnection):
         self.measureCount['cached'] += 1
 
     def postMeasurements(self):
+        """
+        Upload pending measurements to the Move database.
+        """
         def process(r):
             print "Request done."
             self.requestRunning = False
@@ -183,13 +234,13 @@ class Connection(RESTConnection):
 
 class Plugin(olof.core.Plugin):
     """
-    Class that can interact with the Gyrid network component.
+    Main Move plugin class.
     """
     def __init__(self, server):
         """
-        Initialisation.
+        Initialisation. Read previously saved data from disk and create Connection.
 
-        @param   mgr   Reference to ScanManager instance.
+        @param   server (Olof)   Reference to main Olof server instance.
         """
         olof.core.Plugin.__init__(self, server, "Move")
         self.buffer = []
@@ -233,10 +284,14 @@ class Plugin(olof.core.Plugin):
                 pass
             f.close()
 
-        self.conn = Connection(self, self.server, self.url, self.user, self.password,
+        self.conn = Connection(self, self.url, self.user, self.password,
             measurements, measureCount, locations)
 
     def readConf(self):
+        """
+        Read the configuration from disk and update variabled accordingly.
+        Configuration is read from olof/plugins/move/move.conf
+        """
         f = open('olof/plugins/move/move.conf', 'r')
         m = {'True': True, 'False': False, 'true': True, 'false': False, '1': True, '0': False}
         for l in f:
@@ -246,6 +301,9 @@ class Plugin(olof.core.Plugin):
         f.close()
 
     def unload(self):
+        """
+        Unload. Save cache to disk.
+        """
         f = open("olof/plugins/move/measureCount.pickle", "wb")
         pickle.dump(self.conn.measureCount, f)
         f.close()
@@ -259,6 +317,9 @@ class Plugin(olof.core.Plugin):
         f.close()
 
     def getStatus(self):
+        """
+        Return the current status of the Move plugin and cache. For use in the status plugin.
+        """
         r = []
 
         if self.upload_enabled == False:
@@ -282,6 +343,9 @@ class Plugin(olof.core.Plugin):
         return r
 
     def locationUpdate(self, hostname, module, obj):
+        """
+        Handle location updates.
+        """
         if module == 'scanner':
             for sensor in obj.sensors.values():
                 if sensor.start != None:
@@ -302,5 +366,8 @@ class Plugin(olof.core.Plugin):
                 self.conn.addLocation(obj.mac, timestamp, (obj.lon, obj.lat), desc)
 
     def dataFeedRssi(self, hostname, timestamp, sensor_mac, mac, rssi):
+        """
+        Add measurements when RSSI data is received.
+        """
         deviceclass = self.server.getDeviceclass(mac)
         self.conn.addMeasurement(sensor_mac, timestamp, mac, deviceclass, rssi)
