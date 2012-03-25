@@ -33,7 +33,7 @@ import olof.core
 import olof.plugins.status.macvendor as macvendor
 from olof.tools import RESTConnection
 
-def prettydate(d, prefix="", suffix=" ago"):
+def prettyDate(d, prefix="", suffix=" ago"):
     """
     Turn a UNIX timestamp in a prettier, more readable string.
 
@@ -329,13 +329,13 @@ class Scanner(object):
         def renderUptime():
             html = '<div class="block_data"><img src="/status/static/icons/clock-arrow.png">Uptime'
             if 'made' in self.conn_time:
-                html += '<span class="block_data_attr"><b>connection</b> %s</span>' % prettydate(int(float(
+                html += '<span class="block_data_attr"><b>connection</b> %s</span>' % prettyDate(int(float(
                     self.conn_time['made'])), suffix="")
             if self.gyrid_uptime != None and self.gyrid_connected == True:
-                html += '<span class="block_data_attr"><b>gyrid</b> %s</span>' % prettydate(self.gyrid_uptime,
+                html += '<span class="block_data_attr"><b>gyrid</b> %s</span>' % prettyDate(self.gyrid_uptime,
                     suffix="")
             if self.host_uptime != None:
-                html += '<span class="block_data_attr"><b>system</b> %s</span>' % prettydate(self.host_uptime,
+                html += '<span class="block_data_attr"><b>system</b> %s</span>' % prettyDate(self.host_uptime,
                     suffix="")
             html += '</div>'
             return html
@@ -389,10 +389,10 @@ class Scanner(object):
                         'is_expired'] else 'no')
                 if 'valid_until' in self.mv_balance and not self.mv_balance['is_expired']:
                     html += '<span class="block_data_attr"><b>expires</b> %s</span>' % \
-                        prettydate(float(time.strftime('%s', time.strptime(self.mv_balance['valid_until'],
+                        prettyDate(float(time.strftime('%s', time.strptime(self.mv_balance['valid_until'],
                         '%Y-%m-%d %H:%M:%S'))))
                 if self.mv_updated:
-                    html += '<span class="block_data_attr"><b>updated</b> %s</span>' % prettydate(self.mv_updated)
+                    html += '<span class="block_data_attr"><b>updated</b> %s</span>' % prettyDate(self.mv_updated)
                 html += '</div>'
                 return html
             else:
@@ -416,7 +416,7 @@ class Scanner(object):
         def renderNotconnected(disconnect_time, suffix=""):
             html = '<div class="block_data"><img src="/status/static/icons/traffic-cone.png">No connection%s' % suffix
             if disconnect_time != None:
-                html += '<span class="block_data_attr"><b>disconnected</b> %s</span>' % prettydate(int(float(
+                html += '<span class="block_data_attr"><b>disconnected</b> %s</span>' % prettyDate(int(float(
                     disconnect_time)))
             html += '</div>'
             return html
@@ -517,15 +517,15 @@ class Sensor(object):
         if self.connected == False:
             html += '<img src="/status/static/icons/plug-disconnect.png">%s' % mac
             if self.disconnect_time != None:
-                html += '<span class="block_data_attr"><b>disconnected</b> %s</span>' % prettydate(int(float(
+                html += '<span class="block_data_attr"><b>disconnected</b> %s</span>' % prettyDate(int(float(
                     self.disconnect_time)))
         else:
             html += '<img src="/status/static/icons/bluetooth.png">%s' % mac
             if self.last_inquiry != None:
-                html += '<span class="block_data_attr"><b>last inquiry</b> %s</span>' % prettydate(int(float(
+                html += '<span class="block_data_attr"><b>last inquiry</b> %s</span>' % prettyDate(int(float(
                     self.last_inquiry)))
         if self.last_data != None:
-            html += '<span class="block_data_attr"><b>last data</b> %s</span>' % prettydate(int(float(self.last_data)))
+            html += '<span class="block_data_attr"><b>last data</b> %s</span>' % prettyDate(int(float(self.last_data)))
         if self.detections > 0:
             html += '<span class="block_data_attr"><b>detections</b> %s</span>' % formatNumber(self.detections)
         html += '</div>'
@@ -583,7 +583,7 @@ class ContentResource(resource.Resource):
         """
         html = '<div id="server_block"><div class="block_title"><h3>Server</h3></div>'
         html += '<div class="block_topright_server">%s<img src="/status/static/icons/clock-arrow.png"></div>' % \
-            prettydate(self.plugin.plugin_uptime, suffix="")
+            prettyDate(self.plugin.plugin_uptime, suffix="")
         html += '<div style="clear: both;"></div>'
         html += '<div class="block_content">'
 
@@ -614,7 +614,7 @@ class ContentResource(resource.Resource):
                     if len(i) == 1 and 'id' in i:
                         html += '<span class="block_data_attr">%s</span>' % i['id']
                     elif len(i) > 1 and 'time' in i:
-                        html += '<span class="block_data_attr"><b>%s</b> %s</span>' % (i['id'], prettydate(i['time']))
+                        html += '<span class="block_data_attr"><b>%s</b> %s</span>' % (i['id'], prettyDate(i['time']))
                     elif len(i) > 1 and 'str' in i:
                         html += '<span class="block_data_attr"><b>%s</b> %s</span>' % (i['id'], i['str'])
                     elif len(i) > 1 and 'int' in i:
@@ -641,9 +641,9 @@ class ContentResource(resource.Resource):
                 html += '<a href="#" onclick="goTo(\'#%s\')">%s</a>' % (p.name.replace(' ','-'), p.name)
                 html += '<span class="block_data_attr">inactive</span>'
             if p.start:
-                html += '<span class="block_data_attr"><b>start</b> %s</span>' % prettydate(p.start)
+                html += '<span class="block_data_attr"><b>start</b> %s</span>' % prettyDate(p.start)
             if p.end:
-                html += '<span class="block_data_attr"><b>end</b> %s</span>' % prettydate(p.end)
+                html += '<span class="block_data_attr"><b>end</b> %s</span>' % prettyDate(p.end)
             if len(p.disabled_plugins) > 0:
                 html += '<span class="block_data_attr"><b>disabled</b> %s</span>' % ', '.join(sorted(p.disabled_plugins))
             html += '</div>'
@@ -684,9 +684,9 @@ class ContentResource(resource.Resource):
         else:
             html += '<img src="/status/static/icons/radar-grey.png">Inactive'
         if project.start:
-            html += '<span class="block_data_attr"><b>start</b> %s</span>' % prettydate(project.start)
+            html += '<span class="block_data_attr"><b>start</b> %s</span>' % prettyDate(project.start)
         if project.end:
-            html += '<span class="block_data_attr"><b>end</b> %s</span>' % prettydate(project.end)
+            html += '<span class="block_data_attr"><b>end</b> %s</span>' % prettyDate(project.end)
         html += '</div>'
 
         if len(project.disabled_plugins) > 0:
