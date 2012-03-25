@@ -902,6 +902,12 @@ class Plugin(olof.core.Plugin):
         t = task.LoopingCall(self.readMVNumbers)
         t.start(120)
 
+        reactor.callLater(2, self.startListening)
+
+    def startListening(self):
+        """
+        Start listening for incoming requests on TCP port 8080. Called automatically after initialisation.
+        """
         self.listenTCP = reactor.listenTCP(8080, tserver.Site(self.root))
 
     def match(self, location):
