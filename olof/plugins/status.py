@@ -908,7 +908,7 @@ class Plugin(olof.core.Plugin):
         """
         Start listening for incoming requests on TCP port 8080. Called automatically after initialisation.
         """
-        self.listenTCP = reactor.listenTCP(8080, tserver.Site(self.root))
+        self.listeningPort = reactor.listenTCP(8080, tserver.Site(self.root))
 
     def match(self, location):
         """
@@ -990,7 +990,7 @@ class Plugin(olof.core.Plugin):
         """
         Unload this plugin. Stop listening, stop looping calls and save scanner data to disk.
         """
-        self.listenTCP.stopListening()
+        self.listeningPort.stopListening()
 
         for s in self.scanners.values():
             s.checkLagCall('stop')
