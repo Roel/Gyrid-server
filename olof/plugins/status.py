@@ -902,7 +902,7 @@ class Plugin(olof.core.Plugin):
         t = task.LoopingCall(self.readMVNumbers)
         t.start(120)
 
-        reactor.listenTCP(8080, tserver.Site(self.root))
+        self.listenTCP = reactor.listenTCP(8080, tserver.Site(self.root))
 
     def match(self, location):
         """
@@ -982,8 +982,10 @@ class Plugin(olof.core.Plugin):
 
     def unload(self):
         """
-        Unload this plugin. Stop looping calls and save scanner data to disk.
+        Unload this plugin. Stop listening, stop looping calls and save scanner data to disk.
         """
+        self.listenTCP.stopListening()
+
         for s in self.scanners.values():
             s.checkLagCall('stop')
             s.checkMVBalanceCall('stop')
