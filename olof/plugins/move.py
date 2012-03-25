@@ -73,7 +73,7 @@ class Connection(RESTConnection):
                     self.scanners[ls[0]] = True
             return r
 
-        self.request_get('scanner', process)
+        self.requestGet('scanner', process)
 
     def addScanner(self, mac, description):
         """
@@ -82,7 +82,7 @@ class Connection(RESTConnection):
         @param   mac (str)           Bluetooth MAC-address of the scanner.
         @param   description (str)   Description of the scanner.
         """
-        self.request_post('scanner', None, '%s,%s' % (mac, description),
+        self.requestPost('scanner', None, '%s,%s' % (mac, description),
             {'Content-Type': 'text/plain'})
 
     def addLocation(self, sensor, timestamp, coordinates, description):
@@ -146,7 +146,7 @@ class Connection(RESTConnection):
         l = '\n'.join(l_scanner)
         if len(l) > 0:
             self.server.output("move: Posting location: %s" % l)
-            self.request_post('scanner/location', process, l,
+            self.requestPost('scanner/location', process, l,
                 {'Content-Type': 'text/plain'})
 
     def addMeasurement(self, sensor, timestamp, mac, deviceclass, rssi):
@@ -229,7 +229,7 @@ class Connection(RESTConnection):
         if len(m) > 0:
             self.requestRunning = True
             print "Sending request with %i lines..." % linecount
-            self.request_post('measurement', process, m,
+            self.requestPost('measurement', process, m,
                 {'Content-Type': 'text/plain'})
 
 class Plugin(olof.core.Plugin):

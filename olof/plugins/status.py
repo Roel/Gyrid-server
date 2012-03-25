@@ -264,7 +264,7 @@ class Scanner(object):
                     pass
 
         if self.msisdn:
-            self.mv_conn.request_get('sim_balance.pickle?msisdn=%s' % self.msisdn, process)
+            self.mv_conn.requestGet('sim_balance.pickle?msisdn=%s' % self.msisdn, process)
         else:
             self.mv_updated = None
             self.mv_balance = {}
@@ -306,7 +306,7 @@ class Scanner(object):
 
         @return   (str)   HTML representation of this scanner.
         """
-        def render_location():
+        def renderLocation():
             html = '<div class="block_topright">'
             if self.location != None and (self.lat == None or self.lon == None):
                 html += '%s<img src="/status/static/icons/marker.png">' % self.location
@@ -326,7 +326,7 @@ class Scanner(object):
 
             return html
 
-        def render_uptime():
+        def renderUptime():
             html = '<div class="block_data"><img src="/status/static/icons/clock-arrow.png">Uptime'
             if 'made' in self.conn_time:
                 html += '<span class="block_data_attr"><b>connection</b> %s</span>' % prettydate(int(float(
@@ -340,7 +340,7 @@ class Scanner(object):
             html += '</div>'
             return html
 
-        def render_lag():
+        def renderLag():
             lag = [(self.lag[i][0]/self.lag[i][1]) for i in sorted(
                 self.lag.keys()) if (i <= 15 and self.lag[i][1] > 0)]
             if len([i for i in lag[1:] if i >= 5]) > 0:
@@ -363,7 +363,7 @@ class Scanner(object):
             else:
                 return ''
 
-        def render_balance():
+        def renderBalance():
             if 'data' in self.mv_balance:
                 try:
                     mb = self.mv_balance['data']/1024.0/1024.0
@@ -398,7 +398,7 @@ class Scanner(object):
             else:
                 return ''
 
-        def render_detections():
+        def renderDetections():
             detc = [self.lag[i][1] for i in sorted(self.lag.keys()) if i <= 15]
             if len([i for i in detc if i > 0]) > 0:
                 html = '<div class="block_data"><img src="/status/static/icons/users.png">Detections'
@@ -413,7 +413,7 @@ class Scanner(object):
             else:
                 return ""
 
-        def render_notconnected(disconnect_time, suffix=""):
+        def renderNotconnected(disconnect_time, suffix=""):
             html = '<div class="block_data"><img src="/status/static/icons/traffic-cone.png">No connection%s' % suffix
             if disconnect_time != None:
                 html += '<span class="block_data_attr"><b>disconnected</b> %s</span>' % prettydate(int(float(
@@ -431,29 +431,29 @@ class Scanner(object):
             html += '<div class="blacklist_overlay">'
 
         html += '<div class="%(status)s"><div class="block_title"><h3>%(h)s</h3></div>' % d
-        html += render_location()
+        html += renderLocation()
 
         if len(self.connections) >= 1:
-            html += render_uptime()
+            html += renderUptime()
             if self.gyrid_connected == True:
-                html += render_detections()
-                html += render_lag()
-                html += render_balance()
+                html += renderDetections()
+                html += renderLag()
+                html += renderBalance()
                 for sensor in self.sensors.values():
                     html += sensor.render()
             else:
-                html += render_notconnected(self.gyrid_disconnect_time, " to Gyrid")
-                html += render_balance()
+                html += renderNotconnected(self.gyrid_disconnect_time, " to Gyrid")
+                html += renderBalance()
         else:
-            html += render_notconnected(self.conn_time.get('lost', None))
-            html += render_balance()
+            html += renderNotconnected(self.conn_time.get('lost', None))
+            html += renderBalance()
 
         html += '</div></div></div>'
         if bl:
             html += '</div>'
         return html
 
-    def render_navigation(self):
+    def renderNavigation(self):
         """
         Render the navition block for this scanner to HTML.
 
@@ -575,7 +575,7 @@ class ContentResource(resource.Resource):
         resource.Resource.__init__(self)
         self.plugin = plugin
 
-    def render_server(self):
+    def renderServer(self):
         """
         Render the server HTML block.
 
@@ -632,15 +632,15 @@ class ContentResource(resource.Resource):
         html += '</div></div>'
         return html
 
-    def render_project_list(self):
+    def renderProjectList(self):
         """
         Render the project list to HTML
 
         @return   (str)   HTML representation of the project list.
         """
-        def render_project(p):
+        def renderProject(p):
             html = '<div class="block_data">'
-            if p.is_active():
+            if p.isActive():
                 html += '<img src="/status/static/icons/radar.png">'
                 html += '<a href="#" onclick="goTo(\'#%s\')">%s</a>' % (p.name.replace(' ','-'), p.name)
                 html += '<span class="block_data_attr">active</span>'
@@ -666,17 +666,17 @@ class ContentResource(resource.Resource):
         html += '<div class="block_content">'
 
         # Active projects
-        for p_name in sorted([p.name for p in projects.values() if p.is_active()]):
-            html += render_project(projects[p_name])
+        for p_name in sorted([p.name for p in projects.values() if p.isActive()]):
+            html += renderProject(projects[p_name])
 
         # Inactive projects
-        for p_name in sorted([p.name for p in projects.values() if not p.is_active()]):
-            html += render_project(projects[p_name])
+        for p_name in sorted([p.name for p in projects.values() if not p.isActive()]):
+            html += renderProject(projects[p_name])
 
         html += '</div></div>'
         return html
 
-    def render_project(self, project):
+    def renderProject(self, project):
         """
         Render a specific project to HTML.
 
@@ -687,7 +687,7 @@ class ContentResource(resource.Resource):
             (project.name.replace(' ','-'), project.name)
         html += '<div class="block_content"><div class="block_data">'
 
-        if project.is_active():
+        if project.isActive():
             html += '<img src="/status/static/icons/radar.png">Active'
         else:
             html += '<img src="/status/static/icons/radar-grey.png">Inactive'
@@ -727,7 +727,7 @@ class ContentResource(resource.Resource):
 
         html += '<div id="navigation_block">'
         for location in sorted(project.locations.keys()):
-            html += self.plugin.match(project.locations[location]).render_navigation()
+            html += self.plugin.match(project.locations[location]).renderNavigation()
         html += '</div>'
 
         for location in sorted(project.locations.keys()):
@@ -735,7 +735,7 @@ class ContentResource(resource.Resource):
 
         return html
 
-    def render_footer(self):
+    def renderFooter(self):
         """
         Render the footer of the webpage to HTML.
 
@@ -763,19 +763,19 @@ class ContentResource(resource.Resource):
         html = '<div id="title"><h1>Gyrid dashboard</h1></div><div id="updated">%s</div>' % time.strftime('%H:%M:%S')
         html += '<div style="clear: both;"></div>'
 
-        html += self.render_server()
-        html += self.render_project_list()
+        html += self.renderServer()
+        html += self.renderProjectList()
 
         projects = self.plugin.server.dataprovider.projects
-        self.plugin.match_all()
+        self.plugin.matchAll()
 
         # Active projects
-        for p_name in sorted([p.name for p in projects.values() if p.is_active()]):
-            html += self.render_project(projects[p_name])
+        for p_name in sorted([p.name for p in projects.values() if p.isActive()]):
+            html += self.renderProject(projects[p_name])
 
         # Inactive projects
-        for p_name in sorted([p.name for p in projects.values() if not p.is_active()]):
-            html += self.render_project(projects[p_name])
+        for p_name in sorted([p.name for p in projects.values() if not p.isActive()]):
+            html += self.renderProject(projects[p_name])
 
         # Clean old scanners
         to_delete = [s for s in self.plugin.scanners if self.plugin.scanners[s].isOld()]
@@ -792,13 +792,13 @@ class ContentResource(resource.Resource):
             html += '<div id="navigation_block">'
             for scanner in projectless_scanners:
                 s = self.plugin.scanners[scanner]
-                html += s.render_navigation()
+                html += s.renderNavigation()
             html += '</div>'
             for scanner in projectless_scanners:
                 s = self.plugin.scanners[scanner]
                 html += s.render()
 
-        html += self.render_footer()
+        html += self.renderFooter()
 
         return html
 
@@ -904,10 +904,10 @@ class Plugin(olof.core.Plugin):
         except:
             self.cpuCount = 1
 
-        t = task.LoopingCall(self.check_resources)
+        t = task.LoopingCall(self.checkResources)
         t.start(10)
 
-        t = task.LoopingCall(self.read_MV_numbers)
+        t = task.LoopingCall(self.readMVNumbers)
         t.start(120)
 
         reactor.listenTCP(8080, tserver.Site(self.root))
@@ -931,7 +931,7 @@ class Plugin(olof.core.Plugin):
             s.location_description = location.description
         return s
 
-    def match_all(self):
+    def matchAll(self):
         """
         Match all Locations from the dataprovider to the Scanners and vice versa.
         """
@@ -947,7 +947,7 @@ class Plugin(olof.core.Plugin):
             if not found_location:
                 s.project = None
 
-    def check_resources(self):
+    def checkResources(self):
         """
         Check system resources. Reads information from the proc filesystem and updates variables for later use.
         """
@@ -971,7 +971,7 @@ class Plugin(olof.core.Plugin):
         s = os.statvfs('.')
         self.diskfree_mb = (s.f_bavail * s.f_bsize)/1024/1024
 
-    def read_MV_numbers(self):
+    def readMVNumbers(self):
         """
         Read Mobile Vikings MSISDN information from disk.
         """

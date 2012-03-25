@@ -52,7 +52,7 @@ class Location(object):
         self.project = None
         self.sensors = {}
 
-    def add_sensor(self, sensor):
+    def addSensor(self, sensor):
         """
         Add a Bluetooth sensor to this location.
 
@@ -65,7 +65,7 @@ class Location(object):
                 sensor.lat = self.lat
                 sensor.lon = self.lon
 
-    def is_active(self, plugin, timestamp=None):
+    def isActive(self, plugin, timestamp=None):
         """
         Check if the given plugin is active for this location at the given timestamp.
 
@@ -79,7 +79,7 @@ class Location(object):
             return True
         elif self.project == None:
             return False
-        elif self.project.is_active(timestamp) and (plugin not in self.project.disabled_plugins):
+        elif self.project.isActive(timestamp) and (plugin not in self.project.disabled_plugins):
             return True
         else:
             return False
@@ -97,13 +97,13 @@ class Location(object):
 
             # Push scanner update
             for p in server.plugins:
-                if location.is_active(p.filename):
+                if location.isActive(p.filename):
                     p.locationUpdate(location.id, 'scanner', location)
 
             # Push sensor updates
             for sensor in location.sensors.values():
                 for p in server.plugins:
-                    if location.is_active(p.filename):
+                    if location.isActive(p.filename):
                         p.locationUpdate(location.id, 'sensor', sensor)
 
         else:
@@ -127,13 +127,13 @@ class Location(object):
             if update:
                 # Push scanner update
                 for p in server.plugins:
-                    if location.is_active(p.filename):
+                    if location.isActive(p.filename):
                         p.locationUpdate(location.id, 'scanner', location)
 
                 # Push sensor updates
                 for sensor in location.sensors.values():
                     for p in server.plugins:
-                        if location.is_active(p.filename):
+                        if location.isActive(p.filename):
                             p.locationUpdate(location.id, 'sensor', sensor)
 
 class Sensor(object):
@@ -183,7 +183,7 @@ class Project(object):
         self.start = None
         self.end = None
 
-    def is_active(self, timestamp=None):
+    def isActive(self, timestamp=None):
         """
         Check if the project is active at the given timestamp.
 
@@ -208,7 +208,7 @@ class Project(object):
             else:
                 return True
 
-    def add_location(self, location):
+    def addLocation(self, location):
         """
         Add a Location to this project.
 

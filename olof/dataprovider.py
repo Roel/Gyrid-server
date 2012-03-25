@@ -100,7 +100,7 @@ class DataProvider(object):
 
         if plugin in olof.datatypes.ENABLED_PLUGINS:
             return True
-        elif (hostname in self.locations) and (self.locations[hostname].is_active(plugin, timestamp)):
+        elif (hostname in self.locations) and (self.locations[hostname].isActive(plugin, timestamp)):
             return True
         else:
             return False
@@ -119,13 +119,13 @@ class DataProvider(object):
                 # New scanner
                 scannerobj = locations[scanner]
                 for p in self.server.plugins:
-                    if scannerobj.is_active(p.filename):
+                    if scannerobj.isActive(p.filename):
                         p.locationUpdate(scannerobj.name, 'scanner', scannerobj)
 
                 # Push sensor updates
                 for sensor in scannerobj.sensors.values():
                     for p in self.server.plugins:
-                        if scannerobj.is_active(p.filename):
+                        if scannerobj.isActive(p.filename):
                             p.locationUpdate(scannerobj.name, 'sensor', sensor)
 
         for scanner in self.locations:

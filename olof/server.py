@@ -284,11 +284,11 @@ class Olof(object):
 
         olof.datatypes.server = self
 
-        self.load_plugins()
+        self.loadPlugins()
 
         self.dataprovider = olof.dataprovider.DataProvider(self)
 
-    def load_plugins(self):
+    def loadPlugins(self):
         """
         Load the plugins. Called automatically on initialisation.
         """
@@ -314,7 +314,7 @@ class Olof(object):
             elif filename.endswith('.py') and not filename.startswith('__'):
                 load(os.path.join(home, 'olof', 'plugins', filename), self.plugins_inactive)
 
-    def unload_plugins(self):
+    def unloadPlugins(self):
         """
         Unload the dataprovider and all the plugins. Save the MAC-address:deviceclass dictionary to disk.
         """
@@ -336,7 +336,7 @@ class Olof(object):
         """
         return self.mac_dc.get(mac, -1)
 
-    def check_disk_access(self, paths):
+    def checkDiskAccess(self, paths):
         """
         Check read/write access to all given paths. Prints errors when read/write access is forbidden, and exits
         with an exit code of 1 when not all paths have read/write access.
@@ -393,6 +393,6 @@ class Olof(object):
 
         gsf = GyridServerFactory(self)
 
-        reactor.addSystemEventTrigger("before", "shutdown", self.unload_plugins)
+        reactor.addSystemEventTrigger("before", "shutdown", self.unloadPlugins)
         reactor.listenSSL(self.port, gsf, gyridCtxFactory)
         reactor.run()

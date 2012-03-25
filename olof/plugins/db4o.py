@@ -147,7 +147,7 @@ class Plugin(olof.core.Plugin):
                 self.cached_lines += 1
             self.cache.close()
 
-        self.server.check_disk_access([self.cache_file])
+        self.server.checkDiskAccess([self.cache_file])
         self.cache = open(self.cache_file, 'a')
 
         self.connected = False

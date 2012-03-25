@@ -67,7 +67,7 @@ class RESTConnection(object):
         self.host = netloc
         self.path = path
 
-    def request_get(self, resource, cb=None, headers={}):
+    def requestGet(self, resource, cb=None, headers={}):
         """
         Perform a GET request.
 
@@ -78,7 +78,7 @@ class RESTConnection(object):
         """
         self.request(cb, resource, "get", headers=headers)
 
-    def request_delete(self, resource, cb=None, headers={}):
+    def requestDelete(self, resource, cb=None, headers={}):
         """
         Perform a DELETE request.
 
@@ -89,7 +89,7 @@ class RESTConnection(object):
         """
         self.request(cb, resource, "delete", headers=headers)
 
-    def request_head(self, resource, cb=None, headers={}):
+    def requestHead(self, resource, cb=None, headers={}):
         """
         Perform a HEAD request.
 
@@ -100,7 +100,7 @@ class RESTConnection(object):
         """
         self.request(cb, resource, "head", headers=headers)
 
-    def request_post(self, resource, cb=None, body=None, headers={}):
+    def requestPost(self, resource, cb=None, body=None, headers={}):
         """
         Perform a POST request.
 
@@ -112,7 +112,7 @@ class RESTConnection(object):
         """
         self.request(cb, resource, "post", body=body, headers=headers)
 
-    def request_put(self, resource, cb=None, body=None, headers={}):
+    def requestPut(self, resource, cb=None, body=None, headers={}):
         """
         Perform a PUT request.
 
@@ -156,4 +156,3 @@ class RESTConnection(object):
             return e
         except:
             return None
-

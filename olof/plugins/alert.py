@@ -17,7 +17,7 @@ import time
 
 import olof.core
 
-def prettydate(d, prefix="", suffix=" ago"):
+def prettyDate(d, prefix="", suffix=" ago"):
     """
     Turn a UNIX timestamp in a prettier, more readable string.
 
@@ -280,7 +280,7 @@ class Alert(object):
         @return   (str)                 The corresponding message body.
         """
         msg = Alert.Level.String[level]
-        msg += ' - %s -\r\n\r\n' % prettydate(self.etime)
+        msg += ' - %s -\r\n\r\n' % prettyDate(self.etime)
         msg += Alert.Type.Message[self.type] % {'origin': self.origin,
                                                 'module': self.module}
         msg += '\r\n\r\n'
