@@ -12,7 +12,6 @@ from twisted.internet.protocol import Factory
 from twisted.protocols.basic import LineReceiver
 
 import git
-import imp
 import os
 import sys
 import time
@@ -23,6 +22,7 @@ import cPickle as pickle
 
 import olof.dataprovider
 import olof.datatypes
+import olof.pluginmanager
 
 def verifyCallback(connection, x509, errnum, errdepth, ok):
     """
@@ -88,7 +88,7 @@ class GyridServerProtocol(LineReceiver):
             except:
                 return
             else:
-                for p in self.factory.server.plugins:
+                for p in self.factory.server.pluginmgr.getPlugins():
                     if dp.isActive(self.hostname, p.filename):
                         p.connectionLost(**args)
 
@@ -130,7 +130,7 @@ class GyridServerProtocol(LineReceiver):
                 except:
                     return
                 else:
-                    for p in self.factory.server.plugins:
+                    for p in self.factory.server.pluginmgr.getPlugins():
                         if dp.isActive(self.hostname, p.filename):
                             p.connectionMade(**args)
 
@@ -147,7 +147,7 @@ class GyridServerProtocol(LineReceiver):
                     except:
                         return
                     else:
-                        for p in self.factory.server.plugins:
+                        for p in self.factory.server.pluginmgr.getPlugins():
                             if dp.isActive(self.hostname, p.filename):
                                 p.uptime(**args)
                 else:
@@ -161,7 +161,7 @@ class GyridServerProtocol(LineReceiver):
                     except:
                         return
                     else:
-                        for p in self.factory.server.plugins:
+                        for p in self.factory.server.pluginmgr.getPlugins():
                             if dp.isActive(self.hostname, p.filename):
                                 p.sysStateFeed(**args)
                 else:
@@ -185,7 +185,7 @@ class GyridServerProtocol(LineReceiver):
                     except:
                         return
                     else:
-                        for p in self.factory.server.plugins:
+                        for p in self.factory.server.pluginmgr.getPlugins():
                             if dp.isActive(self.hostname, p.filename, args['timestamp']):
                                 p.stateFeed(**args)
                 elif len(ll) == 5:
@@ -206,7 +206,7 @@ class GyridServerProtocol(LineReceiver):
                         except:
                             return
                         else:
-                            for p in self.factory.server.plugins:
+                            for p in self.factory.server.pluginmgr.getPlugins():
                                 if dp.isActive(self.hostname, p.filename, args['timestamp']):
                                     p.dataFeedCell(**args)
                 elif len(ll) == 4:
@@ -219,7 +219,7 @@ class GyridServerProtocol(LineReceiver):
                     except:
                         return
                     else:
-                        for p in self.factory.server.plugins:
+                        for p in self.factory.server.pluginmgr.getPlugins():
                             if dp.isActive(self.hostname, p.filename, args['timestamp']):
                                 p.dataFeedRssi(**args)
                 elif len(ll) == 3 and ll[0] == 'INFO':
@@ -230,7 +230,7 @@ class GyridServerProtocol(LineReceiver):
                     except:
                         return
                     else:
-                        for p in self.factory.server.plugins:
+                        for p in self.factory.server.pluginmgr.getPlugins():
                             if dp.isActive(self.hostname, p.filename, args['timestamp']):
                                 p.infoFeed(**args)
 
@@ -259,13 +259,9 @@ class Olof(object):
         """
         Initialisation.
 
-        Read the MAC-adress:deviceclass dictionary from disk, load the plugins and the dataprovider.
+        Read the MAC-adress:deviceclass dictionary from disk, load the pluginmanager and the dataprovider.
         """
         self.port = 2583
-
-        self.plugins = []
-        self.plugins_inactive = []
-        self.plugins_with_errors = {}
 
         self.output("Starting Gyrid Server")
         repo = git.Repo('.')
@@ -284,55 +280,26 @@ class Olof(object):
 
         olof.datatypes.server = self
 
-        self.loadPlugins()
-
+        self.pluginmgr = olof.pluginmanager.PluginManager(self)
         self.dataprovider = olof.dataprovider.DataProvider(self)
 
-    def loadPlugins(self):
+    def unload(self):
         """
-        Load the plugins. Called automatically on initialisation.
-        """
-        def load(filename, list):
-            name = os.path.basename(filename)[:-3]
-            try:
-                plugin = imp.load_source(name, filename).Plugin(self)
-                plugin.filename = name
-            except Exception, e:
-                self.plugins_with_errors[name] = (e, traceback.format_exc())
-                sys.stderr.write("Error while loading plugin %s: %s\n" % (name, e))
-                traceback.print_exc()
-            else:
-                self.output("Loaded plugin: %s" % name)
-                list.append(plugin)
-
-        home = os.getcwd()
-
-        filenames = []
-        for filename in os.listdir(os.path.join(home, 'olof', 'plugins')):
-            if filename.endswith('.py') and not filename.startswith('_'):
-                load(os.path.join(home, 'olof', 'plugins', filename), self.plugins)
-            elif filename.endswith('.py') and not filename.startswith('__'):
-                load(os.path.join(home, 'olof', 'plugins', filename), self.plugins_inactive)
-
-    def unloadPlugins(self):
-        """
-        Unload the dataprovider and all the plugins. Save the MAC-address:deviceclass dictionary to disk.
+        Unload the dataprovider and the pluginmanager. Save the MAC-address:deviceclass dictionary to disk.
         """
         self.dataprovider.unload()
+        self.pluginmgr.unload()
 
         f = open('olof/data/mac_dc.pickle', 'wb')
         pickle.dump(self.mac_dc, f)
         f.close()
-
-        for p in self.plugins:
-            p.unload()
 
     def getDeviceclass(self, mac):
         """
         Get the deviceclass that corresponds with the given MAC-address.
 
         @param   mac (str)   The MAC-address to check.
-        @return  (int)       The deviceclass of the device with given MAC-address.
+        @return  (int)       The deviceclass of the device with given MAC-address, -1 if unknown.
         """
         return self.mac_dc.get(mac, -1)
 
@@ -393,6 +360,6 @@ class Olof(object):
 
         gsf = GyridServerFactory(self)
 
-        reactor.addSystemEventTrigger("before", "shutdown", self.unloadPlugins)
+        reactor.addSystemEventTrigger("before", "shutdown", self.unload)
         reactor.listenSSL(self.port, gsf, gyridCtxFactory)
         reactor.run()

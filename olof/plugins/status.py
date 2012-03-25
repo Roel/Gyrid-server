@@ -600,7 +600,7 @@ class ContentResource(resource.Resource):
             html += '</div>'
 
         # Plugins
-        for p in self.plugin.server.plugins:
+        for p in self.plugin.server.pluginmgr.getPlugins():
             if p.name != None:
                 html += '<div class="block_data">'
                 st = p.getStatus()
@@ -619,14 +619,6 @@ class ContentResource(resource.Resource):
                         html += '<span class="block_data_attr"><b>%s</b> %s</span>' % (i['id'], i['str'])
                     elif len(i) > 1 and 'int' in i:
                         html += '<span class="block_data_attr"><b>%s</b> %s</span>' % (i['id'], formatNumber(i['int']))
-                html += '</div>'
-
-        # Disabled plugins
-        for p in self.plugin.server.plugins_inactive:
-            if p.name != None:
-                html += '<div class="block_data">'
-                html += '<img src="/status/static/icons/puzzle-grey.png">%s' % p.name
-                html += '<span class="block_data_attr">disabled</span>'
                 html += '</div>'
 
         html += '</div></div>'
