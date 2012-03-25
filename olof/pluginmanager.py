@@ -26,37 +26,35 @@ class PluginManager(object):
         """
         self.server = server
 
+        self.plugin_dirs = ['olof/plugins']
+
         self.plugins = []
-        self.plugins_inactive = []
         self.plugins_with_errors = {}
 
         self.loadPlugins()
+
+    def loadPlugin(self, filename):
+        name = os.path.basename(filename)[:-3]
+        try:
+            plugin = imp.load_source(name, filename).Plugin(self.server)
+            plugin.filename = name
+        except Exception, e:
+            self.plugins_with_errors[name] = (e, traceback.format_exc())
+            self.server.output("Error while loading plugin %s: %s" % (name, e), sys.stderr)
+        else:
+            self.server.output("Loaded plugin: %s" % name)
+            self.plugins.append(plugin)
 
     def loadPlugins(self):
         """
         Load the plugins. Called automatically on initialisation.
         """
-        def load(filename, list):
-            name = os.path.basename(filename)[:-3]
-            try:
-                plugin = imp.load_source(name, filename).Plugin(self.server)
-                plugin.filename = name
-            except Exception, e:
-                self.plugins_with_errors[name] = (e, traceback.format_exc())
-                sys.stderr.write("Error while loading plugin %s: %s\n" % (name, e))
-                traceback.print_exc()
-            else:
-                self.server.output("Loaded plugin: %s" % name)
-                list.append(plugin)
-
         home = os.getcwd()
 
-        filenames = []
-        for filename in os.listdir(os.path.join(home, 'olof', 'plugins')):
-            if filename.endswith('.py') and not filename.startswith('_'):
-                load(os.path.join(home, 'olof', 'plugins', filename), self.plugins)
-            elif filename.endswith('.py') and not filename.startswith('__'):
-                load(os.path.join(home, 'olof', 'plugins', filename), self.plugins_inactive)
+        for path in self.plugin_dirs:
+            for filename in os.listdir(path):
+                if filename.endswith('.py') and not filename == '__init__.py':
+                    self.loadPlugin(os.path.join(home, path, filename))
 
     def unload(self):
         """
