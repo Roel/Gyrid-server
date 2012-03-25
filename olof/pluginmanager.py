@@ -37,6 +37,8 @@ class PluginManager(object):
         name = os.path.basename(filename)[:-3]
         try:
             plugin = imp.load_source(name, filename).Plugin(self.server)
+            if not plugin.isEnabled():
+                return
             plugin.filename = name
         except Exception, e:
             self.plugins_with_errors[name] = (e, traceback.format_exc())

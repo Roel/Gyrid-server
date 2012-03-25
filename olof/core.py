@@ -29,6 +29,14 @@ class Plugin(object):
         self.name = name
         self.output = self.server.output
 
+    def isEnabled(self):
+        """
+        Check if this plugin is enabled. Set this to False to disable the plugin and thus prevent from loading.
+
+        @return   (bool)   If this plugin is enabled. Default implementation is True.
+        """
+        return True
+
     def getStatus(self):
         """
         Used by the status plugin to render the status of this plugin.
