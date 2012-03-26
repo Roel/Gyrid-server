@@ -47,7 +47,7 @@ class PluginManager(object):
         """
         Process an INotify event, unloading and reloading plugins when applicable.
         """
-        if not event.name.startswith('.') and event.name.endswith('.py'):
+        if not event.name.startswith('.') and event.name.endswith('.py') and not event.name == '__init__.py':
             if event.mask == pyinotify.IN_CLOSE_WRITE:
                 self.unloadPlugin(event.name.rstrip('.py'))
                 self.loadPlugin(event.pathname)
