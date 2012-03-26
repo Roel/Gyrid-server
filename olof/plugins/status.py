@@ -418,6 +418,10 @@ class Scanner(object):
             if disconnect_time != None:
                 html += '<span class="block_data_attr"><b>disconnected</b> %s</span>' % prettyDate(int(float(
                     disconnect_time)))
+            elif suffix == "" and self.lastConnected != None:
+                html += '<span class="block_data_attr"><b>last connected</b> %s</span>' % prettyDate(int(float(
+                    self.lastConnected)))
+
             html += '</div>'
             return html
 
