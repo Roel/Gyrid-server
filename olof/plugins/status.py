@@ -589,7 +589,7 @@ class ContentResource(resource.Resource):
         """
         html = '<div id="server_block"><div class="block_title"><h3>Server</h3></div>'
         html += '<div class="block_topright_server">%s<img src="/status/static/icons/clock-arrow.png"></div>' % \
-            prettyDate(self.plugin.plugin_uptime, suffix="")
+            prettyDate(self.plugin.server.server_uptime, suffix="")
         html += '<div style="clear: both;"></div>'
         html += '<div class="block_content">'
 
@@ -893,8 +893,6 @@ class Plugin(olof.core.Plugin):
                 self.scanners = {}
         else:
             self.scanners = {}
-
-        self.plugin_uptime = int(time.time())
 
         try:
             import multiprocessing

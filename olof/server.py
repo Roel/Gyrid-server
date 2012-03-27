@@ -264,6 +264,7 @@ class Olof(object):
         self.port = 2583
 
         self.output("Starting Gyrid Server")
+        self.server_uptime = int(time.time())
         repo = git.Repo('.')
         commit = repo.commits(repo.active_branch)[0]
         self.git_commit = commit.id
