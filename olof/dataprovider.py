@@ -118,13 +118,13 @@ class DataProvider(object):
             else:
                 # New scanner
                 scannerobj = locations[scanner]
-                for p in self.server.plugins:
+                for p in self.server.pluginmgr.getPlugins():
                     if scannerobj.isActive(p.filename):
                         p.locationUpdate(scannerobj.name, 'scanner', scannerobj)
 
                 # Push sensor updates
                 for sensor in scannerobj.sensors.values():
-                    for p in self.server.plugins:
+                    for p in self.server.pluginmgr.getPlugins():
                         if scannerobj.isActive(p.filename):
                             p.locationUpdate(scannerobj.name, 'sensor', sensor)
 
