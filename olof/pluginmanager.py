@@ -90,7 +90,7 @@ class PluginManager(object):
         @param   shutdown (bool)   True if the server is shutting down, else False.
         """
         self.inotifier.unload()
-        self.unloadAllPlugins()
+        self.unloadAllPlugins(shutdown)
 
     def unloadAllPlugins(self, shutdown=False):
         """
