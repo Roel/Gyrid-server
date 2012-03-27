@@ -117,7 +117,7 @@ class Scanner(object):
         Reinitialise variables that need updating when the server starts.
 
         __init__() is called when a new Scanner is created, this init() is called at __init__() and after the
-        saved Scanner data is read at server start.
+        saved Scanner data is read at plugin start.
         """
         self.conn_port = None
         self.conn_time = {}
@@ -929,6 +929,8 @@ class Plugin(olof.core.Plugin):
         """
         s = self.getScanner(location.id)
         if s != None:
+            if False in [s.__dict__[i] == location.__dict__[i] for i in [project, lat, lon]]:
+                s.sensors = {}
             s.project = location.project
             s.lon = location.lon
             s.lat = location.lat
@@ -951,6 +953,7 @@ class Plugin(olof.core.Plugin):
                     break
             if not found_location:
                 s.project = None
+                s.sensors = {}
 
     def checkResources(self):
         """
