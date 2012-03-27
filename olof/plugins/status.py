@@ -925,9 +925,18 @@ class Plugin(olof.core.Plugin):
         @param    location (olof.datatypes.Location)   Location to match.
         @return   (Scanner)                            Matching scanner.
         """
+        def compare(a, b):
+            """
+            Compare two variables. If both are olof.datatypes.Project instances, compare their name.
+            """
+            if type(a) == type(b) == olof.datatypes.Project:
+                return a.name == b.name
+            else:
+                return a == b
+
         s = self.getScanner(location.id)
         if s != None:
-            if False in [s.__dict__[i] == location.__dict__[i] for i in ['project', 'lat', 'lon']]:
+            if False in [compare(s.__dict__[i], location.__dict__[i]) for i in ['project', 'lat', 'lon']]:
                 s.sensors = {}
             s.project = location.project
             s.lon = location.lon
