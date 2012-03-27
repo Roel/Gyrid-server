@@ -215,7 +215,7 @@ class Plugin(olof.core.Plugin):
         if not [sensor, id, description, x, y] in self.locations:
             self.server.output('db4o: Adding location %s|%s' % (id, sensor))
             self.locations.append([sensor, id, description, x, y])
-            self.inet_factory.sendLine(','.join(['addLocation',
+            self.db4o_factory.sendLine(','.join(['addLocation',
                 '%s|%s' % (id, sensor), str(description), "%0.6f" % x, "%0.6f" % y]))
 
     def addScanSetup(self, hostname, sensor, id, timestamp):
@@ -231,7 +231,7 @@ class Plugin(olof.core.Plugin):
             self.server.output('db4o: Adding ScanSetup for %s at %i: %s' % \
                 (hostname, timestamp, '%s|%s' % (id, sensor)))
             self.scanSetups.append([hostname, sensor, id, timestamp, 1])
-            self.inet_factory.sendLine(','.join(['installScannerSetup',
+            self.db4o_factory.sendLine(','.join(['installScannerSetup',
                 hostname, sensor, '%s|%s' % (id, sensor), str(int(timestamp*1000))]))
 
     def removeScanSetup(self, hostname, sensor, id, timestamp):
@@ -247,7 +247,7 @@ class Plugin(olof.core.Plugin):
             self.server.output('db4o: Removing ScanSetup for %s at %i: %s' % \
                 (hostname, timestamp, '%s|%s' % (id, sensor)))
             self.scanSetups.append([hostname, sensor, id, timestamp, 0])
-            self.inet_factory.sendLine(','.join(['removeScannerSetup',
+            self.db4o_factory.sendLine(','.join(['removeScannerSetup',
                 hostname, sensor, '%s|%s' % (id, sensor), str(int(timestamp*1000))]))
 
     def locationUpdate(self, hostname, module, obj):
@@ -275,7 +275,7 @@ class Plugin(olof.core.Plugin):
         """
         dp = self.server.dataprovider
         if info == 'new_inquiry':
-            self.inet_factory.sendLine(','.join([str(dp.getProjectName(hostname)),
+            self.db4o_factory.sendLine(','.join([str(dp.getProjectName(hostname)),
                 hostname, 'INFO', str(int(timestamp*1000)), 'new_inquiry',
                 sensor_mac]))
 
@@ -284,7 +284,7 @@ class Plugin(olof.core.Plugin):
         Send cell data to the Db4O server.
         """
         dp = self.server.dataprovider
-        self.inet_factory.sendLine(','.join([str(dp.getProjectName(hostname)),
+        self.db4o_factory.sendLine(','.join([str(dp.getProjectName(hostname)),
             hostname, sensor_mac, mac, str(deviceclass),
             str(int(timestamp*1000)), move]))
 
@@ -294,6 +294,6 @@ class Plugin(olof.core.Plugin):
         """
         dp = self.server.dataprovider
         deviceclass = str(self.server.getDeviceclass(mac))
-        self.inet_factory.sendLine(','.join([str(dp.getProjectName(hostname)),
+        self.db4o_factory.sendLine(','.join([str(dp.getProjectName(hostname)),
             hostname, sensor_mac, mac, str(deviceclass),
             str(int(timestamp*1000)), str(rssi)]))
