@@ -83,19 +83,23 @@ class PluginManager(object):
                 if filename.endswith('.py') and not filename == '__init__.py':
                     self.loadPlugin(os.path.join(home, path, filename))
 
-    def unload(self):
+    def unload(self, shutdown=False):
         """
         Unload the plugin manager and all plugins.
+
+        @param   shutdown (bool)   True if the server is shutting down, else False.
         """
         self.inotifier.unload()
         self.unloadAllPlugins()
 
-    def unloadAllPlugins(self):
+    def unloadAllPlugins(self, shutdown=False):
         """
         Unload all the plugins.
+
+        @param   shutdown (bool)   True if the server is shutting down, else False.
         """
         for p in self.plugins.values():
-            p.unload()
+            p.unload(shutdown)
             del(p)
 
     def unloadPlugin(self, name):

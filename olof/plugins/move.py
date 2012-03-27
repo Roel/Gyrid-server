@@ -301,7 +301,7 @@ class Plugin(olof.core.Plugin):
             self.__dict__[ls[0]] = ls[1]
         f.close()
 
-    def unload(self):
+    def unload(self, shutdown=False):
         """
         Unload. Save cache to disk.
         """

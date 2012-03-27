@@ -114,14 +114,11 @@ class Scanner(object):
 
     def init(self):
         """
-        Reinitialise variables that need updating when the server starts.
+        Reinitialise variables that need updating when the plugin starts.
 
         __init__() is called when a new Scanner is created, this init() is called at __init__() and after the
         saved Scanner data is read at plugin start.
         """
-        self.conn_port = None
-        self.conn_time = {}
-        self.connections = set()
         self.lag = {1: [0, 0], 5: [0, 0], 15: [0, 0]}
 
         self.mv_conn = RESTConnection(
@@ -997,7 +994,7 @@ class Plugin(olof.core.Plugin):
                     s.mv_updated = None
         f.close()
 
-    def unload(self):
+    def unload(self, shutdown=False):
         """
         Unload this plugin. Stop listening, stop looping calls and save scanner data to disk.
         """
@@ -1005,6 +1002,10 @@ class Plugin(olof.core.Plugin):
         self.inotifier.unload()
 
         for s in self.scanners.values():
+            if shutdown:
+                s.conn_port = None
+                s.conn_time = {}
+                s.connections = set()
             s.checkLagCall('stop')
             s.checkMVBalanceCall('stop')
             if 'checkLag_call' in s.__dict__:

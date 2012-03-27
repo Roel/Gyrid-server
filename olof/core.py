@@ -51,12 +51,15 @@ class Plugin(object):
         """
         return []
 
-    def unload(self):
+    def unload(self, shutdown=False):
         """
         Called when the plugin gets unloaded, f.ex. on server shutdown.
 
         All actions necessary to perform a clean shutdown should be added here, f.ex. closing network connections
         or saving data to disk.
+
+        @param   shutdown (bool)   True if the server is shutting down, False if only this plugin is unloaded.
+                                     Defaults to False.
         """
         pass
 

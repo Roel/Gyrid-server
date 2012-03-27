@@ -168,7 +168,7 @@ class Plugin(olof.core.Plugin):
         self.db4o_factory = Db4OClientFactory(self)
         reactor.connectTCP(self.host, self.port, self.db4o_factory)
 
-    def unload(self):
+    def unload(self, shutdown=False):
         """
         Unload. Save locations and scansetups to disk.
         """

@@ -289,7 +289,7 @@ class Olof(object):
         Unload the dataprovider and the pluginmanager. Save the MAC-address:deviceclass dictionary to disk.
         """
         self.dataprovider.unload()
-        self.pluginmgr.unload()
+        self.pluginmgr.unload(shutdown=True)
 
         f = open('olof/data/mac_dc.pickle', 'wb')
         pickle.dump(self.mac_dc, f)

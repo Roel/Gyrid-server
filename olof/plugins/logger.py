@@ -71,7 +71,7 @@ class Scanner(Logger):
         self.host = None
         self.port = None
 
-    def unload(self):
+    def unload(self, shutdown=False):
         """
         Unload. Write a 'server shutdown' message to the connection log.
         """
