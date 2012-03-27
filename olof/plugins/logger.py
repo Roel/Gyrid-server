@@ -71,7 +71,7 @@ class Scanner(Logger):
         self.host = None
         self.port = None
 
-    def unload(self, shutdown=False):
+    def unload(self):
         """
         Unload. Write a 'server shutdown' message to the connection log.
         """
@@ -162,7 +162,7 @@ class Plugin(olof.core.Plugin):
 
         self.scanSetups = {}
 
-    def unload(self):
+    def unload(self, shutdown=False):
         """
         Unload. Unload all Logger instances.
         """
