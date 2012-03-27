@@ -929,7 +929,7 @@ class Plugin(olof.core.Plugin):
         """
         s = self.getScanner(location.id)
         if s != None:
-            if False in [s.__dict__[i] == location.__dict__[i] for i in [project, lat, lon]]:
+            if False in [s.__dict__[i] == location.__dict__[i] for i in ['project', 'lat', 'lon']]:
                 s.sensors = {}
             s.project = location.project
             s.lon = location.lon
