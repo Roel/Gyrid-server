@@ -177,7 +177,7 @@ class Plugin(olof.core.Plugin):
         @return   (str)            The name of the project the scanner with the given hostname belongs to.
                                      'No-project' when the scanner is not attached to a project.
         """
-        project = self.server.getProjectName(hostname)
+        project = self.server.dataprovider.getProjectName(hostname)
         return project if project != None else 'No-project'
 
     def getScanSetup(self, hostname, sensor_mac):
@@ -190,7 +190,7 @@ class Plugin(olof.core.Plugin):
         """
         project = self.getProject(hostname)
         if not (project, hostname, sensor_mac) in self.scanSetups:
-            ss = ScanSetup(self.server, hostname, sensor_mac)
+            ss = ScanSetup(self, hostname, sensor_mac)
             self.scanSetups[(project, hostname, sensor_mac)] = ss
         else:
             ss = self.scanSetups[(project, hostname, sensor_mac)]
@@ -205,7 +205,7 @@ class Plugin(olof.core.Plugin):
         """
         project = self.getProject(hostname)
         if not (project, hostname, None) in self.scanSetups:
-            sc = Scanner(self.server, hostname)
+            sc = Scanner(self, hostname)
             self.scanSetups[(project, hostname, None)] = sc
         else:
             sc = self.scanSetups[(project, hostname, None)]
