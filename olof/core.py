@@ -49,7 +49,7 @@ class Plugin(object):
         The name of the key depends on the type of information given: either 'str' for a string, 'time' for a UNIX
         timestamp or 'int' for an integer value.
         """
-        return []
+        return [{'status': 'ok'}]
 
     def unload(self, shutdown=False):
         """
