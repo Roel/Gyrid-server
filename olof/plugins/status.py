@@ -215,7 +215,7 @@ class Scanner(object):
         Check the connection lag data. Removes old data and updates the process lag data.
         """
         t = time.time()
-        lag = {1: [0, 0], 5: [0, 0], 15: [0, 0]}
+        lag = {1: [0, 0, set()], 5: [0, 0, set()], 15: [0, 0, set()]}
         for i in self.lagData:
             if (t - i[0]) > (sorted(lag.keys())[-1]*60):
                 try:
@@ -228,6 +228,10 @@ class Scanner(object):
                 if (t - i[0]) <= j*60:
                     lag[j][0] += abs(i[0] - i[1])
                     lag[j][1] += 1
+                    lag[j][2].add(i[2])
+
+        for j in lag.keys():
+            lag[j][2] = len(lag[j][2])
 
         self.lag = lag
 
@@ -402,6 +406,7 @@ class Scanner(object):
 
         def renderDetections():
             detc = [self.lag[i][1] for i in sorted(self.lag.keys()) if i <= 15]
+            udetc = [self.lag[i][2] for i in sorted(self.lag.keys()) if i <= 15]
             if len([i for i in detc if i > 0]) > 0:
                 html = '<div class="block_data"><img src="/status/static/icons/users.png">Detections'
                 html += '<span class="block_data_attr"><b>recently received</b> %s</span>' % \
@@ -410,6 +415,8 @@ class Scanner(object):
                 if sensors_connected > 1:
                     html += '<span class="block_data_attr"><b>averaged</b> %s</span>' % \
                         ', '.join([formatNumber(int(i/sensors_connected)) for i in detc])
+                html += '<span class="block_data_attr"><b>unique</b> %s</span>' % \
+                    ', '.join([formatNumber(i) for i in udetc])
                 html += '</div>'
                 return html
             else:
@@ -1132,4 +1139,4 @@ class Plugin(olof.core.Plugin):
 
         scann = self.getScanner(hostname)
         t = time.time()
-        scann.lagData.append((t, float(timestamp)))
+        scann.lagData.append([t, float(timestamp), mac])
