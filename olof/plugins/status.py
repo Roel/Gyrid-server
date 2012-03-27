@@ -146,6 +146,8 @@ class Scanner(object):
         """
         if self.lastConnected == None:
             return False
+        elif False in [i == None for i in [self.location, self.location_description, self.lat, self.lon]]:
+            return False
         else:
             return (int(time.time()) - self.lastConnected) > 7*24*60*60
 
