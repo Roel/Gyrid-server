@@ -19,6 +19,7 @@ import os
 import time
 
 import olof.datatypes
+from olof.tools import INotifier
 
 class DataProvider(object):
     """
@@ -28,7 +29,7 @@ class DataProvider(object):
         """
         Initialisation.
 
-        Read previous pickled data and start looping calls that read new Location and Project data every 10 seconds.
+        Read previous pickled data and initiates an INotifier to read locations and projects when data.py is changed.
 
         @param   server (Olof)   Reference to the main Olof server instance.
         """
@@ -41,22 +42,23 @@ class DataProvider(object):
             self.locations = pickle.load(f)
             f.close()
 
-        t = task.LoopingCall(self.readLocations)
-        t.start(10, now=False)
+        self.inotifier = INotifier('olof/data/data.py')
+        self.inotifier.addCallback(INotifier.Write, self.readLocations)
+        self.inotifier.addCallback(INotifier.Write, self.readProjects)
 
+        self.readLocations()
         self.readProjects()
-        t = task.LoopingCall(self.readProjects)
-        t.start(10, now=False)
 
     def unload(self):
         """
         Unload this data provider. Saves the current location data to disk.
         """
+        self.inotifier.unload()
         f = open("olof/data/data.pickle", "wb")
         pickle.dump(self.locations, f)
         f.close()
 
-    def readLocations(self):
+    def readLocations(self, event=None):
         """
         Read Location data from disk, this is the 'locations' variable of /olof/data/data.py.
         Parse and save the new information.
@@ -65,7 +67,7 @@ class DataProvider(object):
         self.parseLocations(self.new_locations)
         self.locations = copy.deepcopy(self.new_locations)
 
-    def readProjects(self):
+    def readProjects(self, event=None):
         """
         Read Project information from this, this is the 'projects' variable of /olof/data/data.py.
         Save the new information.

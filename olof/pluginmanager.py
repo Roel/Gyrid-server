@@ -11,13 +11,13 @@ Module that handles the loading, unloading and dynamically reloading of plugins 
 
 import imp
 import os
+import pyinotify
 import sys
 import traceback
 
-import pyinotify
-from pyinotify import WatchManager, Notifier, ThreadedNotifier, EventsCodes, ProcessEvent
-
 from twisted.internet import reactor
+
+from olof.tools import INotifier
 
 class PluginManager(object):
     """
@@ -38,10 +38,9 @@ class PluginManager(object):
 
         self.loadAllPlugins()
 
-        wm = WatchManager()
-        wm.add_watch('olof/plugins/', pyinotify.ALL_EVENTS)
-        self.inotifier = ThreadedNotifier(wm, self.processINotify)
-        self.inotifier.start()
+        self.inotifier = INotifier('olof/plugins')
+        self.inotifier.addCallback(INotifier.Write, self.processINotify)
+        self.inotifier.addCallback(INotifier.Delete, self.processINotify)
 
     def processINotify(self, event):
         """
@@ -88,7 +87,7 @@ class PluginManager(object):
         """
         Unload the plugin manager and all plugins.
         """
-        self.inotifier.stop()
+        self.inotifier.unload()
         self.unloadAllPlugins()
 
     def unloadAllPlugins(self):
