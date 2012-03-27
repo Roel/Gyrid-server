@@ -142,7 +142,10 @@ class Scanner(object):
         """
         Get the age of the scanner. Old scanners are removed automatically.
 
-        @return   (bool)   True if this scanner is old, else False. Old is defined as last connected > 7 days ago.
+        A scanner is defined old if it has been connected to the server at least once, has no location information
+        attached and its last connection to the server was more than 7 days ago.
+
+        @return   (bool)   True if this scanner is old, else False.
         """
         if self.lastConnected == None:
             return False
