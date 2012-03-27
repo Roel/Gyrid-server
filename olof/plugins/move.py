@@ -18,7 +18,7 @@ import time
 import urllib2
 
 import olof.core
-from olof.tools import RESTConnection
+from olof.tools import INotifier, RESTConnection
 
 class Connection(RESTConnection):
     """
@@ -247,8 +247,9 @@ class Plugin(olof.core.Plugin):
         self.last_session_id = None
         self.upload_enabled = False
 
-        t = task.LoopingCall(self.readConf)
-        t.start(10)
+        self.inotifier = INotifier('olof/plugins/move/move.conf')
+        self.inotifier.addCallback(INotifier.Write, self.readConf)
+        self.readConf()
 
         measureCount = {'last_upload': -1,
                         'uploads': 0,
@@ -287,7 +288,7 @@ class Plugin(olof.core.Plugin):
         self.conn = Connection(self, self.url, self.user, self.password,
             measurements, measureCount, locations)
 
-    def readConf(self):
+    def readConf(self, event=None):
         """
         Read the configuration from disk and update variabled accordingly.
         Configuration is read from olof/plugins/move/move.conf
@@ -304,6 +305,8 @@ class Plugin(olof.core.Plugin):
         """
         Unload. Save cache to disk.
         """
+        self.inotifier.unload()
+
         f = open("olof/plugins/move/measureCount.pickle", "wb")
         pickle.dump(self.conn.measureCount, f)
         f.close()
