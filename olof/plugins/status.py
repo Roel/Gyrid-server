@@ -31,7 +31,7 @@ import urlparse
 
 import olof.core
 import olof.plugins.status.macvendor as macvendor
-from olof.tools import RESTConnection
+from olof.tools import INotifier, RESTConnection
 
 def prettyDate(d, prefix="", suffix=" ago"):
     """
@@ -906,8 +906,9 @@ class Plugin(olof.core.Plugin):
         t = task.LoopingCall(self.checkResources)
         t.start(10)
 
-        t = task.LoopingCall(self.readMVNumbers)
-        t.start(120)
+        self.inotifier = INotifier('olof/plugins/status/data/mobilevikings_numbers.conf')
+        self.inotifier.addCallback(INotifier.Write, self.readMVNumbers)
+        self.readMVNumbers()
 
         reactor.callLater(2, self.startListening)
 
@@ -979,7 +980,7 @@ class Plugin(olof.core.Plugin):
         s = os.statvfs('.')
         self.diskfree_mb = (s.f_bavail * s.f_bsize)/1024/1024
 
-    def readMVNumbers(self):
+    def readMVNumbers(self, event=None):
         """
         Read Mobile Vikings MSISDN information from disk.
         """
@@ -1001,6 +1002,7 @@ class Plugin(olof.core.Plugin):
         Unload this plugin. Stop listening, stop looping calls and save scanner data to disk.
         """
         self.listeningPort.stopListening()
+        self.inotifier.unload()
 
         for s in self.scanners.values():
             s.checkLagCall('stop')
