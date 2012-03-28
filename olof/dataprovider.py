@@ -19,7 +19,7 @@ import os
 import time
 
 import olof.datatypes
-from olof.tools import INotifier
+from olof.tools.inotifier import INotifier
 
 class DataProvider(object):
     """

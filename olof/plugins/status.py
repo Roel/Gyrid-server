@@ -31,7 +31,8 @@ import urlparse
 
 import olof.core
 import olof.plugins.status.macvendor as macvendor
-from olof.tools import INotifier, RESTConnection
+from olof.tools.inotifier import INotifier
+from olof.tools.webprotocols import RESTConnection
 
 def prettyDate(d, prefix="", suffix=" ago"):
     """

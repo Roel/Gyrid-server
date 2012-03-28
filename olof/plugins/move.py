@@ -18,7 +18,8 @@ import time
 import urllib2
 
 import olof.core
-from olof.tools import INotifier, RESTConnection
+from olof.tools.inotifier import INotifier
+from olof.tools.webprotocols import RESTConnection
 
 class Connection(RESTConnection):
     """

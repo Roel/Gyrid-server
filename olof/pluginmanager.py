@@ -17,7 +17,7 @@ import traceback
 
 from twisted.internet import reactor
 
-from olof.tools import INotifier
+from olof.tools.inotifier import INotifier
 
 class PluginManager(object):
     """
