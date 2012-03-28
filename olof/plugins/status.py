@@ -1019,6 +1019,8 @@ class Plugin(olof.core.Plugin):
 
         for s in self.scanners.values():
             if shutdown:
+                if len(s.connections) > 0:
+                    s.lastConnected = int(time.time())
                 s.conn_port = None
                 s.conn_time = {}
                 s.connections = set()
