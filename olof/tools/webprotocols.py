@@ -5,6 +5,10 @@
 # Copyright (C) 2011-2012  Roel Huybrechts
 # All rights reserved.
 
+"""
+Provider implementations for different web protocols, currently only REST.
+"""
+
 from twisted.internet import threads
 
 import urllib2

@@ -5,6 +5,10 @@
 # Copyright (C) 2011-2012  Roel Huybrechts
 # All rights reserved.
 
+"""
+Provide an easy wrapper for listening to INotify kernel events.
+"""
+
 import os
 
 import pyinotify
