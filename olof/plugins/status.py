@@ -96,6 +96,9 @@ class Scanner(object):
         self.mv_balance = {}
         self.mv_updated = None
         self.lastConnected = None
+        self.conn_port = None
+        self.conn_time = {}
+        self.connections = set()
 
         f = open('olof/plugins/status/data/mobilevikings.conf', 'r')
         for l in f:
