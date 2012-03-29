@@ -181,7 +181,7 @@ class Connection(RESTConnection):
         Upload pending measurements to the Move database.
         """
         def process(r):
-            print "Request done."
+            self.plugin.logger.logInfo("Request done")
             self.requestRunning = False
             if r != None and type(r) is list and len(r) == len(to_delete):
                 self.measureCount['uploads'] += 1
@@ -192,15 +192,15 @@ class Connection(RESTConnection):
                     uploaded_lines = scanner[1]
 
                     if move_lines == uploaded_lines:
-                        print "Upload for scanner %s: OK" % scanner[0]
+                        self.plugin.logger.logInfo("Upload for scanner %s: OK" % scanner[0])
                         self.measureCount['uploaded'] += uploaded_lines
                         self.measureCount['cached'] -= uploaded_lines
                         for l in self.measurements_uploaded[scanner[0]]:
                             self.measurements[scanner[0]].remove(l)
                     else:
-                        print "Upload for scanner %s: FAIL" % scanner[0]
+                        self.plugin.logger.logError("Upload for scanner %s: FAIL" % scanner[0])
             else:
-                print "Upload failed: %s" % str(r)
+                self.plugin.logger.logError("Upload failed: %s" % str(r))
 
         if self.requestRunning or not self.plugin.upload_enabled:
             return
@@ -212,15 +212,15 @@ class Connection(RESTConnection):
         to_delete = []
         m_scanner = []
         self.measurements_uploaded = {}
-        print "---"
-        print "Posting measurements..."
+        self.plugin.logger.logInfo("Posting measurements")
         linecount = 0
         for scanner in [s for s in self.scanners.keys() if (self.scanners[s] == True \
             and s in self.measurements)]:
             self.measurements_uploaded[scanner] = copy.deepcopy(self.measurements[scanner])
 
             if len(self.measurements_uploaded[scanner]) > 0:
-                print "  Adding %i measurements for scanner %s..." % (len(self.measurements_uploaded[scanner]), scanner)
+                self.plugin.logger.logInfo("Adding %i measurements for scanner %s" % (len(
+                    self.measurements_uploaded[scanner]), scanner))
                 linecount += len(self.measurements_uploaded[scanner])
                 m_scanner.append("==%s" % scanner)
                 m_scanner.append("\n".join(self.measurements_uploaded[scanner]))
@@ -229,7 +229,7 @@ class Connection(RESTConnection):
         m = '\n'.join(m_scanner)
         if len(m) > 0:
             self.requestRunning = True
-            print "Sending request with %i lines..." % linecount
+            self.plugin.logger.logInfo("Sending request with %i lines" % linecount)
             self.requestPost('measurement', process, m,
                 {'Content-Type': 'text/plain'})
 

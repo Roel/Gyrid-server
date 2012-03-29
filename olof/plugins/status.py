@@ -204,14 +204,14 @@ class Scanner(object):
             try:
                 self.checkLag_call.start(10)
             except AssertionError:
-                print self.hostname + ": AssertionError starting call"
+                pass
 
         elif action == 'stop':
             if 'checkLag_call' in self.__dict__:
                 try:
                     self.checkLag_call.stop()
                 except AssertionError:
-                    print self.hostname + ": AssertionError stopping call"
+                    pass
 
     def checkLag(self):
         """
@@ -251,14 +251,14 @@ class Scanner(object):
             try:
                 self.checkMVBalance_call.start(1800, now=False)
             except AssertionError:
-                print self.hostname + ": AssertionError starting call"
+                pass
 
         elif action == 'stop':
             if 'checkMVBalance_call' in self.__dict__:
                 try:
                     self.checkMVBalance_call.stop()
                 except AssertionError:
-                    print self.hostname + ": AssertionError stopping call"
+                    pass
 
     def getMVBalance(self):
         """
