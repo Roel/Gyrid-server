@@ -15,20 +15,20 @@ class Plugin(olof.core.Plugin):
     """
     Main Debug plugin class.
     """
-    def __init__(self, server):
+    def __init__(self, server, filename):
         """
         Initialisation.
         """
-        olof.core.Plugin.__init__(self, server)
+        olof.core.Plugin.__init__(self, server, filename)
 
     def connectionMade(self, hostname, ip, port):
         """
         Print connection details to terminal.
         """
-        self.output("Connection made with %s (%s:%s)" % (hostname, ip, port))
+        self.logger.logInfo("Connection made with %s (%s:%s)" % (hostname, ip, port))
 
     def connectionLost(self, hostname, ip, port):
         """
         Print connection details to terminal.
         """
-        self.output("Connection lost with %s (%s:%s)" % (hostname, ip, port))
+        self.logger.logInfo("Connection lost with %s (%s:%s)" % (hostname, ip, port))

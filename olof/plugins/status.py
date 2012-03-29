@@ -866,14 +866,14 @@ class Plugin(olof.core.Plugin):
     """
     Main Status plugin class.
     """
-    def __init__(self, server):
+    def __init__(self, server, filename):
         """
         Initialisation. Read saved data from disk, start looping calls that check system resources and read SIM card
         data and serve the status webpage.
 
         @param   server (Olof)   Reference to the main Olof server instance.
         """
-        olof.core.Plugin.__init__(self, server)
+        olof.core.Plugin.__init__(self, server, filename)
         self.root = RootResource()
 
         status_resource = self.root

@@ -30,12 +30,9 @@ class PluginManager(object):
         @param   server (Olof)   Reference to main Olof server instance.
         """
         self.server = server
-
         self.plugin_dirs = ['olof/plugins']
 
         self.plugins = {}
-        self.plugins_with_errors = {}
-
         self.loadAllPlugins()
 
         self.inotifier = INotifier('olof/plugins')
@@ -61,15 +58,14 @@ class PluginManager(object):
         """
         name = os.path.basename(path)[:-3]
         try:
-            plugin = imp.load_source(name, path).Plugin(self.server)
+            plugin = imp.load_source(name, path).Plugin(self.server, name)
             if not plugin.isEnabled():
                 return
-            plugin.filename = name
         except Exception, e:
-            self.plugins_with_errors[name] = (e, traceback.format_exc())
-            self.server.output("Error while loading plugin %s: %s" % (name, e), sys.stderr)
+            self.server.logger.logError("Error while loading plugin %s: %s" % (name, e))
+            self.server.logger.logError(traceback.format_exc())
         else:
-            self.server.output("Loaded plugin: %s" % name)
+            self.server.logger.logInfo("Loaded plugin: %s" % name)
             self.plugins[name] = plugin
 
     def loadAllPlugins(self):
@@ -110,7 +106,7 @@ class PluginManager(object):
         """
         p = self.getPlugin(name)
         if p != None:
-            self.server.output('Unloaded plugin: %s' % p.filename)
+            self.server.logger.logInfo('Unloaded plugin: %s' % p.filename)
             p.unload()
             del(self.plugins[name])
 

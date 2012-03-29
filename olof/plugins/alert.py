@@ -311,11 +311,11 @@ class Plugin(olof.core.Plugin):
     """
     Main Alert plugin class.
     """
-    def __init__(self, server):
+    def __init__(self, server, filename):
         """
         Initialisation. Add ServerStartup info alert.
         """
-        olof.core.Plugin.__init__(self, server)
+        olof.core.Plugin.__init__(self, server, filename)
 
         self.alerts = {}
         self.mailer = Mailer()

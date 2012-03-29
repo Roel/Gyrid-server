@@ -129,14 +129,14 @@ class Plugin(olof.core.Plugin):
     """
     Main Db4O plugin class.
     """
-    def __init__(self, server):
+    def __init__(self, server, filename):
         """
         Initialisation. Set up connection details and open cache file.
         Read pickled location and scansetup data from disk.
 
         Connect to the Db4O server.
         """
-        olof.core.Plugin.__init__(self, server, "Db4o")
+        olof.core.Plugin.__init__(self, server, filename, "Db4o")
         self.host = 'localhost'
         self.port = 5001
         self.cache_file = '/var/cache/gyrid-server/db4o.cache'
@@ -213,7 +213,7 @@ class Plugin(olof.core.Plugin):
         @param   y (float)           Y-coordinate of the location.
         """
         if not [sensor, id, description, x, y] in self.locations:
-            self.server.output('db4o: Adding location %s|%s' % (id, sensor))
+            self.logger.logInfo('db4o: Adding location %s|%s' % (id, sensor))
             self.locations.append([sensor, id, description, x, y])
             self.db4o_factory.sendLine(','.join(['addLocation',
                 '%s|%s' % (id, sensor), str(description), "%0.6f" % x, "%0.6f" % y]))
@@ -228,7 +228,7 @@ class Plugin(olof.core.Plugin):
         @param   timestamp (float)   Timestamp at which the scansetup is installed. In UNIX time.
         """
         if not [hostname, sensor, id, timestamp, 1] in self.scanSetups:
-            self.server.output('db4o: Adding ScanSetup for %s at %i: %s' % \
+            self.logger.logInfo('db4o: Adding ScanSetup for %s at %i: %s' % \
                 (hostname, timestamp, '%s|%s' % (id, sensor)))
             self.scanSetups.append([hostname, sensor, id, timestamp, 1])
             self.db4o_factory.sendLine(','.join(['installScannerSetup',
@@ -244,7 +244,7 @@ class Plugin(olof.core.Plugin):
         @param   timestamp (float)   Timestamp at which the scansetup is installed. In UNIX time.
         """
         if not [hostname, sensor, id, timestamp, 0] in self.scanSetups:
-            self.server.output('db4o: Removing ScanSetup for %s at %i: %s' % \
+            self.logger.logInfo('db4o: Removing ScanSetup for %s at %i: %s' % \
                 (hostname, timestamp, '%s|%s' % (id, sensor)))
             self.scanSetups.append([hostname, sensor, id, timestamp, 0])
             self.db4o_factory.sendLine(','.join(['removeScannerSetup',

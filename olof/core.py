@@ -9,6 +9,8 @@
 Module that provides the plugin interface.
 """
 
+import olof.logger
+
 class Plugin(object):
     """
     This is the superclass interface for Olof plugins.
@@ -16,18 +18,21 @@ class Plugin(object):
     All methods have a default empty implementation. This allows for plugins to only implement the methods that are
     needed.
     """
-    def __init__(self, server, name=None):
+
+    def __init__(self, server, filename, name=None):
         """
         Initialisation.
 
-        @param   server (Olof)   Reference to the main Olof server instance. This is made automatically when a plugin
-                                   is initialised.
-        @param   name (str)      The name of the plugin.
+        @param   server (Olof)    Reference to the main Olof server instance. This is made automatically when a plugin
+                                    is initialised.
+        @param   filename (str)   The filename of the plugins module file (without trailing '.py')
+        @param   name (str)       The name of the plugin.
         """
         self.server = server
-        self.filename = None
+        self.filename = filename
         self.name = name
-        self.output = self.server.output
+
+        self.logger = olof.logger.Logger(self.server, self.filename)
 
     def isEnabled(self):
         """

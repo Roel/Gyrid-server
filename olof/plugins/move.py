@@ -101,12 +101,12 @@ class Connection(RESTConnection):
 
         if not sensor in self.locations:
             self.locations[sensor] = [[(timestamp, coordinates, description), False]]
-            self.server.output("move: Adding location for %s at %s: %s (%s)" % (sensor, timestamp, description,
+            self.logger.logInfo("move: Adding location for %s at %s: %s (%s)" % (sensor, timestamp, description,
                 coordinates))
         else:
             if not (timestamp, coordinates, description) in [i[0] for i in self.locations[sensor]]:
                 self.locations[sensor].append([(timestamp, coordinates, description), False])
-                self.server.output("move: Adding location for %s at %s: %s (%s)" % (sensor, timestamp, description,
+                self.logger.logInfo("move: Adding location for %s at %s: %s (%s)" % (sensor, timestamp, description,
                     coordinates))
 
     def postLocations(self):
@@ -146,7 +146,7 @@ class Connection(RESTConnection):
 
         l = '\n'.join(l_scanner)
         if len(l) > 0:
-            self.server.output("move: Posting location: %s" % l)
+            self.logger.logInfo("move: Posting location: %s" % l)
             self.requestPost('scanner/location', process, l,
                 {'Content-Type': 'text/plain'})
 
@@ -237,13 +237,13 @@ class Plugin(olof.core.Plugin):
     """
     Main Move plugin class.
     """
-    def __init__(self, server):
+    def __init__(self, server, filename):
         """
         Initialisation. Read previously saved data from disk and create Connection.
 
         @param   server (Olof)   Reference to main Olof server instance.
         """
-        olof.core.Plugin.__init__(self, server, "Move")
+        olof.core.Plugin.__init__(self, server, filename, "Move")
         self.buffer = []
         self.last_session_id = None
         self.upload_enabled = False

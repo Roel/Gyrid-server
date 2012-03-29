@@ -154,11 +154,11 @@ class Plugin(olof.core.Plugin):
     """
     Main Logger plugin class.
     """
-    def __init__(self, server):
+    def __init__(self, server, filename):
         """
         Initialisation.
         """
-        olof.core.Plugin.__init__(self, server)
+        olof.core.Plugin.__init__(self, server, filename)
 
         self.scanSetups = {}
 

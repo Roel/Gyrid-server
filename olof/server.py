@@ -22,6 +22,7 @@ import cPickle as pickle
 
 import olof.dataprovider
 import olof.datatypes
+import olof.logger
 import olof.pluginmanager
 
 def verifyCallback(connection, x509, errnum, errdepth, ok):
@@ -262,8 +263,13 @@ class Olof(object):
         Read the MAC-adress:deviceclass dictionary from disk, load the pluginmanager and the dataprovider.
         """
         self.port = 2583
+        self.logger = olof.logger.Logger(self, 'server')
 
-        self.output("Starting Gyrid Server")
+        self.debug_mode = False
+        if len(sys.argv) > 1 and sys.argv[1] == 'debug':
+            self.debug_mode = True
+
+        self.logger.logInfo("Starting Gyrid Server")
         self.server_uptime = int(time.time())
         repo = git.Repo('.')
         commit = repo.commits(repo.active_branch)[0]
@@ -317,34 +323,23 @@ class Olof(object):
             if not os.path.exists(os.path.dirname(path)):
                 os.makedirs(os.path.dirname(path))
             elif (os.path.exists(path)) and (os.access(path, os.W_OK) == False):
-                self.output("Error: Needs write access to %s" \
+                self.logger.logError("Error: Needs write access to %s" \
                     % path, sys.stderr)
                 access = False
             elif (not os.path.exists(path)) and (os.access(os.path.dirname(
                 path), os.W_OK) == False):
-                self.output("Error: Needs write access to %s" \
+                self.logger.logError("Error: Needs write access to %s" \
                     % path, sys.stderr)
                 access = False
 
         if not access:
             sys.exit(1)
 
-    def output(self, message, channel=sys.stdout):
-        """
-        Write a message to the terminal output.
-
-        @param   message (str)   The message to write, without trailing punctuation or line-endings.
-        @param   channel         The channel to write the message to, by default sys.stdout
-        """
-        d = {'time': time.strftime('%Y%m%d-%H%M%S-%Z'),
-             'message': message}
-        channel.write("%(time)s Gyrid Server: %(message)s.\n" % d)
-
     def run(self):
         """
         Start up the server reactor.
         """
-        self.output("Listening on TCP port %s" % self.port)
+        self.logger.logInfo("Listening on TCP port %s" % self.port)
 
         gyridCtxFactory = ssl.DefaultOpenSSLContextFactory(
             'keys/server.key', 'keys/server.crt')
