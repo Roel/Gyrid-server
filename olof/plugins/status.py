@@ -96,7 +96,6 @@ class Scanner(object):
         self.mv_balance = {}
         self.mv_updated = None
         self.lastConnected = None
-        self.conn_port = None
         self.conn_time = {}
         self.connections = set()
 
@@ -1025,7 +1024,6 @@ class Plugin(olof.core.Plugin):
             if shutdown:
                 if len(s.connections) > 0:
                     s.lastConnected = int(time.time())
-                s.conn_port = None
                 s.conn_time = {}
                 s.connections = set()
             s.checkLagCall('stop')
