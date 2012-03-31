@@ -96,13 +96,13 @@ class Location(object):
             # Something changed in the scanner details
 
             # Push scanner update
-            for p in server.plugins:
+            for p in server.pluginmgr.getPlugins():
                 if location.isActive(p.filename):
                     p.locationUpdate(location.id, 'scanner', location)
 
             # Push sensor updates
             for sensor in location.sensors.values():
-                for p in server.plugins:
+                for p in server.pluginmgr.getPlugins():
                     if location.isActive(p.filename):
                         p.locationUpdate(location.id, 'sensor', sensor)
 
@@ -126,13 +126,13 @@ class Location(object):
 
             if update:
                 # Push scanner update
-                for p in server.plugins:
+                for p in server.pluginmgr.getPlugins():
                     if location.isActive(p.filename):
                         p.locationUpdate(location.id, 'scanner', location)
 
                 # Push sensor updates
                 for sensor in location.sensors.values():
-                    for p in server.plugins:
+                    for p in server.pluginmgr.getPlugins():
                         if location.isActive(p.filename):
                             p.locationUpdate(location.id, 'sensor', sensor)
 
