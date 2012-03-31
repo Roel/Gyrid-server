@@ -58,11 +58,11 @@ class INotifier(object):
         """
         Called when an INotify was received. Call the applicable callback method based on the event type.
         """
-        if event.mask == pyinotify.IN_DELETE:
+        if event.mask == pyinotify.IN_DELETE or event.mask == pyinotify.IN_MOVED_FROM:
             if self.path_file == None or (self.path_file and event.name == self.path_file):
                 for c in self.__getCallbacks(INotifier.Delete):
                     c(event)
-        elif event.mask == pyinotify.IN_CLOSE_WRITE:
+        elif event.mask == pyinotify.IN_CLOSE_WRITE or event.mask == pyinotify.IN_MOVED_TO:
             if self.path_file == None or (self.path_file and event.name == self.path_file):
                 for c in self.__getCallbacks(INotifier.Write):
                     c(event)

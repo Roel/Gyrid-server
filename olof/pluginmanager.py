@@ -36,19 +36,23 @@ class PluginManager(object):
         self.loadAllPlugins()
 
         self.inotifier = INotifier('olof/plugins')
-        self.inotifier.addCallback(INotifier.Write, self.processINotify)
-        self.inotifier.addCallback(INotifier.Delete, self.processINotify)
+        self.inotifier.addCallback(INotifier.Write, self.__processINotifyWrite)
+        self.inotifier.addCallback(INotifier.Delete, self.__processINotifyDelete)
 
-    def processINotify(self, event):
+    def __processINotifyWrite(self, event):
         """
-        Process an INotify event, unloading and reloading plugins when applicable.
+        Process an INotify Write event, reloading plugins when applicable.
         """
         if not event.name.startswith('.') and event.name.endswith('.py') and not event.name == '__init__.py':
-            if event.mask == pyinotify.IN_CLOSE_WRITE:
-                self.unloadPlugin(event.name.rstrip('.py'))
-                self.loadPlugin(event.pathname)
-            elif event.mask == pyinotify.IN_DELETE:
-                self.unloadPlugin(event.name.rstrip('.py'))
+            self.unloadPlugin(event.name.rstrip('.py'))
+            self.loadPlugin(event.pathname)
+
+    def __processINotifyDelete(self, event):
+        """
+        Process an INotify Delete event, unloading plugins when applicable.
+        """
+        if not event.name.startswith('.') and event.name.endswith('.py') and not event.name == '__init__.py':
+            self.unloadPlugin(event.name.rstrip('.py'))
 
     def loadPlugin(self, path):
         """
