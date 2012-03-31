@@ -20,6 +20,7 @@ import zlib
 
 import cPickle as pickle
 
+import olof.configuration
 import olof.dataprovider
 import olof.datatypes
 import olof.logger
@@ -262,7 +263,6 @@ class Olof(object):
 
         Read the MAC-adress:deviceclass dictionary from disk, load the pluginmanager and the dataprovider.
         """
-        self.port = 2583
         self.logger = olof.logger.Logger(self, 'server')
 
         self.debug_mode = False
@@ -287,8 +287,11 @@ class Olof(object):
 
         olof.datatypes.server = self
 
+        self.configmgr = olof.configuration.Configuration(self, 'olof/config/server.conf')
         self.pluginmgr = olof.pluginmanager.PluginManager(self)
         self.dataprovider = olof.dataprovider.DataProvider(self)
+
+        self.port = self.configmgr.getValue('tcp_listening_port')
 
     def unload(self):
         """
@@ -342,8 +345,11 @@ class Olof(object):
         """
         self.logger.logInfo("Listening on TCP port %s" % self.port)
 
-        gyridCtxFactory = ssl.DefaultOpenSSLContextFactory(
-            'keys/server.key', 'keys/server.crt')
+        ssl_crt = self.configmgr.getValue('ssl_server_crt')
+        ssl_key = self.configmgr.getValue('ssl_server_key')
+        ssl_ca = self.configmgr.getValue('ssl_server_ca')
+
+        gyridCtxFactory = ssl.DefaultOpenSSLContextFactory(ssl_key, ssl_crt)
 
         ctx = gyridCtxFactory.getContext()
 
@@ -353,7 +359,7 @@ class Olof(object):
 
         # Since we have self-signed certs we have to explicitly
         # tell the server to trust them.
-        ctx.load_verify_locations("keys/ca.pem")
+        ctx.load_verify_locations(ssl_ca)
 
         gsf = GyridServerFactory(self)
 
