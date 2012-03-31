@@ -18,7 +18,6 @@ class Plugin(object):
     All methods have a default empty implementation. This allows for plugins to only implement the methods that are
     needed.
     """
-
     def __init__(self, server, filename, name=None):
         """
         Initialisation.
