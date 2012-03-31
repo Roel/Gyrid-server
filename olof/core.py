@@ -9,7 +9,6 @@
 Module that provides the plugin interface.
 """
 
-import olof.configuration
 import olof.logger
 
 class Plugin(object):
@@ -32,12 +31,7 @@ class Plugin(object):
         self.filename = filename
         self.name = name
 
-        self.configmgr = olof.configuration.Configuration(self.server, 'olof/config/%s.conf' % self.filename,
-            self.defineConfiguration)
         self.logger = olof.logger.Logger(self.server, self.filename)
-
-    def defineConfiguration(self):
-        return []
 
     def isEnabled(self):
         """

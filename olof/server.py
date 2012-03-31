@@ -287,35 +287,11 @@ class Olof(object):
 
         olof.datatypes.server = self
 
-        self.configmgr = olof.configuration.Configuration(self, 'server', self.defineConfiguration)
+        self.configmgr = olof.configuration.Configuration(self, 'olof/config/server.conf')
         self.pluginmgr = olof.pluginmanager.PluginManager(self)
         self.dataprovider = olof.dataprovider.DataProvider(self)
 
         self.port = self.configmgr.getValue('tcp_listening_port')
-
-    def defineConfiguration(self):
-        ssl_server_crt = olof.configuration.Option(name = 'ssl_server_crt',
-            description = 'Path to the SSL server certificate.',
-            values = {},
-            default = 'keys/server.crt')
-
-        ssl_server_key = olof.configuration.Option(name = 'ssl_server_key',
-            description = 'Path to the SSL server key.',
-            values = {},
-            default = 'keys/server.key')
-
-        ssl_server_ca = olof.configuration.Option(name = 'ssl_server_ca',
-            description = 'Path to the SSL server CA.',
-            values = {},
-            default = 'keys/ca.pem')
-
-        tcp_listening_port = olof.configuration.Option(name = 'tcp_listening_port',
-            description = 'The TCP port to listen on for incoming connection from the scanners.',
-            type = 'int("%s")',
-            values = {2583: 'Listen on port 2583 by default.'},
-            default = 2583)
-
-        return [ssl_server_ca, ssl_server_crt, ssl_server_key, tcp_listening_port]
 
     def unload(self):
         """

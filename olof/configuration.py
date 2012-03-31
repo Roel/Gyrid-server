@@ -23,27 +23,44 @@ class Configuration(object):
     """
     Store all the configuration options and retrieve the value of a certain option with the ConfigurationParser.
     """
-    def __init__(self, server, name, defineOptions=None):
+    def __init__(self, server, configfile):
         """
         Initialisation. Construct an empty list of options, and fill it with all the Options.
 
         @param  configfile   URL of the configfile to write to.
         """
         self.server = server
-        self.name = name
         self.options = []
-        self.configfile = 'olof/config/%s.conf' % name
-        if defineOptions == None:
-            self.options.extend(self._defineOptions())
-        else:
-            self.options.extend(defineOptions())
+        self.configfile = configfile
+        self._defineOptions()
         self.configparser = _ConfigurationParser(self)
 
     def _defineOptions(self):
         """
         Create all options and add them to the list.
         """
-        return []
+        ssl_server_crt = _Option(name = 'ssl_server_crt',
+            description = 'Path to the SSL server certificate.',
+            values = {},
+            default = 'keys/server.crt')
+
+        ssl_server_key = _Option(name = 'ssl_server_key',
+            description = 'Path to the SSL server key.',
+            values = {},
+            default = 'keys/server.key')
+
+        ssl_server_ca = _Option(name = 'ssl_server_ca',
+            description = 'Path to the SSL server CA.',
+            values = {},
+            default = 'keys/ca.pem')
+
+        tcp_listening_port = _Option(name = 'tcp_listening_port',
+            description = 'The TCP port to listen on for incoming connection from the scanners.',
+            type = 'int("%s")',
+            values = {2583: 'Listen on port 2583 by default.'},
+            default = 2583)
+
+        self.options.extend([ssl_server_ca, ssl_server_crt, ssl_server_key, tcp_listening_port])
 
     def _getOptionByName(self, name):
         """
@@ -121,7 +138,7 @@ class _ConfigurationParser(ConfigParser.ConfigParser, object):
         If no configuration file exists, copy a new default one.
         """
 
-        if len(self.configuration.options) > 0 and not os.path.isfile(self.config_file_location):
+        if not os.path.isfile(self.config_file_location):
             file = open(self.config_file_location, "w")
             file.write(self._generateDefault())
             file.close()
@@ -135,8 +152,7 @@ class _ConfigurationParser(ConfigParser.ConfigParser, object):
 
         @return  (str)    A default configuration file, based on the configuration options.
         """
-        default = '# Gyrid Server configuration file for %s \n[%s]\n\n' % (self.configuration.name,
-            self.configuration.name)
+        default = '# Gyrid Server configuration file\n[Gyrid Server]\n\n'
         for option in self.configuration.options:
             if not option.hidden:
                 default += "\n# ".join(textwrap.wrap("# %s" % option.description, 78))
@@ -160,11 +176,11 @@ class _ConfigurationParser(ConfigParser.ConfigParser, object):
                            option.
         """
         try:
-            return ConfigParser.ConfigParser.get(self, self.configuration.name, option)
+            return ConfigParser.ConfigParser.get(self, 'Gyrid Server', option)
         except:
             return None
 
-class Option(object):
+class _Option(object):
     """
     Class for an option.
     """
