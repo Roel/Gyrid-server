@@ -7,13 +7,13 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width">
 
-    <link rel="stylesheet" href="/status/static/style.css" media="screen and (min-device-width: 681px)" type="text/css" />
-    <link rel="stylesheet" href="/status/static/mobile.css" media="only screen and (max-device-width: 680px)" type="text/css" />
-    <link rel="stylesheet" href="/status/static/mobile.css" media="handheld" type="text/css" />
-    <link rel="stylesheet" href="/status/static/mobile.css" media="handheld, only screen and (max-width: 680px), only screen and (max-device-width: 680px)" type="text/css" />
-    <link rel="icon" type="image/png" href="/status/static/icons/monitor-window-bluetooth.png">
+    <link rel="stylesheet" href="/dashboard/static/style.css" media="screen and (min-device-width: 681px)" type="text/css" />
+    <link rel="stylesheet" href="/dashboard/static/mobile.css" media="only screen and (max-device-width: 680px)" type="text/css" />
+    <link rel="stylesheet" href="/dashboard/static/mobile.css" media="handheld" type="text/css" />
+    <link rel="stylesheet" href="/dashboard/static/mobile.css" media="handheld, only screen and (max-width: 680px), only screen and (max-device-width: 680px)" type="text/css" />
+    <link rel="icon" type="image/png" href="/dashboard/static/icons/monitor-window-bluetooth.png">
 
-    <script type="text/javascript" src="/status/static/jquery.js"></script>
+    <script type="text/javascript" src="/dashboard/static/jquery.js"></script>
 
     <script type="text/javascript">
         var connected = true;
@@ -44,7 +44,7 @@
             if (connected) { $("#spinner").find('img').fadeIn(); }
             $.ajax({
                 type: "GET",
-                url: "/status/content",
+                url: "/dashboard/content",
 
                 async: true,
                 cache: false,
@@ -74,14 +74,14 @@
 </head>
 
 <body>
-    <div id="header"><img src="/status/static/logos/header.png"/>
+    <div id="header"><img src="/dashboard/static/logos/header.png"/>
         <p>
             <a href="http://geoweb.ugent.be/">Department of Geography</a> —
             <a href="http://cartogis.ugent.be/">CartoGIS</a>
         </p>
     </div>
-    <div id="spinner"><img src="/status/static/icons/spinner.gif"></div>
-    <div id="logo"><p><img src="/status/static/logos/logo.png"/></p></div>
+    <div id="spinner"><img src="/dashboard/static/icons/spinner.gif"></div>
+    <div id="logo"><p><img src="/dashboard/static/logos/logo.png"/></p></div>
     <div id="content"></div>
 </body>
 
