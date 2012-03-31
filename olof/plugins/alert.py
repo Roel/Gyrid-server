@@ -15,6 +15,7 @@ import datetime
 import smtplib
 import time
 
+import olof.configuration
 import olof.core
 
 def prettyDate(d, prefix="", suffix=" ago"):
@@ -54,31 +55,31 @@ class Mailer(object):
     """
     Class that handles e-mail interaction.
     """
-    def __init__(self):
+    def __init__(self, plugin):
         """
         Initialisation.
 
         Reads the configuration from alert/mailserver.conf and start the looping call that sends e-mails every minute.
-        """
-        self.server = 'smtp.ugent.be'
-        self.port = 587
-        self.from_address = 'noreply@gyrid-server.ugent.be'
-        self.recipients = {}
 
-        f = open('olof/plugins/alert/mailserver.conf')
-        for line in f:
-            ls = line.strip().split(',')
-            if len(ls) == 1 and ls[0] == '':
-                continue
-            self.__dict__[ls[0]] = ls[1]
-        f.close()
+        @param   plugin (olof.core.Plugin)   Reference to main Alert plugin instance.
+        """
+        self.plugin = plugin
+
+        self.server = self.plugin.configmgr.getValue('smtp_server')
+        self.port = self.plugin.configmgr.getValue('smtp_port')
+        self.user = self.plugin.configmgr.getValue('smtp_user')
+        self.password = self.plugin.configmgr.getValue('smtp_password')
+        self.from_address = self.plugin.configmgr.getValue('from_address')
+
+        self.recipients = {}
 
         self.alerts = []
         self.__alertMap = {}
         self.loadRecipients()
 
-        t = task.LoopingCall(self.sendAlerts)
-        t.start(60)
+        if None not in [self.server, self.port, self.user, self.password, self.from_address]:
+            t = task.LoopingCall(self.sendAlerts)
+            t.start(60)
 
     def loadRecipients(self, *args):
         """
@@ -318,12 +319,35 @@ class Plugin(olof.core.Plugin):
         olof.core.Plugin.__init__(self, server, filename)
 
         self.alerts = {}
-        self.mailer = Mailer()
+        self.mailer = Mailer(self)
 
         self.mailer.addAlert(Alert('Server', Alert.Type.ServerStartup,
             info=1, warning=None, alert=None, fire=None))
 
         self.connections = {}
+
+    def defineConfiguration(self):
+        smtp_server = olof.configuration.Option(name = 'smtp_server',
+            description = 'SMTP server to use to send e-mail.',
+            values = {}, default = None)
+
+        smtp_port = olof.configuration.Option(name = 'smtp_port',
+            description = 'TCP port to use while connecting to the SMTP server.',
+            type = 'self._parseInt(%s)', values = {}, default = None)
+
+        smtp_user = olof.configuration.Option(name = 'smtp_user',
+            description = 'Username to use while logging in the SMTP server.',
+            values = {}, default = None)
+
+        smtp_password = olof.configuration.Option(name = 'smtp_password',
+            description = 'Password to use while logging in the SMTP server.',
+            values = {}, default = None)
+
+        from_address = olof.configuration.Option(name = 'from_address',
+            description = 'E-mailaddress to use as the From address.',
+            values = {}, default = None)
+
+        return [smtp_server, smtp_port, smtp_user, smtp_password, from_address]
 
     def connectionMade(self, hostname, ip, port):
         """

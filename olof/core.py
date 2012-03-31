@@ -32,8 +32,7 @@ class Plugin(object):
         self.filename = filename
         self.name = name
 
-        self.configmgr = olof.configuration.Configuration(self.server, 'olof/config/%s.conf' % self.filename,
-            self.defineConfiguration)
+        self.configmgr = olof.configuration.Configuration(self.server, self.filename, self.defineConfiguration)
         self.logger = olof.logger.Logger(self.server, self.filename)
 
     def defineConfiguration(self):
