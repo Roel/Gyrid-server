@@ -17,6 +17,7 @@ import cPickle as pickle
 import os
 import time
 
+import olof.configuration
 import olof.core
 
 class Db4OClient(LineReceiver):
@@ -137,9 +138,9 @@ class Plugin(olof.core.Plugin):
         Connect to the Db4O server.
         """
         olof.core.Plugin.__init__(self, server, filename, "Db4o")
-        self.host = 'localhost'
-        self.port = 5001
-        self.cache_file = '/var/cache/gyrid-server/db4o.cache'
+        self.host = self.config.getValue('host')
+        self.port = self.config.getValue('port')
+        self.cache_file = self.config.getValue('cache_file')
         self.cached_lines = 0
         if os.path.isfile(self.cache_file):
             self.cache = open(self.cache_file, 'r')
@@ -167,6 +168,28 @@ class Plugin(olof.core.Plugin):
 
         self.db4o_factory = Db4OClientFactory(self)
         reactor.connectTCP(self.host, self.port, self.db4o_factory)
+
+    def defineConfiguration(self):
+        options = []
+
+        o = olof.configuration.Option('host')
+        o.setDescription('Hostname or IP-address of the Db4O database server.')
+        o.addValue(olof.configuration.OptionValue('"localhost"', default=True))
+        options.append(o)
+
+        o = olof.configuration.Option('port')
+        o.setDescription('TCP port to use on the database server.')
+        o.setValidation(olof.tools.validation.parseInt)
+        o.addValue(olof.configuration.OptionValue(5001, default=True))
+        options.append(o)
+
+        o = olof.configuration.Option('cache_file')
+        o.setDescription('Location of the file to use for caching data when the connection with the database ' + \
+            'fails or is lost.')
+        o.addValue(olof.configuration.OptionValue('"/var/cache/gyrid-server/db4o.cache"', default=True))
+        options.append(o)
+
+        return options
 
     def unload(self, shutdown=False):
         """
