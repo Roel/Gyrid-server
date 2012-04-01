@@ -16,6 +16,7 @@ import os
 import sys
 import time
 import traceback
+import warnings
 import zlib
 
 import cPickle as pickle
@@ -265,6 +266,7 @@ class Olof(object):
         Read the MAC-adress:deviceclass dictionary from disk, load the pluginmanager and the dataprovider.
         """
         self.logger = olof.logger.Logger(self, 'server')
+        warnings.simplefilter("ignore", RuntimeWarning)
 
         self.debug_mode = False
         if len(sys.argv) > 1 and sys.argv[1] == 'debug':
