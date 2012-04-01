@@ -29,8 +29,10 @@ import time
 import urllib2
 import urlparse
 
+import olof.configuration
 import olof.core
 import olof.plugins.dashboard.macvendor as macvendor
+import olof.tools.validation
 from olof.tools.inotifier import INotifier
 from olof.tools.webprotocols import RESTConnection
 
@@ -919,11 +921,18 @@ class Plugin(olof.core.Plugin):
 
         reactor.callLater(2, self.startListening)
 
+    def defineConfiguration(self):
+        o = olof.configuration.Option('tcp_port')
+        o.setDescription('TCP port to serve the dashboard on.')
+        o.setValidation(olof.tools.validation.parseInt)
+        o.addValue(olof.configuration.OptionValue(8080, default=True))
+        return [o]
+
     def startListening(self):
         """
-        Start listening for incoming requests on TCP port 8080. Called automatically after initialisation.
+        Start listening for incoming requests. Called automatically after initialisation.
         """
-        self.listeningPort = reactor.listenTCP(8080, tserver.Site(self.root))
+        self.listeningPort = reactor.listenTCP(self.config.getValue('tcp_port'), tserver.Site(self.root))
 
     def match(self, location):
         """
