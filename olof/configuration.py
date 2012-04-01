@@ -31,6 +31,7 @@ class Configuration(object):
         self.server = server
         self.name = name
         self.options = {}
+        self.option_list = []
         self.base_path = 'config/'
         self.location = self.base_path + self.name + '.conf.py'
 
@@ -53,6 +54,8 @@ class Configuration(object):
         @param   option (Option)   The Option to add.
         """
         self.options[option.name] = option
+        if not option.name in self.option_list:
+            self.option_list.append(option.name)
 
     def addOptions(self, iterable):
         """
@@ -60,6 +63,9 @@ class Configuration(object):
 
         @param   iterable (list, set, ..)   The Options to add.
         """
+        if type(iterable) is set:
+            iterable = sorted(iterable, key=lambda x: x.name)
+
         for o in iterable:
             self.addOption(o)
 
@@ -92,7 +98,7 @@ class Configuration(object):
         else:
             s = "#-*- coding: utf-8 -*-\n"
             s += "# Gyrid Server: configuration file for %s\n\n" % self.name
-            for o in sorted(self.options):
+            for o in self.option_list:
                 s += self.options[o].render()
                 s += "\n\n"
             return s[:-2]
@@ -111,9 +117,10 @@ class Configuration(object):
         if len(to_append) > 0:
             f = open(self.location, 'a')
             s = ""
-            for o in sorted(to_append):
-                s += self.options[o].render()
-                s += '\n\n'
+            for o in self.option_list:
+                if o in to_append:
+                    s += self.options[o].render()
+                    s += '\n\n'
             f.write('\n')
             f.write(s[:-2])
             f.close()

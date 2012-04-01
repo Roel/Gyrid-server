@@ -289,25 +289,25 @@ class Plugin(olof.core.Plugin):
         self.conn = Connection(self, url, user, password, measurements, measureCount, locations)
 
     def defineConfiguration(self):
-        options = set()
+        options = []
 
         o = olof.configuration.Option('url')
         o.setDescription('Base URL of the MOVE REST API.')
-        options.add(o)
+        options.append(o)
 
         o = olof.configuration.Option('username')
         o.setDescription('Username to use for logging in.')
-        options.add(o)
+        options.append(o)
 
         o = olof.configuration.Option('password')
         o.setDescription('Password to use for logging in.')
-        options.add(o)
+        options.append(o)
 
         o = olof.configuration.Option('upload_enabled')
         o.setDescription('Whether uploading to the MOVE database is enabled.')
         o.addValue(olof.configuration.OptionValue(True, default=True))
         o.addValue(olof.configuration.OptionValue(False))
-        options.add(o)
+        options.append(o)
 
         return options
 
