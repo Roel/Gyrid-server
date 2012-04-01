@@ -20,10 +20,12 @@ import zlib
 
 import cPickle as pickle
 
+import olof.configuration
 import olof.dataprovider
 import olof.datatypes
 import olof.logger
 import olof.pluginmanager
+import olof.tools.validation
 
 def verifyCallback(connection, x509, errnum, errdepth, ok):
     """
@@ -262,7 +264,6 @@ class Olof(object):
 
         Read the MAC-adress:deviceclass dictionary from disk, load the pluginmanager and the dataprovider.
         """
-        self.port = 2583
         self.logger = olof.logger.Logger(self, 'server')
 
         self.debug_mode = False
@@ -287,8 +288,25 @@ class Olof(object):
 
         olof.datatypes.server = self
 
+        self.configmgr = olof.configuration.Configuration(self, 'server')
+        self.__defineConfiguration()
+
         self.pluginmgr = olof.pluginmanager.PluginManager(self)
         self.dataprovider = olof.dataprovider.DataProvider(self)
+
+        self.port = self.configmgr.getValue('tcp_listening_port')
+
+    def __defineConfiguration(self):
+        """
+        Define the configuration options for the server.
+        """
+        o = olof.configuration.Option('tcp_listening_port')
+        o.setDescription('TCP port to listen on for incoming connections from the scanners.')
+        o.setValidation(olof.tools.validation.parseInt)
+        o.addValue(olof.configuration.OptionValue(2583, default=True))
+        self.configmgr.addOption(o)
+
+        self.configmgr.readConfig()
 
     def unload(self):
         """
@@ -296,6 +314,7 @@ class Olof(object):
         """
         self.logger.logInfo("Stopping Gyrid Server")
         self.dataprovider.unload()
+        self.configmgr.unload()
         self.pluginmgr.unload(shutdown=True)
 
         f = open('olof/data/mac_dc.pickle', 'wb')
