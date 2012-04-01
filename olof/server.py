@@ -306,6 +306,21 @@ class Olof(object):
         o.addValue(olof.configuration.OptionValue(2583, default=True))
         self.configmgr.addOption(o)
 
+        o = olof.configuration.Option('ssl_server_key')
+        o.setDescription("Path to the server's SSL key.")
+        o.addValue(olof.configuration.OptionValue('"keys/server.key"', default=True))
+        self.configmgr.addOption(o)
+
+        o = olof.configuration.Option('ssl_server_crt')
+        o.setDescription("Path to the server's SSL certificate.")
+        o.addValue(olof.configuration.OptionValue('"keys/server.crt"', default=True))
+        self.configmgr.addOption(o)
+
+        o = olof.configuration.Option('ssl_server_ca')
+        o.setDescription("Path to the server's SSL CA.")
+        o.addValue(olof.configuration.OptionValue('"keys/ca.pem"', default=True))
+        self.configmgr.addOption(o)
+
         self.configmgr.readConfig()
 
     def unload(self):
@@ -362,7 +377,8 @@ class Olof(object):
         self.logger.logInfo("Listening on TCP port %s" % self.port)
 
         gyridCtxFactory = ssl.DefaultOpenSSLContextFactory(
-            'keys/server.key', 'keys/server.crt')
+            self.configmgr.getValue('ssl_server_key'),
+            self.configmgr.getValue('ssl_server_crt'))
 
         ctx = gyridCtxFactory.getContext()
 
@@ -372,7 +388,7 @@ class Olof(object):
 
         # Since we have self-signed certs we have to explicitly
         # tell the server to trust them.
-        ctx.load_verify_locations("keys/ca.pem")
+        ctx.load_verify_locations(self.configmgr.getValue('ssl_server_ca'))
 
         gsf = GyridServerFactory(self)
 
