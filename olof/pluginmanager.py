@@ -6,7 +6,7 @@
 # All rights reserved.
 
 """
-Module that handles the loading, unloading and dynamically reloading of plugins and their dependencies.
+Module that handles the loading, unloading and dynamically reloading of plugins.
 """
 
 import imp
