@@ -38,7 +38,7 @@ class Configuration(object):
             os.makedirs(self.base_path)
 
         self.inotifier = INotifier(self.location)
-        self.inotifier.addCallback(INotifier.Write, self.readConfig)
+        self.inotifier.addCallback(INotifier.Write, self.__readConfig)
 
     def unload(self):
         """
@@ -88,7 +88,28 @@ class Configuration(object):
                 s += "\n\n"
             return s[:-2]
 
-    def writeDefault(self):
+    def updateConfigFile(self):
+        """
+        Update the configuration file, adding new options when appropriate.
+        """
+        to_append = []
+        if len(self.options) > 0 and os.path.exists(self.location):
+            self.__readConfig()
+            for o in self.options:
+                if not self.options[o].name in self.config.__dict__:
+                    to_append.append(o)
+
+        if len(to_append) > 0:
+            f = open(self.location, 'a')
+            s = ""
+            for o in sorted(to_append):
+                s += self.options[o].render()
+                s += '\n\n'
+            f.write('\n\n')
+            f.write(s[:-2])
+            f.close()
+
+    def writeDefaultConfigFile(self):
         """
         Write the default configuration file to disk, when no such file exists yet.
         """
@@ -97,11 +118,10 @@ class Configuration(object):
             f.write(self.generateDefault())
             f.close()
 
-    def readConfig(self, event=None):
+    def __readConfig(self, event=None):
         """
-        Read the configuration file from disk. This should be called after all Options are added.
+        Read the configuration file from disk.
         """
-        self.writeDefault()
         try:
             c = imp.load_source(str(time.time()), self.location)
         except Exception, e:
@@ -109,6 +129,17 @@ class Configuration(object):
                 self.name, e))
         else:
             self.config = c
+
+    def readConfig(self):
+        """
+        Read the configuration file from disk. Create a default one when none exists, update if one exists.
+        This should be called after all options are added.
+        """
+        if not os.path.exists(self.location):
+            self.writeDefaultConfigFile()
+        else:
+            self.updateConfigFile()
+        self.__readConfig()
 
 class OptionValue(object):
     """
