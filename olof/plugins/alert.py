@@ -15,7 +15,9 @@ import datetime
 import smtplib
 import time
 
+import olof.configuration
 import olof.core
+import olof.tools.validation
 
 def prettyDate(d, prefix="", suffix=" ago"):
     """
@@ -68,31 +70,12 @@ class Mailer(object):
         self.user = self.plugin.config.getValue('smtp_username')
         self.password = self.plugin.config.getValue('smtp_password')
         self.from_address = self.plugin.config.getValue('from_address')
-        self.recipients = {}
 
         self.alerts = []
         self.__alertMap = {}
-        self.loadRecipients()
 
         t = task.LoopingCall(self.sendAlerts)
         t.start(60)
-
-    def loadRecipients(self, *args):
-        """
-        Read the recipients from alert/recipients.conf.
-
-        @param   *args   Can be ignored.
-        """
-        r = {}
-        f = open('olof/plugins/alert/recipients.conf')
-        for line in f:
-            ls = line.strip().split(',')
-            if len(ls) == 1 and ls[0] == '':
-                continue
-            r[ls[0]] = eval(ls[1])
-        f.close()
-
-        self.recipients = r
 
     def addAlert(self, alert):
         """
@@ -136,7 +119,6 @@ class Mailer(object):
         Send the Alerts by e-mail and reload recipients when finished.
         """
         d = threads.deferToThread(self.__sendAlerts)
-        d.addCallback(self.loadRecipients)
 
     def __connect(self):
         """
@@ -179,11 +161,12 @@ class Mailer(object):
         mails = []
 
         to_delete = []
+        recipients = self.plugin.config.getValue('recipients')
         for alert in self.alerts:
             level = alert.getStatusLevel(t)
             if level is not None and not alert.isSent(level):
-                for r in self.recipients:
-                    if level >= self.recipients[r]:
+                for r in recipients:
+                    if level >= recipients[r]:
                         mails.append([r,
                             alert.origin,
                             alert.getMessageBody(level)])
@@ -323,6 +306,22 @@ class Plugin(olof.core.Plugin):
         self.connections = {}
 
     def defineConfiguration(self):
+        """
+        Define the configuration option for this plugin.
+        """
+        def validateRecipients(value):
+            """
+            Validate recipients dictionary.
+            """
+            d = {}
+            if type(value) is not dict:
+                return None
+            else:
+                for i in value:
+                    if olof.tools.validation.isEmail(i) and Alert.Level.Info <= value[i] <= Alert.Level.Fire:
+                        d[i] = value[i]
+            return d
+
         options = []
 
         o = olof.configuration.Option('smtp_server')
@@ -344,6 +343,13 @@ class Plugin(olof.core.Plugin):
 
         o = olof.configuration.Option('from_address')
         o.setDescription("E-mailaddress to use as the 'From:' address.")
+        options.append(o)
+
+        o = olof.configuration.Option('recipients')
+        o.setDescription("Dictionary containing e-mailaddresses and Alert.Level's of recipients of e-mailalerts. " + \
+            "The e-mailaddresses are stored as the keys with for each the associated Alert.Level as value.")
+        o.setValidation(validateRecipients)
+        o.addValue(olof.configuration.OptionValue("{}", default=True))
         options.append(o)
 
         return options
