@@ -17,6 +17,7 @@ import os
 import time
 import urllib2
 
+import olof.configuration
 import olof.core
 from olof.tools.inotifier import INotifier
 from olof.tools.webprotocols import RESTConnection
@@ -119,7 +120,7 @@ class Connection(RESTConnection):
                     for l in self.locations[scanner]:
                         l[1] = True
 
-        if self.requestRunning or not self.plugin.upload_enabled:
+        if self.requestRunning or not self.plugin.config.getValue('upload_enabled'):
             return
 
         l = ""
@@ -202,7 +203,7 @@ class Connection(RESTConnection):
             else:
                 self.plugin.logger.logError("Upload failed: %s" % str(r))
 
-        if self.requestRunning or not self.plugin.upload_enabled:
+        if self.requestRunning or not self.plugin.config.getValue('upload_enabled'):
             return
 
         m = ""
@@ -246,11 +247,6 @@ class Plugin(olof.core.Plugin):
         olof.core.Plugin.__init__(self, server, filename, "Move")
         self.buffer = []
         self.last_session_id = None
-        self.upload_enabled = False
-
-        self.inotifier = INotifier('olof/plugins/move/move.conf')
-        self.inotifier.addCallback(INotifier.Write, self.readConf)
-        self.readConf()
 
         measureCount = {'last_upload': -1,
                         'uploads': 0,
@@ -286,27 +282,40 @@ class Plugin(olof.core.Plugin):
                 pass
             f.close()
 
-        self.conn = Connection(self, self.url, self.user, self.password,
-            measurements, measureCount, locations)
+        url = self.config.getValue('url')
+        user = self.config.getValue('username')
+        password = self.config.getValue('password')
 
-    def readConf(self, event=None):
-        """
-        Read the configuration from disk and update variabled accordingly.
-        Configuration is read from olof/plugins/move/move.conf
-        """
-        f = open('olof/plugins/move/move.conf', 'r')
-        m = {'True': True, 'False': False, 'true': True, 'false': False, '1': True, '0': False}
-        for l in f:
-            ls = l.strip().split(',')
-            ls[1] = m.get(ls[1], ls[1])
-            self.__dict__[ls[0]] = ls[1]
-        f.close()
+        self.conn = Connection(self, url, user, password, measurements, measureCount, locations)
+
+    def defineConfiguration(self):
+        options = set()
+
+        o = olof.configuration.Option('url')
+        o.setDescription('Base URL of the MOVE REST API.')
+        options.add(o)
+
+        o = olof.configuration.Option('username')
+        o.setDescription('Username to use for logging in.')
+        options.add(o)
+
+        o = olof.configuration.Option('password')
+        o.setDescription('Password to use for logging in.')
+        options.add(o)
+
+        o = olof.configuration.Option('upload_enabled')
+        o.setDescription('Whether uploading to the MOVE database is enabled.')
+        o.addValue(olof.configuration.OptionValue(True, default=True))
+        o.addValue(olof.configuration.OptionValue(False))
+        options.add(o)
+
+        return options
 
     def unload(self, shutdown=False):
         """
         Unload. Save cache to disk.
         """
-        self.inotifier.unload()
+        olof.core.Plugin.unload(self)
 
         f = open("olof/plugins/move/measureCount.pickle", "wb")
         pickle.dump(self.conn.measureCount, f)
@@ -326,7 +335,7 @@ class Plugin(olof.core.Plugin):
         """
         r = []
 
-        if self.upload_enabled == False:
+        if self.config.getValue('upload_enabled') == False:
             r.append({'status': 'disabled'})
             r.append({'id': 'uploading disabled'})
         elif self.conn.measureCount['last_upload'] < 0:

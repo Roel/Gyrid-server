@@ -172,6 +172,7 @@ class Plugin(olof.core.Plugin):
         """
         Unload. Save locations and scansetups to disk.
         """
+        olof.core.Plugin.unload(self)
         f = open('olof/plugins/db4o/locations.pickle', 'wb')
         pickle.dump(self.locations, f)
         f.close()

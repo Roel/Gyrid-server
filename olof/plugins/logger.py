@@ -166,6 +166,7 @@ class Plugin(olof.core.Plugin):
         """
         Unload. Unload all Logger instances.
         """
+        olof.core.Plugin.unload(self)
         for ss in self.scanSetups.values():
             ss.unload()
 

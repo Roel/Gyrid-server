@@ -33,6 +33,21 @@ class Plugin(object):
 
         self.logger = olof.logger.Logger(self.server, self.filename)
 
+        options = self.defineConfiguration()
+        if len(options) > 0:
+            self.config = olof.configuration.Configuration(self.server, self.filename)
+            self.config.addOptions(options)
+            self.config.readConfig()
+
+    def defineConfiguration(self):
+        """
+        Define the configuration options for this plugin. Should return a list or set with olof.configuration.Option's
+        The value of these can then be retrieved by calling self.config.getValue('option_name').
+
+        @return   iterable (list, set)   A list or set with Options for this plugin.
+        """
+        return []
+
     def isEnabled(self):
         """
         Check if this plugin is enabled. Set this to False to disable the plugin and thus prevent from loading.
@@ -60,12 +75,13 @@ class Plugin(object):
         Called when the plugin gets unloaded, f.ex. on server shutdown.
 
         All actions necessary to perform a clean shutdown should be added here, f.ex. closing network connections
-        or saving data to disk.
+        or saving data to disk. Make sure to call this super method in the subclass too.
 
         @param   shutdown (bool)   True if the server is shutting down, False if only this plugin is unloaded.
                                      Defaults to False.
         """
-        pass
+        if 'config' in self.__dict__:
+            self.config.unload()
 
     def uptime(self, hostname, host_uptime, gyrid_uptime):
         """

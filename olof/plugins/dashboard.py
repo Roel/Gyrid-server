@@ -1017,6 +1017,7 @@ class Plugin(olof.core.Plugin):
         """
         Unload this plugin. Stop listening, stop looping calls and save scanner data to disk.
         """
+        olof.core.Plugin.unload(self)
         self.listeningPort.stopListening()
         self.inotifier.unload()
 
