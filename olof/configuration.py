@@ -99,7 +99,7 @@ class Configuration(object):
 
     def readConfig(self, event=None):
         """
-        Read the configuration file from disk.
+        Read the configuration file from disk. This should be called after all Options are added.
         """
         self.writeDefault()
         try:
