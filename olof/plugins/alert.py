@@ -54,24 +54,21 @@ class Mailer(object):
     """
     Class that handles e-mail interaction.
     """
-    def __init__(self):
+    def __init__(self, plugin):
         """
         Initialisation.
 
-        Reads the configuration from alert/mailserver.conf and start the looping call that sends e-mails every minute.
-        """
-        self.server = 'smtp.ugent.be'
-        self.port = 587
-        self.from_address = 'noreply@gyrid-server.ugent.be'
-        self.recipients = {}
+        Start the looping call that sends e-mails every minute.
 
-        f = open('olof/plugins/alert/mailserver.conf')
-        for line in f:
-            ls = line.strip().split(',')
-            if len(ls) == 1 and ls[0] == '':
-                continue
-            self.__dict__[ls[0]] = ls[1]
-        f.close()
+        @param   plugin (Olof)   Reference to main Olof server instance.
+        """
+        self.plugin = plugin
+        self.server = self.plugin.config.getValue('smtp_server')
+        self.port = self.plugin.config.getValue('smtp_port')
+        self.user = self.plugin.config.getValue('smtp_username')
+        self.password = self.plugin.config.getValue('smtp_password')
+        self.from_address = self.plugin.config.getValue('from_address')
+        self.recipients = {}
 
         self.alerts = []
         self.__alertMap = {}
@@ -318,12 +315,38 @@ class Plugin(olof.core.Plugin):
         olof.core.Plugin.__init__(self, server, filename)
 
         self.alerts = {}
-        self.mailer = Mailer()
+        self.mailer = Mailer(self)
 
         self.mailer.addAlert(Alert('Server', Alert.Type.ServerStartup,
             info=1, warning=None, alert=None, fire=None))
 
         self.connections = {}
+
+    def defineConfiguration(self):
+        options = []
+
+        o = olof.configuration.Option('smtp_server')
+        o.setDescription('SMTP server to use for sending e-mail.')
+        options.append(o)
+
+        o = olof.configuration.Option('smtp_port')
+        o.setDescription('TCP port to use while connecting to the SMTP server.')
+        o.setValidation(olof.tools.validation.parseInt)
+        options.append(o)
+
+        o = olof.configuration.Option('smtp_username')
+        o.setDescription('Username to use for logging in to the SMTP server.')
+        options.append(o)
+
+        o = olof.configuration.Option('smtp_password')
+        o.setDescription('Password to use for logging in to the SMTP server.')
+        options.append(o)
+
+        o = olof.configuration.Option('from_address')
+        o.setDescription("E-mailaddress to use as the 'From:' address.")
+        options.append(o)
+
+        return options
 
     def connectionMade(self, hostname, ip, port):
         """
