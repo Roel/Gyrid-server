@@ -82,13 +82,19 @@ class Scanner(object):
     """
     Class representing a scanner.
     """
-    def __init__(self, hostname):
+    def __init__(self, hostname, mv_url=None, mv_user=None, mv_pwd=None):
         """
         Initialisation.
 
         @param   hostname (str)   Hostname of the scanner.
+        @param   mv_url (str)     Base URL of the Mobile Vikings basic API. Optional.
+        @param   mv_user (str)    Username to log in to the Mobile Vikings API. Optional.
+        @param   mv_pwd (str)     Password to log in to the Mobile Vikings API. Optional.
         """
         self.hostname = hostname
+        self.mv_url = mv_url
+        self.mv_user = mv_user
+        self.mv_pwd = mv_pwd
         self.project = None
         self.host_uptime = None
         self.sensors = {}
@@ -100,12 +106,6 @@ class Scanner(object):
         self.lastConnected = None
         self.conn_time = {}
         self.connections = set()
-
-        f = open('olof/plugins/dashboard/data/mobilevikings.conf', 'r')
-        for l in f:
-            ls = l.strip().split(',')
-            self.__dict__[ls[0]] = ls[1]
-        f.close()
 
         self.location = None
         self.location_description = None
@@ -127,9 +127,9 @@ class Scanner(object):
         self.lag = {1: [0, 0], 5: [0, 0], 15: [0, 0]}
 
         self.mv_conn = RESTConnection(
-            base_url = self.url,
-            username = self.user,
-            password = self.password,
+            base_url = self.mv_url,
+            username = self.mv_user,
+            password = self.mv_pwd,
             authHandler = urllib2.HTTPBasicAuthHandler)
 
         self.checkLag_call = task.LoopingCall(reactor.callInThread,
@@ -925,11 +925,28 @@ class Plugin(olof.core.Plugin):
         """
         Define the configuration options for this plugin.
         """
+        options = []
+
         o = olof.configuration.Option('tcp_port')
         o.setDescription('TCP port to serve the dashboard on.')
         o.setValidation(olof.tools.validation.parseInt)
         o.addValue(olof.configuration.OptionValue(8080, default=True))
-        return [o]
+        options.append(o)
+
+        o = olof.configuration.Option('mobilevikings_api_url')
+        o.setDescription('Base URL of the Mobile Vikings basic API.')
+        o.addValue(olof.configuration.OptionValue('"https://mobilevikings.com/api/2.0/basic"', default=True))
+        options.append(o)
+
+        o = olof.configuration.Option('mobilevikings_api_username')
+        o.setDescription('Username to use to log in to the Mobile Vikings API.')
+        options.append(o)
+
+        o = olof.configuration.Option('mobilevikings_api_password')
+        o.setDescription('Password to use to log in to the Mobile Vikings API.')
+        options.append(o)
+
+        return options
 
     def startListening(self):
         """
@@ -1059,7 +1076,10 @@ class Plugin(olof.core.Plugin):
         @return   (Scanner)        Scanner instance for the given hostname.
         """
         if not hostname in self.scanners and create:
-            s = Scanner(hostname)
+            s = Scanner(hostname,
+                mv_url = self.config.getValue('mobilevikings_api_url'),
+                mv_user = self.config.getValue('mobilevikings_api_user'),
+                mv_pwd = self.config.getValue('mobilevikings_api_password'))
             self.scanners[hostname] = s
         elif hostname in self.scanners:
             s = self.scanners[hostname]
