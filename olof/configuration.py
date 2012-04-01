@@ -54,6 +54,15 @@ class Configuration(object):
         """
         self.options[option.name] = option
 
+    def addOptions(self, iterable):
+        """
+        Add all the given Options.
+
+        @param   iterable (list, set, ..)   The Options to add.
+        """
+        for o in iterable:
+            self.addOption(o)
+
     def getValue(self, optionName):
         """
         Get the value of the option with the given name. Returns None when such option does not exist, else the
@@ -255,5 +264,6 @@ class Option(object):
             s += '#  Values:'
             for v in sorted(self.values):
                 s += self.values[v].render()
-        s += "\n%s = %s" % (self.name, self.getDefaultValue())
+            s += "\n"
+        s += "%s = %s" % (self.name, self.getDefaultValue())
         return s
