@@ -35,7 +35,7 @@ class Plugin(object):
 
         options = self.defineConfiguration()
         if len(options) > 0:
-            self.config = olof.configuration.Configuration(self.server, self.filename)
+            self.config = olof.configuration.Configuration(self.server, self.filename, self.name)
             self.config.addOptions(options)
             self.config.readConfig()
 

@@ -21,19 +21,22 @@ class Configuration(object):
     """
     Main Configuration object representing a specific configuration file.
     """
-    def __init__(self, server, name):
+    def __init__(self, server, filename, name=None):
         """
         Initialisation.
 
-        @param   server (Olof)   Reference to main Olof server instance.
-        @param   name (str)      Name of this configuration file.
+        @param   server (Olof)    Reference to main Olof server instance.
+        @param   filename (str)   Filename of this configuration file.
+        @param   name (str)       Name of this configuration file. Is used in the header of the file.
+                                    Optional: use the filename when omitted.
         """
         self.server = server
-        self.name = name
+        self.filename = filename
+        self.name = filename if name == None else name
         self.options = {}
         self.option_list = []
         self.base_path = 'config/'
-        self.location = self.base_path + self.name + '.conf.py'
+        self.location = self.base_path + self.filename + '.conf.py'
 
         if not os.path.isdir(self.base_path):
             os.makedirs(self.base_path)
@@ -142,7 +145,7 @@ class Configuration(object):
             c = imp.load_source(str(time.time()), self.location)
         except Exception, e:
             self.server.logger.logError("Failed to load config file: %s.conf.py: %s" % (
-                self.name, e))
+                self.filename, e))
         else:
             self.config = c
 
