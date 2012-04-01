@@ -307,7 +307,7 @@ class Plugin(olof.core.Plugin):
 
     def defineConfiguration(self):
         """
-        Define the configuration option for this plugin.
+        Define the configuration options for this plugin.
         """
         def validateRecipients(value):
             """

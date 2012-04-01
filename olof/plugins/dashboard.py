@@ -922,6 +922,9 @@ class Plugin(olof.core.Plugin):
         reactor.callLater(2, self.startListening)
 
     def defineConfiguration(self):
+        """
+        Define the configuration options for this plugin.
+        """
         o = olof.configuration.Option('tcp_port')
         o.setDescription('TCP port to serve the dashboard on.')
         o.setValidation(olof.tools.validation.parseInt)
