@@ -31,7 +31,7 @@ class Configuration(object):
         self.server = server
         self.name = name
         self.options = {}
-        self.base_path = 'olof/config/'
+        self.base_path = 'config/'
         self.location = self.base_path + self.name + '.conf.py'
 
         if not os.path.isdir(self.base_path):
