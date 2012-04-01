@@ -105,7 +105,7 @@ class Configuration(object):
             for o in sorted(to_append):
                 s += self.options[o].render()
                 s += '\n\n'
-            f.write('\n\n')
+            f.write('\n')
             f.write(s[:-2])
             f.close()
 
