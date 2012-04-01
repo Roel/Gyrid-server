@@ -300,27 +300,30 @@ class Olof(object):
         """
         Define the configuration options for the server.
         """
+        options = set()
+
         o = olof.configuration.Option('tcp_listening_port')
         o.setDescription('TCP port to listen on for incoming connections from the scanners.')
         o.setValidation(olof.tools.validation.parseInt)
         o.addValue(olof.configuration.OptionValue(2583, default=True))
-        self.configmgr.addOption(o)
+        options.add(o)
 
         o = olof.configuration.Option('ssl_server_key')
         o.setDescription("Path to the server's SSL key.")
         o.addValue(olof.configuration.OptionValue('"keys/server.key"', default=True))
-        self.configmgr.addOption(o)
+        options.add(o)
 
         o = olof.configuration.Option('ssl_server_crt')
         o.setDescription("Path to the server's SSL certificate.")
         o.addValue(olof.configuration.OptionValue('"keys/server.crt"', default=True))
-        self.configmgr.addOption(o)
+        options.add(o)
 
         o = olof.configuration.Option('ssl_server_ca')
         o.setDescription("Path to the server's SSL CA.")
         o.addValue(olof.configuration.OptionValue('"keys/ca.pem"', default=True))
-        self.configmgr.addOption(o)
+        options.add(o)
 
+        self.configmgr.addOptions(options)
         self.configmgr.readConfig()
 
     def unload(self):
