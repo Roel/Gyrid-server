@@ -11,7 +11,7 @@ Module providing useful tools regarding dates and times.
 
 import datetime
 
-def getRelativeTime(timestamp, now=None, futurePrefix="in ", pastSuffix=" ago", wrapper=None):
+def getRelativeTime(timestamp, now=None, levels=1, futurePrefix="in ", pastSuffix=" ago", wrapper=None):
     """
     Get a relative string representation from comparing two timestamps.
 
@@ -20,6 +20,7 @@ def getRelativeTime(timestamp, now=None, futurePrefix="in ", pastSuffix=" ago", 
     @param   now                  Second timestamp to compare. Should be either a datetime.datetime instance or a UNIX
                                     timestamp as an integer or floating point value. Optional: use the current time when
                                     omitted.
+    @param   levels (int)         The maximum number of time levels to use when formatting the string. Defaults to 1.
     @param   futurePrefix (str)   The prefix to use when formatting a time in the future. Defaults to "in ".
     @param   pastSuffix (str)     The suffix to use when formatting a time in the past. Defaults to " ago".
     @param   wrapper (method)     An optional wrapper method. Takes one argument: the first timestamp in the comparison
@@ -74,12 +75,13 @@ def getRelativeTime(timestamp, now=None, futurePrefix="in ", pastSuffix=" ago", 
             if count != 0:
                 break
         s = '%(number)d %(type)s' % {'number': count, 'type': name(count)}
-        if i + 1 < len(chunks):
-            # Now get the second item
-            seconds2, name2 = chunks[i + 1]
-            count2 = (since - (seconds * count)) // seconds2
-            if count2 != 0:
-                s += ', %(number)d %(type)s' % {'number': count2, 'type': name2(count2)}
+        for j in range(levels-1):
+            if i +j + 1 < len(chunks):
+                # Now get the second item
+                seconds2, name2 = chunks[i + j + 1]
+                count2 = (since - (seconds * count)) // seconds2
+                if count2 != 0:
+                    s += ', %(number)d %(type)s' % {'number': count2, 'type': name2(count2)}
         return s
 
     def timeUntil(d, now=None):
