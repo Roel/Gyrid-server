@@ -65,11 +65,6 @@ class Mailer(object):
         @param   plugin (Olof)   Reference to main Olof server instance.
         """
         self.plugin = plugin
-        self.server = self.plugin.config.getValue('smtp_server')
-        self.port = self.plugin.config.getValue('smtp_port')
-        self.user = self.plugin.config.getValue('smtp_username')
-        self.password = self.plugin.config.getValue('smtp_password')
-        self.from_address = self.plugin.config.getValue('from_address')
 
         self.alerts = []
         self.__alertMap = {}
@@ -124,11 +119,16 @@ class Mailer(object):
         """
         Connect to the SMTP server.
         """
-        self.s = smtplib.SMTP(self.server, self.port)
+        smtp_server = self.plugin.config.getValue('smtp_server')
+        smtp_port = self.plugin.config.getValue('smtp_port')
+        smtp_username = self.plugin.config.getValue('smtp_username')
+        smtp_password = self.plugin.config.getValue('smtp_password')
+
+        self.s = smtplib.SMTP(smtp_server, smtp_port)
         self.s.ehlo()
         self.s.starttls()
         self.s.ehlo()
-        self.s.login(self.user, self.password)
+        self.s.login(smtp_username, smtp_password)
 
     def __sendMail(self, to, subject, message):
         """
@@ -138,11 +138,12 @@ class Mailer(object):
         @param   subject (str)   The subject of the e-mail.
         @param   message (str)   The message to send.
         """
-        msg = "From: Gyrid Server <%s>\r\n" % self.from_address
+        from_address = self.plugin.config.getValue('from_address')
+        msg = "From: Gyrid Server <%s>\r\n" % from_address
         msg += "To: %s\r\n" % to
         msg += "Subject: %s\r\n\r\n" % subject
         msg += message
-        self.s.sendmail(self.from_address, to, msg)
+        self.s.sendmail(from_address, to, msg)
 
     def __disconnect(self):
         """
