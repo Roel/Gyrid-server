@@ -127,11 +127,7 @@ class Scanner(object):
         """
         self.lag = {1: [0, 0], 5: [0, 0], 15: [0, 0]}
 
-        self.mv_conn = RESTConnection(
-            base_url = self.mv_url,
-            username = self.mv_user,
-            password = self.mv_pwd,
-            authHandler = urllib2.HTTPBasicAuthHandler)
+        self.initMVConnection(self.mv_url, self.mv_user, self.mv_pwd)
 
         self.checkLag_call = task.LoopingCall(reactor.callInThread,
             self.checkLag)
@@ -140,6 +136,24 @@ class Scanner(object):
         self.checkMVBalance_call = task.LoopingCall(reactor.callInThread,
             self.getMVBalance)
         self.checkMVBalanceCall('start')
+
+    def initMVConnection(self, url, username, password):
+        """
+        Initialise a Mobile Vikings REST connection with the given details. If any of the arguments is None, delete
+        any existing connection.
+
+        @param   url (str)        Base URL of the Mobile Vikings basic API. Optional.
+        @param   username (str)   Username to log in to the Mobile Vikings API. Optional.
+        @param   password (str)   Password to log in to the Mobile Vikings API. Optional.
+        """
+        if None not in [url, username, password]:
+            self.mv_conn = RESTConnection(
+                base_url = url,
+                username = username,
+                password = password,
+                authHandler = urllib2.HTTPBasicAuthHandler)
+        else:
+            self.mv_conn = None
 
     def isOld(self):
         """
@@ -275,7 +289,7 @@ class Scanner(object):
                 except:
                     pass
 
-        if self.msisdn:
+        if self.mv_conn != None and self.msisdn:
             self.mv_conn.requestGet('sim_balance.pickle?msisdn=%s' % self.msisdn, process)
         else:
             self.mv_updated = None
@@ -947,14 +961,17 @@ class Plugin(olof.core.Plugin):
         o = olof.configuration.Option('mobilevikings_api_url')
         o.setDescription('Base URL of the Mobile Vikings basic API.')
         o.addValue(olof.configuration.OptionValue('https://mobilevikings.com/api/2.0/basic', default=True))
+        o.addCallback(self.updateMVConnectionConfig)
         options.append(o)
 
         o = olof.configuration.Option('mobilevikings_api_username')
         o.setDescription('Username to use to log in to the Mobile Vikings API.')
+        o.addCallback(self.updateMVConnectionConfig)
         options.append(o)
 
         o = olof.configuration.Option('mobilevikings_api_password')
         o.setDescription('Password to use to log in to the Mobile Vikings API.')
+        o.addCallback(self.updateMVConnectionConfig)
         options.append(o)
 
         o = olof.configuration.Option('mobilevikings_msisdn_mapping')
@@ -965,6 +982,17 @@ class Plugin(olof.core.Plugin):
         options.append(o)
 
         return options
+
+    def updateMVConnectionConfig(self, value=None):
+        """
+        Update the Mobile Vikings API details for all current scanners.
+        """
+        mv_url = self.config.getValue('mobilevikings_api_url')
+        mv_user = self.config.getValue('mobilevikings_api_username')
+        mv_pwd = self.config.getValue('mobilevikings_api_password')
+
+        for s in self.scanners.values():
+            s.initMVConnection(mv_url, mv_user, mv_pwd)
 
     def startListening(self):
         """
@@ -1094,9 +1122,10 @@ class Plugin(olof.core.Plugin):
         if not hostname in self.scanners and create:
             s = Scanner(hostname,
                 mv_url = self.config.getValue('mobilevikings_api_url'),
-                mv_user = self.config.getValue('mobilevikings_api_user'),
+                mv_user = self.config.getValue('mobilevikings_api_username'),
                 mv_pwd = self.config.getValue('mobilevikings_api_password'))
             self.scanners[hostname] = s
+            self.parseMVNumbers()
         elif hostname in self.scanners:
             s = self.scanners[hostname]
         else:
