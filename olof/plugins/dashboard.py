@@ -83,20 +83,14 @@ class Scanner(object):
     """
     Class representing a scanner.
     """
-    def __init__(self, plugin, hostname, mv_url=None, mv_user=None, mv_pwd=None):
+    def __init__(self, plugin, hostname):
         """
         Initialisation.
 
         @param   plugin (olof.core.Plugin)   Reference to main Dashboard plugin instance.
         @param   hostname (str)              Hostname of the scanner.
-        @param   mv_url (str)                Base URL of the Mobile Vikings basic API. Optional.
-        @param   mv_user (str)               Username to log in to the Mobile Vikings API. Optional.
-        @param   mv_pwd (str)                Password to log in to the Mobile Vikings API. Optional.
         """
         self.hostname = hostname
-        self.mv_url = mv_url
-        self.mv_user = mv_user
-        self.mv_pwd = mv_pwd
         self.project = None
         self.host_uptime = None
         self.sensors = {}
@@ -131,7 +125,7 @@ class Scanner(object):
         self.plugin = plugin
         self.lag = {1: [0, 0], 5: [0, 0], 15: [0, 0]}
 
-        self.initMVConnection(self.mv_url, self.mv_user, self.mv_pwd)
+        self.initMVConnection()
 
         self.checkLag_call = task.LoopingCall(reactor.callInThread,
             self.checkLag)
@@ -141,15 +135,15 @@ class Scanner(object):
             self.getMVBalance)
         self.checkMVBalanceCall('start')
 
-    def initMVConnection(self, url, username, password):
+    def initMVConnection(self):
         """
         Initialise a Mobile Vikings REST connection with the given details. If any of the arguments is None, delete
         any existing connection.
-
-        @param   url (str)        Base URL of the Mobile Vikings basic API. Optional.
-        @param   username (str)   Username to log in to the Mobile Vikings API. Optional.
-        @param   password (str)   Password to log in to the Mobile Vikings API. Optional.
         """
+        url = self.plugin.config.getValue('mobilevikings_api_url')
+        username = self.plugin.config.getValue('mobilevikings_api_username')
+        password = self.plugin.config.getValue('mobilevikings_api_password')
+
         if None not in [url, username, password]:
             self.mv_conn = RESTConnection(
                 base_url = url,
@@ -1012,12 +1006,8 @@ class Plugin(olof.core.Plugin):
         """
         Update the Mobile Vikings API details for all current scanners.
         """
-        mv_url = self.config.getValue('mobilevikings_api_url')
-        mv_user = self.config.getValue('mobilevikings_api_username')
-        mv_pwd = self.config.getValue('mobilevikings_api_password')
-
         for s in self.scanners.values():
-            s.initMVConnection(mv_url, mv_user, mv_pwd)
+            s.initMVConnection()
 
     def startListening(self):
         """
@@ -1135,10 +1125,7 @@ class Plugin(olof.core.Plugin):
         @return   (Scanner)        Scanner instance for the given hostname.
         """
         if not hostname in self.scanners and create:
-            s = Scanner(self, hostname,
-                mv_url = self.config.getValue('mobilevikings_api_url'),
-                mv_user = self.config.getValue('mobilevikings_api_username'),
-                mv_pwd = self.config.getValue('mobilevikings_api_password'))
+            s = Scanner(self, hostname)
             self.scanners[hostname] = s
             self.parseMVNumbers()
         elif hostname in self.scanners:
