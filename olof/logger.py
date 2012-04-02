@@ -26,8 +26,9 @@ class Logger(object):
         @param   filename (str)   Filename of the logfile. Log resides in olof/logs/filename.
         """
         self.server = server
+        self.filename = filename
         self.base_path = 'olof/logs'
-        self.location = os.path.join(self.base_path, filename)
+        self.location = os.path.join(self.base_path, self.filename)
 
         if not os.path.exists(self.base_path):
             os.makedirs(self.base_path)
@@ -65,7 +66,8 @@ class Logger(object):
         """
         t, m = self.__procMsg(message)
         if self.server.debug_mode:
-            sys.stdout.write("%s Gyrid Server: %s.\n" % (t, m))
+            f = ' (%s)' % self.filename if self.filename != 'server' else ''
+            sys.stdout.write("%s Gyrid Server%s: %s.\n" % (t, f, m))
         self.logger.info("I %s: %s." % (t, m))
 
     def logError(self, message):
@@ -76,5 +78,6 @@ class Logger(object):
         """
         t, m = self.__procMsg(message)
         if self.server.debug_mode:
-            sys.stderr.write("%s Gyrid Server: %s.\n" % (t, m))
+            f = ' (%s)' % self.filename if self.filename != 'server' else ''
+            sys.stderr.write("%s Gyrid Server%s: Error: %s.\n" % (t, f, m))
         self.logger.info("E %s: %s." % (t, m))
