@@ -2,7 +2,11 @@ Gyrid Server is written by Roel Huybrechts.
 (c) Roel Huybrechts
 All rights reserved.
 
+---
+
 E-mail validation regex borrowed from django.core.validators
+Relative datetime function borrowed from django.utils.timesince
+
 Copyright (c) Django Software Foundation and individual contributors.
 All rights reserved.
 

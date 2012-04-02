@@ -34,42 +34,16 @@ import olof.configuration
 import olof.core
 import olof.plugins.dashboard.macvendor as macvendor
 import olof.tools.validation
+
+from olof.tools.datetimetools import getRelativeTime
 from olof.tools.inotifier import INotifier
 from olof.tools.webprotocols import RESTConnection
 
-def prettyDate(d, prefix="", suffix=" ago"):
+def htmlSpanWrapper(timestamp):
     """
-    Turn a UNIX timestamp in a prettier, more readable string.
-
-    @param    d (int)        The UNIX timestamp to convert.
-    @param    prefix (str)   The prefix to add. No prefix by default.
-    @param    suffix (str)   The suffix to add, " ago" by default.
-    @return   (str)          The string corresponding to the timestamp.
+    Wrapper method to use when formatting relative timestamps using olof.tools.datetimetools.getRelativeTime
     """
-    t = d
-    d = datetime.datetime.fromtimestamp(d)
-    diff = datetime.datetime.now() - d
-    s = diff.seconds
-    if diff.days < 0:
-        r =  d.strftime('%d %b %Y')
-    elif diff.days == 1:
-        r =  '%s1 day%s' % (prefix, suffix)
-    elif diff.days > 1:
-        r =  '%s%i days%s' % (prefix, diff.days, suffix)
-    elif s <= 1:
-        r =  'just now'
-    elif s < 60:
-        r =  '%s%i seconds%s' % (prefix, s, suffix)
-    elif s < 120:
-        r =  '%s1 minute%s' % (prefix, suffix)
-    elif s < 3600:
-        r =  '%s%i minutes%s' % (prefix, s/60, suffix)
-    elif s < 7200:
-        r =  '%s1 hour%s' % (prefix, suffix)
-    else:
-        r =  '%s%i hours%s' % (prefix, s/3600, suffix)
-    return '<span title="%s">%s</span>' % (time.strftime('%a %Y%m%d-%H%M%S-%Z',
-        time.localtime(t)), r)
+    return '<span title="%s">' % timestamp.strftime('%a %Y-%m-%d %H:%M:%S'), '</span>'
 
 class ScannerStatus:
     """
@@ -374,14 +348,14 @@ class Scanner(object):
         def renderUptime():
             html = '<div class="block_data"><img src="/dashboard/static/icons/clock-arrow.png">Uptime'
             if 'made' in self.conn_time:
-                html += '<span class="block_data_attr"><b>connection</b> %s</span>' % prettyDate(int(float(
-                    self.conn_time['made'])), suffix="")
+                html += '<span class="block_data_attr"><b>connection</b> %s</span>' % getRelativeTime(int(float(
+                    self.conn_time['made'])), pastSuffix="", wrapper=htmlSpanWrapper)
             if self.gyrid_uptime != None and self.gyrid_connected == True:
-                html += '<span class="block_data_attr"><b>gyrid</b> %s</span>' % prettyDate(self.gyrid_uptime,
-                    suffix="")
+                html += '<span class="block_data_attr"><b>gyrid</b> %s</span>' % getRelativeTime(self.gyrid_uptime,
+                    pastSuffix="", wrapper=htmlSpanWrapper)
             if self.host_uptime != None:
-                html += '<span class="block_data_attr"><b>system</b> %s</span>' % prettyDate(self.host_uptime,
-                    suffix="")
+                html += '<span class="block_data_attr"><b>system</b> %s</span>' % getRelativeTime(self.host_uptime,
+                    pastSuffix="", wrapper=htmlSpanWrapper)
             html += '</div>'
             return html
 
@@ -434,10 +408,11 @@ class Scanner(object):
                         'is_expired'] else 'no')
                 if 'valid_until' in self.mv_balance and not self.mv_balance['is_expired']:
                     html += '<span class="block_data_attr"><b>expires</b> %s</span>' % \
-                        prettyDate(float(time.strftime('%s', time.strptime(self.mv_balance['valid_until'],
-                        '%Y-%m-%d %H:%M:%S'))))
+                        getRelativeTime(float(time.strftime('%s', time.strptime(self.mv_balance['valid_until'],
+                        '%Y-%m-%d %H:%M:%S'))), wrapper=htmlSpanWrapper)
                 if self.mv_updated:
-                    html += '<span class="block_data_attr"><b>updated</b> %s</span>' % prettyDate(self.mv_updated)
+                    html += '<span class="block_data_attr"><b>updated</b> %s</span>' % getRelativeTime(self.mv_updated,
+                        wrapper=htmlSpanWrapper)
                 html += '</div>'
                 return html
             else:
@@ -461,14 +436,15 @@ class Scanner(object):
             else:
                 return ""
 
-        def renderNotconnected(disconnect_time, suffix=""):
-            html = '<div class="block_data"><img src="/dashboard/static/icons/traffic-cone.png">No connection%s' % suffix
+        def renderNotconnected(disconnect_time, pastSuffix=""):
+            html = '<div class="block_data"><img src="/dashboard/static/icons/traffic-cone.png">No connection%s' % \
+                pastSuffix
             if disconnect_time != None:
-                html += '<span class="block_data_attr"><b>disconnected</b> %s</span>' % prettyDate(int(float(
-                    disconnect_time)))
-            elif suffix == "" and self.lastConnected != None:
-                html += '<span class="block_data_attr"><b>last connected</b> %s</span>' % prettyDate(int(float(
-                    self.lastConnected)))
+                html += '<span class="block_data_attr"><b>disconnected</b> %s</span>' % getRelativeTime(int(float(
+                    disconnect_time)), wrapper=htmlSpanWrapper)
+            elif pastSuffix == "" and self.lastConnected != None:
+                html += '<span class="block_data_attr"><b>last connected</b> %s</span>' % getRelativeTime(int(float(
+                    self.lastConnected)), wrapper=htmlSpanWrapper)
 
             html += '</div>'
             return html
@@ -569,15 +545,16 @@ class Sensor(object):
         if self.connected == False:
             html += '<img src="/dashboard/static/icons/plug-disconnect.png">%s' % mac
             if self.disconnect_time != None:
-                html += '<span class="block_data_attr"><b>disconnected</b> %s</span>' % prettyDate(int(float(
-                    self.disconnect_time)))
+                html += '<span class="block_data_attr"><b>disconnected</b> %s</span>' % getRelativeTime(int(float(
+                    self.disconnect_time)), wrapper=htmlSpanWrapper)
         else:
             html += '<img src="/dashboard/static/icons/bluetooth.png">%s' % mac
             if self.last_inquiry != None:
-                html += '<span class="block_data_attr"><b>last inquiry</b> %s</span>' % prettyDate(int(float(
-                    self.last_inquiry)))
+                html += '<span class="block_data_attr"><b>last inquiry</b> %s</span>' % getRelativeTime(int(float(
+                    self.last_inquiry)), wrapper=htmlSpanWrapper)
         if self.last_data != None:
-            html += '<span class="block_data_attr"><b>last data</b> %s</span>' % prettyDate(int(float(self.last_data)))
+            html += '<span class="block_data_attr"><b>last data</b> %s</span>' % getRelativeTime(int(float(
+                self.last_data)), wrapper=htmlSpanWrapper)
         if self.detections > 0:
             html += '<span class="block_data_attr"><b>detections</b> %s</span>' % formatNumber(self.detections)
         html += '</div>'
@@ -635,7 +612,7 @@ class ContentResource(resource.Resource):
         """
         html = '<div id="server_block"><div class="block_title"><h3>Server</h3></div>'
         html += '<div class="block_topright_server">%s<img src="/dashboard/static/icons/clock-arrow.png"></div>' % \
-            prettyDate(self.plugin.server.server_uptime, suffix="")
+            getRelativeTime(self.plugin.server.server_uptime, pastSuffix="", wrapper=htmlSpanWrapper)
         html += '<div style="clear: both;"></div>'
         html += '<div class="block_content">'
 
@@ -666,7 +643,8 @@ class ContentResource(resource.Resource):
                     if len(i) == 1 and 'id' in i:
                         html += '<span class="block_data_attr">%s</span>' % i['id']
                     elif len(i) > 1 and 'time' in i:
-                        html += '<span class="block_data_attr"><b>%s</b> %s</span>' % (i['id'], prettyDate(i['time']))
+                        html += '<span class="block_data_attr"><b>%s</b> %s</span>' % (i['id'], getRelativeTime(
+                            i['time'], wrapper=htmlSpanWrapper))
                     elif len(i) > 1 and 'str' in i:
                         html += '<span class="block_data_attr"><b>%s</b> %s</span>' % (i['id'], i['str'])
                     elif len(i) > 1 and 'int' in i:
@@ -693,11 +671,14 @@ class ContentResource(resource.Resource):
                 html += '<a href="#" onclick="goTo(\'#%s\')">%s</a>' % (p.name.replace(' ','-'), p.name)
                 html += '<span class="block_data_attr">inactive</span>'
             if p.start:
-                html += '<span class="block_data_attr"><b>start</b> %s</span>' % prettyDate(p.start)
+                html += '<span class="block_data_attr"><b>start</b> %s</span>' % getRelativeTime(p.start,
+                    wrapper=htmlSpanWrapper)
             if p.end:
-                html += '<span class="block_data_attr"><b>end</b> %s</span>' % prettyDate(p.end)
+                html += '<span class="block_data_attr"><b>end</b> %s</span>' % getRelativeTime(p.end,
+                    wrapper=htmlSpanWrapper)
             if len(p.disabled_plugins) > 0:
-                html += '<span class="block_data_attr"><b>disabled</b> %s</span>' % ', '.join(sorted(p.disabled_plugins))
+                html += '<span class="block_data_attr"><b>disabled</b> %s</span>' % ', '.join(sorted(
+                    p.disabled_plugins))
             html += '</div>'
             return html
 
@@ -736,9 +717,11 @@ class ContentResource(resource.Resource):
         else:
             html += '<img src="/dashboard/static/icons/radar-grey.png">Inactive'
         if project.start:
-            html += '<span class="block_data_attr"><b>start</b> %s</span>' % prettyDate(project.start)
+            html += '<span class="block_data_attr"><b>start</b> %s</span>' % getRelativeTime(project.start,
+                wrapper=htmlSpanWrapper)
         if project.end:
-            html += '<span class="block_data_attr"><b>end</b> %s</span>' % prettyDate(project.end)
+            html += '<span class="block_data_attr"><b>end</b> %s</span>' % getRelativeTime(project.end,
+                wrapper=htmlSpanWrapper)
         html += '</div>'
 
         if len(project.disabled_plugins) > 0:
