@@ -24,6 +24,7 @@ import cPickle as pickle
 import datetime
 import math
 import os
+import re
 import subprocess
 import time
 import urllib2
@@ -912,12 +913,10 @@ class Plugin(olof.core.Plugin):
         except:
             self.cpuCount = 1
 
+        self.parseMVNumbers()
+
         t = task.LoopingCall(self.checkResources)
         t.start(10)
-
-        self.inotifier = INotifier('olof/plugins/dashboard/data/mobilevikings_numbers.conf')
-        self.inotifier.addCallback(INotifier.Write, self.readMVNumbers)
-        self.readMVNumbers()
 
         reactor.callLater(2, self.startListening)
 
@@ -925,6 +924,18 @@ class Plugin(olof.core.Plugin):
         """
         Define the configuration options for this plugin.
         """
+        def validateMVNumbers(value):
+            """
+            Validate Mobile Vikings MSISDN mapping.
+            """
+            d = {}
+            tel_re = re.compile(r'\+32[0-9]{9}')
+
+            for i in value:
+                if tel_re.match(value[i]) != None:
+                    d[i] = value[i]
+            return d
+
         options = []
 
         o = olof.configuration.Option('tcp_port')
@@ -935,7 +946,7 @@ class Plugin(olof.core.Plugin):
 
         o = olof.configuration.Option('mobilevikings_api_url')
         o.setDescription('Base URL of the Mobile Vikings basic API.')
-        o.addValue(olof.configuration.OptionValue('"https://mobilevikings.com/api/2.0/basic"', default=True))
+        o.addValue(olof.configuration.OptionValue('https://mobilevikings.com/api/2.0/basic', default=True))
         options.append(o)
 
         o = olof.configuration.Option('mobilevikings_api_username')
@@ -944,6 +955,13 @@ class Plugin(olof.core.Plugin):
 
         o = olof.configuration.Option('mobilevikings_api_password')
         o.setDescription('Password to use to log in to the Mobile Vikings API.')
+        options.append(o)
+
+        o = olof.configuration.Option('mobilevikings_msisdn_mapping')
+        o.setDescription('Dictionary mapping hostnames to Mobile Vikings MSISDN ID\'s (telephone numbers).')
+        o.setValidation(validateMVNumbers)
+        o.addCallback(self.parseMVNumbers)
+        o.addValue(olof.configuration.OptionValue({}, default=True))
         options.append(o)
 
         return options
@@ -1025,22 +1043,21 @@ class Plugin(olof.core.Plugin):
         s = os.statvfs('.')
         self.diskfree_mb = (s.f_bavail * s.f_bsize)/1024/1024
 
-    def readMVNumbers(self, event=None):
+    def parseMVNumbers(self, msisdn_map=None):
         """
-        Read Mobile Vikings MSISDN information from disk.
+        Parse the Mobile Vikings MSISDN mapping, matching the numbers to the corresponding scanners.
+
+        @param   msisdn_map (dict)   MSISDN mapping. Optional: when omitted the current configuration value is used.
         """
-        f = open('olof/plugins/dashboard/data/mobilevikings_numbers.conf', 'r')
-        for line in f:
-            l = line.strip().split(',')
-            s = self.getScanner(l[0], create=False)
-            if s:
-                if l[1]:
-                    s.msisdn = l[1]
-                else:
-                    s.msisdn = None
-                    s.mv_balance = {}
-                    s.mv_updated = None
-        f.close()
+        if msisdn_map == None:
+            msisdn_map = self.config.getValue('mobilevikings_msisdn_mapping')
+        for s in self.scanners.values():
+            if s.hostname in msisdn_map:
+                s.msisdn = msisdn_map[s.hostname]
+            else:
+                s.msisdn = None
+                s.mv_balance = {}
+                s.mv_updated = None
 
     def unload(self, shutdown=False):
         """
@@ -1048,7 +1065,6 @@ class Plugin(olof.core.Plugin):
         """
         olof.core.Plugin.unload(self)
         self.listeningPort.stopListening()
-        self.inotifier.unload()
 
         for s in self.scanners.values():
             if shutdown:

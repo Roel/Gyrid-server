@@ -83,12 +83,8 @@ class Configuration(object):
         """
         if not optionName in self.options:
             return None
-        elif 'config' not in self.__dict__:
-            return self.options[optionName].getDefaultValue()
-        elif optionName in self.config.__dict__:
-            return self.options[optionName].validate(self.config.__dict__[optionName])
         else:
-            return self.options[optionName].getDefaultValue()
+            return self.options[optionName].getValue()
 
     def generateDefault(self):
         """
@@ -147,7 +143,20 @@ class Configuration(object):
             self.server.logger.logError("Failed to load config file: %s.conf.py: %s" % (
                 self.filename, e))
         else:
+            self.__parseConfig(c)
             self.config = c
+
+    def __parseConfig(self, config):
+        """
+        Parse the given config module, setting/clearing the values of the Options.
+
+        @param   config (module)   Configuration file module to parse.
+        """
+        for o in self.options.values():
+            if o.name in config.__dict__:
+                o.setValue(config.__dict__[o.name])
+            else:
+                o.setValue(None)
 
     def readConfig(self):
         """
@@ -180,7 +189,8 @@ class OptionValue(object):
         """
         Render this OptionValue to text. For use in the configuration file.
         """
-        d = {'value': self.value}
+        v = '"%s"' % self.value if type(self.value) is str else str(self.value)
+        d = {'value': v}
         d['default'] = ' (Default)' if self.default else ''
         d['description'] = ' %s' % self.description if self.description != None else ''
         d['link'] = ' -' if d['default'] or d['description'] else ''
@@ -200,8 +210,9 @@ class Option(object):
         """
         self.name = name
         self.description = description
-        self.values = {}
+        self.values = set()
         self.validation = None
+        self.callbacks = set()
 
     def setDescription(self, description):
         """
@@ -210,6 +221,39 @@ class Option(object):
         @param   description (str)   The description to use.
         """
         self.description = description
+
+    def setValue(self, value):
+        """
+        Set the current value for this option. Validates the value first and activates callbacks when the value changed.
+
+        @param   value   The new value for this option.
+        """
+        v = self.validate(value)
+        if 'value' in self.__dict__:
+            if self.value != v:
+                for c in self.callbacks:
+                    c(v)
+        self.value = v
+
+    def getValue(self):
+        """
+        Get the current value for this option.
+
+        @return   The current value for this option. The default value in case no value is set.
+        """
+        if not 'value' in self.__dict__:
+            return self.getDefaultValue()
+        else:
+            return self.value if self.value != None else self.getDefaultValue()
+
+    def addCallback(self, callback):
+        """
+        Add a callback function. This method is called whenever the value for this option changes at runtime. It should
+        accept one argument, the new value for the option.
+
+        @param   callback (method)   The method to call.
+        """
+        self.callbacks.add(callback)
 
     def setValidation(self, validation, *args):
         """
@@ -232,14 +276,14 @@ class Option(object):
         @return           The validated value, depending on the validation result this is the given value or the
                             default value.
         """
-        if self.validation != None:
+        if value != None and self.validation != None:
             v = self.validation[0](value, *self.validation[1])
             v = v if v != None else self.getDefaultValue()
         else:
-            v = value
+            v = value if value != None else self.getDefaultValue()
 
         if len(self.values) > 1:
-            return v if v in self.values else self.getDefaultValue()
+            return v if v in [i.value for i in self.values] else self.getDefaultValue()
         else:
             return v
 
@@ -249,14 +293,14 @@ class Option(object):
 
         @param   value (OptionValue)   The value to add.
         """
-        self.values[value.value] = value
+        self.values.add(value)
 
     def getDefaultValue(self):
         """
         Return the default value for this Option, None when none exists. Note there should be only one OptionValue
         that is 'default' for each Option.
         """
-        for v in self.values.values():
+        for v in self.values:
             if v.default == True:
                 return v.value
         return None
@@ -272,8 +316,9 @@ class Option(object):
 
         if len(self.values) > 0:
             s += '#  Values:'
-            for v in sorted(self.values):
-                s += self.values[v].render()
+            for v in sorted(self.values, key=lambda x: str(x.value)):
+                s += v.render()
             s += "\n"
-        s += "%s = %s" % (self.name, self.getDefaultValue())
+        v = '"%s"' % self.getDefaultValue() if type(self.getDefaultValue()) is str else str(self.getDefaultValue())
+        s += "%s = %s" % (self.name, v)
         return s

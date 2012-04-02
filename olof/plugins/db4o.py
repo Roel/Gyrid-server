@@ -174,7 +174,7 @@ class Plugin(olof.core.Plugin):
 
         o = olof.configuration.Option('host')
         o.setDescription('Hostname or IP-address of the Db4O database server.')
-        o.addValue(olof.configuration.OptionValue('"localhost"', default=True))
+        o.addValue(olof.configuration.OptionValue('localhost', default=True))
         options.append(o)
 
         o = olof.configuration.Option('port')
@@ -186,7 +186,7 @@ class Plugin(olof.core.Plugin):
         o = olof.configuration.Option('cache_file')
         o.setDescription('Location of the file to use for caching data when the connection with the database ' + \
             'fails or is lost.')
-        o.addValue(olof.configuration.OptionValue('"/var/cache/gyrid-server/db4o.cache"', default=True))
+        o.addValue(olof.configuration.OptionValue('/var/cache/gyrid-server/db4o.cache', default=True))
         options.append(o)
 
         return options

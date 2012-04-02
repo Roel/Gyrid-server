@@ -349,7 +349,7 @@ class Plugin(olof.core.Plugin):
         o.setDescription("Dictionary containing e-mailaddresses and Alert.Level's of recipients of e-mailalerts. " + \
             "The e-mailaddresses are stored as the keys with for each the associated Alert.Level as value.")
         o.setValidation(validateRecipients)
-        o.addValue(olof.configuration.OptionValue("{}", default=True))
+        o.addValue(olof.configuration.OptionValue({}, default=True))
         options.append(o)
 
         return options
