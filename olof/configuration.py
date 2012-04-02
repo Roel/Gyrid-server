@@ -228,12 +228,16 @@ class Option(object):
 
         @param   value   The new value for this option.
         """
+        valueChanged = False
         v = self.validate(value)
         if 'value' in self.__dict__:
             if self.value != v:
-                for c in self.callbacks:
-                    c(v)
+                valueChanged = True
         self.value = v
+
+        if valueChanged:
+            for c in self.callbacks:
+                c(v)
 
     def getValue(self):
         """
