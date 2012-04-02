@@ -23,11 +23,11 @@ class Logger(object):
         Initialisation.
 
         @param   server (Olof)    Reference to main Olof server instance.
-        @param   filename (str)   Filename of the logfile. Log resides in olof/logs/filename.
+        @param   filename (str)   Filename of the logfile. Log resides in logs/filename.
         """
         self.server = server
         self.filename = filename
-        self.base_path = 'olof/logs'
+        self.base_path = 'logs'
         self.location = os.path.join(self.base_path, self.filename)
 
         if not os.path.exists(self.base_path):
