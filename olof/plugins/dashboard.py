@@ -83,14 +83,15 @@ class Scanner(object):
     """
     Class representing a scanner.
     """
-    def __init__(self, hostname, mv_url=None, mv_user=None, mv_pwd=None):
+    def __init__(self, plugin, hostname, mv_url=None, mv_user=None, mv_pwd=None):
         """
         Initialisation.
 
-        @param   hostname (str)   Hostname of the scanner.
-        @param   mv_url (str)     Base URL of the Mobile Vikings basic API. Optional.
-        @param   mv_user (str)    Username to log in to the Mobile Vikings API. Optional.
-        @param   mv_pwd (str)     Password to log in to the Mobile Vikings API. Optional.
+        @param   plugin (olof.core.Plugin)   Reference to main Dashboard plugin instance.
+        @param   hostname (str)              Hostname of the scanner.
+        @param   mv_url (str)                Base URL of the Mobile Vikings basic API. Optional.
+        @param   mv_user (str)               Username to log in to the Mobile Vikings API. Optional.
+        @param   mv_pwd (str)                Password to log in to the Mobile Vikings API. Optional.
         """
         self.hostname = hostname
         self.mv_url = mv_url
@@ -116,15 +117,18 @@ class Scanner(object):
         self.gyrid_disconnect_time = None
         self.gyrid_uptime = None
 
-        self.init()
+        self.init(plugin)
 
-    def init(self):
+    def init(self, plugin):
         """
         Reinitialise variables that need updating when the plugin starts.
 
         __init__() is called when a new Scanner is created, this init() is called at __init__() and after the
         saved Scanner data is read at plugin start.
+
+        @param   plugin (olof.core.Plugin)   Reference to main Dashboard plugin instance.
         """
+        self.plugin = plugin
         self.lag = {1: [0, 0], 5: [0, 0], 15: [0, 0]}
 
         self.initMVConnection(self.mv_url, self.mv_user, self.mv_pwd)
@@ -154,6 +158,23 @@ class Scanner(object):
                 authHandler = urllib2.HTTPBasicAuthHandler)
         else:
             self.mv_conn = None
+
+    def unload(self, shutdown=False):
+        """
+        Unload this scanner.
+        """
+        if shutdown:
+            if len(self.connections) > 0:
+                self.lastConnected = int(time.time())
+            self.conn_time = {}
+            self.connections = set()
+        del(self.plugin)
+        self.checkLagCall('stop')
+        self.checkMVBalanceCall('stop')
+        if 'checkLag_call' in self.__dict__:
+            del(self.checkLag_call)
+        if 'checkMVBalance_call' in self.__dict__:
+            del(self.checkMVBalance_call)
 
     def isOld(self):
         """
@@ -286,8 +307,12 @@ class Scanner(object):
                 try:
                     self.mv_balance = pickle.loads("".join(r))
                     self.mv_updated = int(time.time())
-                except:
-                    pass
+                except Exception, e:
+                    self.plugin.logger.logError('Error requesting Mobile Vikings balance for %s (%s): %s' % \
+                        (self.hostname, self.msisdn, e))
+            else:
+                self.plugin.logger.logError('Error requesting Mobile Vikings balance for %s (%s).' % \
+                    (self.hostname, self.msisdn))
 
         if self.mv_conn != None and self.msisdn:
             self.mv_conn.requestGet('sim_balance.pickle?msisdn=%s' % self.msisdn, process)
@@ -913,7 +938,7 @@ class Plugin(olof.core.Plugin):
                 self.scanners = pickle.load(f)
                 f.close()
                 for s in self.scanners.values():
-                    s.init()
+                    s.init(self)
                     for sens in s.sensors.values():
                         sens.init()
             except:
@@ -1095,17 +1120,7 @@ class Plugin(olof.core.Plugin):
         self.listeningPort.stopListening()
 
         for s in self.scanners.values():
-            if shutdown:
-                if len(s.connections) > 0:
-                    s.lastConnected = int(time.time())
-                s.conn_time = {}
-                s.connections = set()
-            s.checkLagCall('stop')
-            s.checkMVBalanceCall('stop')
-            if 'checkLag_call' in s.__dict__:
-                del(s.checkLag_call)
-            if 'checkMVBalance_call' in s.__dict__:
-                del(s.checkMVBalance_call)
+            s.unload(shutdown)
 
         f = open("olof/plugins/dashboard/data/obj.pickle", "wb")
         pickle.dump(self.scanners, f)
@@ -1120,7 +1135,7 @@ class Plugin(olof.core.Plugin):
         @return   (Scanner)        Scanner instance for the given hostname.
         """
         if not hostname in self.scanners and create:
-            s = Scanner(hostname,
+            s = Scanner(self, hostname,
                 mv_url = self.config.getValue('mobilevikings_api_url'),
                 mv_user = self.config.getValue('mobilevikings_api_username'),
                 mv_pwd = self.config.getValue('mobilevikings_api_password'))
