@@ -19,38 +19,7 @@ import olof.configuration
 import olof.core
 import olof.tools.validation
 
-def prettyDate(d, prefix="", suffix=" ago"):
-    """
-    Turn a UNIX timestamp in a prettier, more readable string.
-
-    @param    d (int)        The UNIX timestamp to convert.
-    @param    prefix (str)   The prefix to add. No prefix by default.
-    @param    suffix (str)   The suffix to add, " ago" by default.
-    @return   (str)          The string corresponding to the timestamp.
-    """
-    t = d
-    d = datetime.datetime.fromtimestamp(d)
-    diff = datetime.datetime.now() - d
-    s = diff.seconds
-    if diff.days < 0:
-        r =  d.strftime('%d %b %y')
-    elif diff.days == 1:
-        r =  '%s1 day%s' % (prefix, suffix)
-    elif diff.days > 1:
-        r =  '%s%i days%s' % (prefix, diff.days, suffix)
-    elif s <= 1:
-        r =  'just now'
-    elif s < 60:
-        r =  '%s%i seconds%s' % (prefix, s, suffix)
-    elif s < 120:
-        r =  '%s1 minute%s' % (prefix, suffix)
-    elif s < 3600:
-        r =  '%s%i minutes%s' % (prefix, s/60, suffix)
-    elif s < 7200:
-        r =  '%s1 hour%s' % (prefix, suffix)
-    else:
-        r =  '%s%i hours%s' % (prefix, s/3600, suffix)
-    return r
+from olof.tools.datetimetools import getRelativeTime
 
 class Mailer(object):
     """
@@ -266,7 +235,7 @@ class Alert(object):
         @return   (str)                 The corresponding message body.
         """
         msg = Alert.Level.String[level]
-        msg += ' - %s -\r\n\r\n' % prettyDate(self.etime)
+        msg += ' - %s -\r\n\r\n' % getRelativeTime(self.etime)
         msg += Alert.Type.Message[self.type] % {'origin': self.origin,
                                                 'module': self.module}
         msg += '\r\n\r\n'
