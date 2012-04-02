@@ -124,11 +124,16 @@ class Mailer(object):
         smtp_username = self.plugin.config.getValue('smtp_username')
         smtp_password = self.plugin.config.getValue('smtp_password')
 
-        self.s = smtplib.SMTP(smtp_server, smtp_port)
-        self.s.ehlo()
-        self.s.starttls()
-        self.s.ehlo()
-        self.s.login(smtp_username, smtp_password)
+        if None in [smtp_server, smtp_port, smtp_username, smtp_password]:
+            self.plugin.logger.logError('Cannot send e-mail: missing configuration')
+            return False
+        else:
+            self.s = smtplib.SMTP(smtp_server, smtp_port)
+            self.s.ehlo()
+            self.s.starttls()
+            self.s.ehlo()
+            self.s.login(smtp_username, smtp_password)
+            return True
 
     def __sendMail(self, to, subject, message):
         """
@@ -182,10 +187,10 @@ class Mailer(object):
         self.removeAlerts(to_delete)
 
         if len(mails) > 0:
-            self.__connect()
-            for m in mails:
-                self.__sendMail(m[0], m[1], m[2])
-            self.__disconnect()
+            if self.__connect():
+                for m in mails:
+                    self.__sendMail(m[0], m[1], m[2])
+                self.__disconnect()
 
 class Alert(object):
     """
