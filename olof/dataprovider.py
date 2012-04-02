@@ -18,6 +18,7 @@ import imp
 import os
 import time
 
+import olof.configuration
 import olof.datatypes
 from olof.tools.inotifier import INotifier
 
@@ -42,37 +43,63 @@ class DataProvider(object):
             self.locations = pickle.load(f)
             f.close()
 
-        self.inotifier = INotifier('olof/data/data.py')
-        self.inotifier.addCallback(INotifier.Write, self.readLocations)
-        self.inotifier.addCallback(INotifier.Write, self.readProjects)
+        self.dataconfig = olof.configuration.Configuration(self.server, 'data')
+        self.defineConfiguration()
 
         self.readLocations()
         self.readProjects()
+
+    def defineConfiguration(self):
+        """
+        Define the data configuration options.
+        """
+        def validate(value, datatype):
+            d = {}
+            for i in value:
+                if type(i) is str and type(value[i]) is datatype:
+                    d[i] = value[i]
+            return d
+
+        o = olof.configuration.Option('projects')
+        o.setDescription('Dictionary mapping project names to olof.datatypes.Project instances.')
+        o.setValidation(validate, olof.datatypes.Project)
+        o.addValue(olof.configuration.OptionValue({}, default=True))
+        o.addCallback(self.readProjects)
+        self.dataconfig.addOption(o)
+
+        o = olof.configuration.Option('locations')
+        o.setDescription('Dictionary mapping location id\'s to olof.datatypes.Location instances.')
+        o.setValidation(validate, olof.datatypes.Location)
+        o.addValue(olof.configuration.OptionValue({}, default=True))
+        o.addCallback(self.readLocations)
+        self.dataconfig.addOption(o)
+
+        self.dataconfig.readConfig()
 
     def unload(self):
         """
         Unload this data provider. Saves the current location data to disk.
         """
-        self.inotifier.unload()
+        self.dataconfig.unload()
         f = open("olof/data/data.pickle", "wb")
         pickle.dump(self.locations, f)
         f.close()
 
-    def readLocations(self, event=None):
+    def readLocations(self, value=None):
         """
         Read Location data from disk, this is the 'locations' variable of /olof/data/data.py.
         Parse and save the new information.
         """
-        self.new_locations = imp.load_source('l', os.getcwd() + "/olof/data/data.py").locations
+        self.new_locations = value if value != None else self.dataconfig.getValue('locations')
         self.parseLocations(self.new_locations)
         self.locations = copy.deepcopy(self.new_locations)
 
-    def readProjects(self, event=None):
+    def readProjects(self, value=None):
         """
         Read Project information from this, this is the 'projects' variable of /olof/data/data.py.
         Save the new information.
         """
-        self.new_projects = imp.load_source('l', os.getcwd() + "/olof/data/data.py").projects
+        self.new_projects = value if value != None else self.dataconfig.getValue('projects')
         self.projects = copy.deepcopy(self.new_projects)
 
     def getProjectName(self, hostname):
