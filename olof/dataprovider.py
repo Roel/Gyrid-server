@@ -30,7 +30,7 @@ class DataProvider(object):
         """
         Initialisation.
 
-        Read previous pickled data and initiates an INotifier to read locations and projects when data.py is changed.
+        Read previous pickled data and initialise the data configuration file.
 
         @param   server (Olof)   Reference to the main Olof server instance.
         """
@@ -87,7 +87,7 @@ class DataProvider(object):
 
     def readLocations(self, value=None):
         """
-        Read Location data from disk, this is the 'locations' variable of /olof/data/data.py.
+        Read Location data from disk, this is the 'locations' option in data.conf.py
         Parse and save the new information.
         """
         self.new_locations = value if value != None else self.dataconfig.getValue('locations')
@@ -96,7 +96,7 @@ class DataProvider(object):
 
     def readProjects(self, value=None):
         """
-        Read Project information from this, this is the 'projects' variable of /olof/data/data.py.
+        Read Project information from this, this is the 'projects' option in data.conf.py
         Save the new information.
         """
         self.new_projects = value if value != None else self.dataconfig.getValue('projects')

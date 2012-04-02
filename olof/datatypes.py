@@ -6,7 +6,7 @@
 # All rights reserved.
 
 """
-Module that defines the datatypes that can be used in data/data.py to define
+Module that defines the datatypes that can be used in data.conf.py to define
 scanner setups at specific projects, times and locations.
 """
 
@@ -15,8 +15,8 @@ import time
 # A reference to the main Olof server object. This reference is made at runtime.
 server = None
 
-# Plugins that cannot be disabled by the user in data/data.py
-ENABLED_PLUGINS = ['debug', 'status']
+# Plugins that cannot be disabled by the user.
+ENABLED_PLUGINS = ['dashboard', 'debug']
 
 def unixtime(timestamp, format='%Y%m%d-%H%M%S-%Z'):
     """
