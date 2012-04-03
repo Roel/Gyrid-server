@@ -9,6 +9,7 @@
 Module that provides the plugin interface.
 """
 
+import olof.configuration
 import olof.logger
 import olof.storagemanager
 
