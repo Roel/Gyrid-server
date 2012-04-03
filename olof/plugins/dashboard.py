@@ -372,7 +372,11 @@ class Scanner(object):
                         if self.lag[i][1] == 0:
                             l.append('nd')
                         else:
-                            l.append(formatNumber(float("%0.2f" % (self.lag[i][0]/self.lag[i][1]))))
+                            avg = self.lag[i][0]/self.lag[i][1]
+                            if avg < 60:
+                                l.append(formatNumber(float("%0.2f" % (avg))))
+                            else:
+                                l.append(getRelativeTime(time.time()-avg, pastSuffix=""))
                 if len([i for i in l if i != 'nd']) > 0:
                     html += '<span class="block_data_attr"><b>lag</b> ' + \
                         '<span title="1, 5 and 15 minutes moving averages">%s</span></span>' %  ', '.join(l)
