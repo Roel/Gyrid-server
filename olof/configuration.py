@@ -17,6 +17,13 @@ import time
 from olof.tools import validation
 from olof.tools.inotifier import INotifier
 
+class DummyConfig(object):
+    """
+    Class representing an empty configuration file.
+    """
+    def __init__(self):
+        pass
+
 class Configuration(object):
     """
     Main Configuration object representing a specific configuration file.
@@ -142,6 +149,7 @@ class Configuration(object):
         except Exception, e:
             self.server.logger.logError("Failed to load config file: %s.conf.py: %s" % (
                 self.filename, e))
+            self.config = DummyConfig()
         else:
             self.__parseConfig(c)
             self.config = c
