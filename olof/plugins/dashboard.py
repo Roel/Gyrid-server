@@ -374,7 +374,8 @@ class Scanner(object):
                         else:
                             l.append(formatNumber(float("%0.2f" % (self.lag[i][0]/self.lag[i][1]))))
                 if len([i for i in l if i != 'nd']) > 0:
-                    html += '<span class="block_data_attr"><b>lag</b> %s</span>' %  ', '.join(l)
+                    html += '<span class="block_data_attr"><b>lag</b> ' + \
+                        '<span title="1, 5 and 15 minutes moving averages">%s</span></span>' %  ', '.join(l)
                 if provider:
                     html += '<span class="block_data_attr"><b>provider</b> %s</span>' % provider
                 html += '</div>'
@@ -423,10 +424,12 @@ class Scanner(object):
             udetc = [self.lag[i][2] for i in sorted(self.lag.keys()) if i <= 15]
             if len([i for i in detc if i > 0]) > 0:
                 html = '<div class="block_data"><img alt="" src="/dashboard/static/icons/users.png">Detections'
-                html += '<span class="block_data_attr"><b>recently received</b> %s</span>' % \
+                html += '<span class="block_data_attr"><b>recently received</b> ' + \
+                    '<span title="1, 5 and 15 minutes moving averages">%s</span></span>' % \
                     ', '.join([formatNumber(i) for i in detc])
                 sensors_connected = len([s for s in self.sensors.values() if s.connected == True])
-                html += '<span class="block_data_attr"><b>unique</b> %s</span>' % \
+                html += '<span class="block_data_attr"><b>unique</b> ' + \
+                    '<span title="1, 5 and 15 minutes moving averages">%s</span></span>' % \
                     ', '.join([formatNumber(i) for i in udetc])
                 html += '</div>'
                 return html
@@ -618,7 +621,8 @@ class ContentResource(resource.Resource):
             self.plugin.cpuCount*0.8)]) > 0) or int(self.plugin.memfree_mb) <= 256 or self.plugin.diskfree_mb <= 1000:
             html += '<div class="block_data">'
             html += '<img alt="" src="/dashboard/static/icons/system-monitor.png">Resources'
-            html += '<span class="block_data_attr"><b>load</b> %s</span>' % ', '.join(self.plugin.load)
+            html += '<span class="block_data_attr"><b>load</b> ' + \
+                '<span title="1, 5 and 15 minutes moving averages">%s</span></span>' % ', '.join(self.plugin.load)
             html += '<span class="block_data_attr"><b>ram free</b> %s</span>' % (formatNumber(
                 self.plugin.memfree_mb) + ' MB')
             html += '<span class="block_data_attr"><b>disk free</b> %s</span>' % (formatNumber(
