@@ -426,9 +426,6 @@ class Scanner(object):
                 html += '<span class="block_data_attr"><b>recently received</b> %s</span>' % \
                     ', '.join([formatNumber(i) for i in detc])
                 sensors_connected = len([s for s in self.sensors.values() if s.connected == True])
-                if sensors_connected > 1:
-                    html += '<span class="block_data_attr"><b>averaged</b> %s</span>' % \
-                        ', '.join([formatNumber(int(i/sensors_connected)) for i in detc])
                 html += '<span class="block_data_attr"><b>unique</b> %s</span>' % \
                     ', '.join([formatNumber(i) for i in udetc])
                 html += '</div>'
