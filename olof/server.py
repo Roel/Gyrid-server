@@ -145,8 +145,8 @@ class GyridServerProtocol(LineReceiver):
                 if self.hostname != None:
                     try:
                         args = {'hostname': str(self.hostname),
-                                'host_uptime': int(ll[3]),
-                                'gyrid_uptime': int(ll[2])}
+                                'hostUptime': int(ll[3]),
+                                'gyridUptime': int(ll[2])}
                     except:
                         return
                     else:
@@ -183,7 +183,7 @@ class GyridServerProtocol(LineReceiver):
                     try:
                         args = {'hostname': str(self.hostname),
                                 'timestamp': float(ll[2]),
-                                'sensor_mac': str(ll[1]),
+                                'sensorMac': str(ll[1]),
                                 'info': str(ll[3])}
                     except:
                         return
@@ -202,7 +202,7 @@ class GyridServerProtocol(LineReceiver):
                         try:
                             args = {'hostname': str(self.hostname),
                                     'timestamp': float(ll[1]),
-                                    'sensor_mac': str(ll[0]),
+                                    'sensorMac': str(ll[0]),
                                     'mac': mac,
                                     'deviceclass': dc,
                                     'move': str(ll[4])}
@@ -216,7 +216,7 @@ class GyridServerProtocol(LineReceiver):
                     try:
                         args = {'hostname': str(self.hostname),
                                 'timestamp': float(ll[1]),
-                                'sensor_mac': str(ll[0]),
+                                'sensorMac': str(ll[0]),
                                 'mac': str(ll[2]),
                                 'rssi': int(ll[3])}
                     except:
