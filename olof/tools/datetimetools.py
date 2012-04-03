@@ -103,10 +103,10 @@ def getRelativeTime(timestamp, now=None, levels=1, futurePrefix="in ", pastSuffi
     if wrapper != None:
         d['wrapPrefix'], d['wrapSuffix'] = wrapper(timestamp)
 
-    if timestamp < now:
+    if timestamp < now and (now - timestamp).seconds > 0:
         d['relativeTime'] = timeSince(timestamp, now)
         d['pastSuffix'] = pastSuffix
-    elif timestamp > now:
+    elif timestamp > now and (timestamp - now).seconds > 0:
         d['relativeTime'] = timeUntil(timestamp, now)
         d['futurePrefix'] = futurePrefix
     else:
