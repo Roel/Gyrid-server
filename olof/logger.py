@@ -68,6 +68,7 @@ class Logger(object):
         if self.server.debug_mode:
             f = ' (%s)' % self.filename if self.filename != 'server' else ''
             sys.stdout.write("%s Gyrid Server%s: %s.\n" % (t, f, m))
+        m = m.replace('\n', '\nI   ')
         self.logger.info("I %s: %s." % (t, m))
 
     def logError(self, message):
@@ -80,4 +81,5 @@ class Logger(object):
         if self.server.debug_mode:
             f = ' (%s)' % self.filename if self.filename != 'server' else ''
             sys.stderr.write("%s Gyrid Server%s: Error: %s.\n" % (t, f, m))
+        m = m.replace('\n', '\nE   ')
         self.logger.info("E %s: %s." % (t, m))
