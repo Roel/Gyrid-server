@@ -587,7 +587,7 @@ class RootResource(resource.Resource):
         """
         Return the index.html contents.
         """
-        return self.rendered_page
+        return str(self.rendered_page)
 
 class ContentResource(resource.Resource):
     """
@@ -827,7 +827,7 @@ class ContentResource(resource.Resource):
 
         html += self.renderFooter()
 
-        return html
+        return str(html)
 
 class StaticResource(File):
     """
