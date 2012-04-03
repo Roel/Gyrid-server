@@ -64,6 +64,7 @@ class PluginManager(object):
         try:
             plugin = imp.load_source(name, path).Plugin(self.server, name)
             if not plugin.isEnabled():
+                plugin.unload()
                 return
         except Exception, e:
             self.server.logger.logError("Error while loading plugin %s: %s" % (name, e))
