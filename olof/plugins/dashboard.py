@@ -374,7 +374,7 @@ class Scanner(object):
                         else:
                             avg = self.lag[i][0]/self.lag[i][1]
                             if avg < 60:
-                                l.append(formatNumber(float("%0.2f" % (avg))))
+                                l.append(formatNumber(float("%0.2f" % (avg))) + 's')
                             else:
                                 l.append(getRelativeTime(time.time()-avg, pastSuffix=""))
                 if len([i for i in l if i != 'nd']) > 0:
