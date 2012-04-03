@@ -130,7 +130,7 @@ div #footer {
     margin-right: 6px;
 }
 
-#navigation_block {
+.navigation_block {
     margin-top: 10px;
     line-height: 150%;
     width: 100%;
@@ -179,7 +179,7 @@ div #footer {
     border: none;
 }
 
-#server_block {
+#server_block, #project_block {
     margin-top: 20px;
     padding: 5px;
     border: 1px dotted #c0c0c0;

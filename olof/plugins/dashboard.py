@@ -328,12 +328,12 @@ class Scanner(object):
         def renderLocation():
             html = '<div class="block_topright">'
             if self.location != None and (self.lat == None or self.lon == None):
-                html += '%s<img src="/dashboard/static/icons/marker.png">' % self.location
+                html += '%s<img alt="" src="/dashboard/static/icons/marker.png">' % self.location
             elif self.location != None:
                 loc = '<span title="%s">%s</span>' % (self.location_description, self.location) if \
                     self.location_description != None else self.location
-                html += '<a href="%s">%s</a><img src="/dashboard/static/icons/marker.png">' % (
-                    ("http://maps.google.be/maps?z=17&q=loc:%s,%s(%s)" % (self.lat, self.lon, self.hostname)), loc)
+                html += '<a href="%s">%s</a><img alt="" src="/dashboard/static/icons/marker.png">' % (
+                    ("http://maps.google.be/maps?z=17&amp;q=loc:%s,%s(%s)" % (self.lat, self.lon, self.hostname)), loc)
             if self.project == None:
                 goto = 'No-project'
             else:
@@ -346,7 +346,7 @@ class Scanner(object):
             return html
 
         def renderUptime():
-            html = '<div class="block_data"><img src="/dashboard/static/icons/clock-arrow.png">Uptime'
+            html = '<div class="block_data"><img alt="" src="/dashboard/static/icons/clock-arrow.png">Uptime'
             if 'made' in self.conn_time:
                 html += '<span class="block_data_attr"><b>connection</b> %s</span>' % getRelativeTime(int(float(
                     self.conn_time['made'])), pastSuffix="", wrapper=htmlSpanWrapper)
@@ -364,7 +364,7 @@ class Scanner(object):
                 self.lag.keys()) if (i <= 15 and self.lag[i][1] > 0)]
             if len([i for i in lag[1:] if i >= 5]) > 0:
                 provider = self.ip_provider.get(list(self.connections)[0][0], (None, None))[0]
-                html = '<div class="block_data"><img src="/dashboard/static/icons/network-cloud.png">Network'
+                html = '<div class="block_data"><img alt="" src="/dashboard/static/icons/network-cloud.png">Network'
                 html += '<span class="block_data_attr"><b>ip</b> %s</span>' % list(self.connections)[0][0]
                 l = []
                 for i in sorted(self.lag.keys()):
@@ -389,15 +389,15 @@ class Scanner(object):
                 except:
                     return ''
                 if mb <= 200:
-                    html = '<div class="block_data"><img src="/dashboard/static/icons/shield-red.png">SIM balance'
+                    html = '<div class="block_data"><img alt="" src="/dashboard/static/icons/shield-red.png">SIM balance'
                 elif mb <= 500:
-                    html = '<div class="block_data"><img src="/dashboard/static/icons/shield-yellow.png">SIM balance'
+                    html = '<div class="block_data"><img alt="" src="/dashboard/static/icons/shield-yellow.png">SIM balance'
                 elif 'is_expired' in self.mv_balance and self.mv_balance['is_expired']:
-                    html = '<div class="block_data"><img src="/dashboard/static/icons/shield-red.png">SIM balance'
+                    html = '<div class="block_data"><img alt="" src="/dashboard/static/icons/shield-red.png">SIM balance'
                 elif 'valid_until' in self.mv_balance and not self.mv_balance['is_expired']:
                     if int(time.strftime('%s', time.strptime(self.mv_balance['valid_until'], '%Y-%m-%d %H:%M:%S'))) - \
                         int(time.time()) <= 60*60*24*7:
-                        html = '<div class="block_data"><img src="/dashboard/static/icons/shield-yellow.png">SIM balance'
+                        html = '<div class="block_data"><img alt="" src="/dashboard/static/icons/shield-yellow.png">SIM balance'
                     else:
                         return ''
                 else:
@@ -422,7 +422,7 @@ class Scanner(object):
             detc = [self.lag[i][1] for i in sorted(self.lag.keys()) if i <= 15]
             udetc = [self.lag[i][2] for i in sorted(self.lag.keys()) if i <= 15]
             if len([i for i in detc if i > 0]) > 0:
-                html = '<div class="block_data"><img src="/dashboard/static/icons/users.png">Detections'
+                html = '<div class="block_data"><img alt="" src="/dashboard/static/icons/users.png">Detections'
                 html += '<span class="block_data_attr"><b>recently received</b> %s</span>' % \
                     ', '.join([formatNumber(i) for i in detc])
                 sensors_connected = len([s for s in self.sensors.values() if s.connected == True])
@@ -437,7 +437,7 @@ class Scanner(object):
                 return ""
 
         def renderNotconnected(disconnect_time, pastSuffix=""):
-            html = '<div class="block_data"><img src="/dashboard/static/icons/traffic-cone.png">No connection%s' % \
+            html = '<div class="block_data"><img alt="" src="/dashboard/static/icons/traffic-cone.png">No connection%s' % \
                 pastSuffix
             if disconnect_time != None:
                 html += '<span class="block_data_attr"><b>disconnected</b> %s</span>' % getRelativeTime(int(float(
@@ -543,12 +543,12 @@ class Sensor(object):
         vendor = macvendor.get_vendor(self.mac)
         mac = self.mac if vendor == None else '<span title="%s">%s</span>' % (vendor, self.mac)
         if self.connected == False:
-            html += '<img src="/dashboard/static/icons/plug-disconnect.png">%s' % mac
+            html += '<img alt="" src="/dashboard/static/icons/plug-disconnect.png">%s' % mac
             if self.disconnect_time != None:
                 html += '<span class="block_data_attr"><b>disconnected</b> %s</span>' % getRelativeTime(int(float(
                     self.disconnect_time)), wrapper=htmlSpanWrapper)
         else:
-            html += '<img src="/dashboard/static/icons/bluetooth.png">%s' % mac
+            html += '<img alt="" src="/dashboard/static/icons/bluetooth.png">%s' % mac
             if self.last_inquiry != None:
                 html += '<span class="block_data_attr"><b>last inquiry</b> %s</span>' % getRelativeTime(int(float(
                     self.last_inquiry)), wrapper=htmlSpanWrapper)
@@ -611,7 +611,7 @@ class ContentResource(resource.Resource):
         @return   (str)   HTML representation of the server.
         """
         html = '<div id="server_block"><div class="block_title"><h3>Server</h3></div>'
-        html += '<div class="block_topright_server">%s<img src="/dashboard/static/icons/clock-arrow.png"></div>' % \
+        html += '<div class="block_topright_server">%s<img alt="" src="/dashboard/static/icons/clock-arrow.png"></div>' % \
             getRelativeTime(self.plugin.server.server_uptime, pastSuffix="", wrapper=htmlSpanWrapper)
         html += '<div style="clear: both;"></div>'
         html += '<div class="block_content">'
@@ -620,7 +620,7 @@ class ContentResource(resource.Resource):
         if (len(self.plugin.load) > 0 and len([i for i in self.plugin.load[1:] if float(i) >= (
             self.plugin.cpuCount*0.8)]) > 0) or int(self.plugin.memfree_mb) <= 256 or self.plugin.diskfree_mb <= 1000:
             html += '<div class="block_data">'
-            html += '<img src="/dashboard/static/icons/system-monitor.png">Resources'
+            html += '<img alt="" src="/dashboard/static/icons/system-monitor.png">Resources'
             html += '<span class="block_data_attr"><b>load</b> %s</span>' % ', '.join(self.plugin.load)
             html += '<span class="block_data_attr"><b>ram free</b> %s</span>' % (formatNumber(
                 self.plugin.memfree_mb) + ' MB')
@@ -634,11 +634,11 @@ class ContentResource(resource.Resource):
                 html += '<div class="block_data">'
                 st = p.getStatus()
                 if 'status' in st[0] and st[0]['status'] == 'error':
-                    html += '<img src="/dashboard/static/icons/puzzle-red.png">%s' % p.name
+                    html += '<img alt="" src="/dashboard/static/icons/puzzle-red.png">%s' % p.name
                 elif 'status' in st[0] and st[0]['status'] == 'disabled':
-                    html += '<img src="/dashboard/static/icons/puzzle-grey.png">%s' % p.name
+                    html += '<img alt="" src="/dashboard/static/icons/puzzle-grey.png">%s' % p.name
                 else:
-                    html += '<img src="/dashboard/static/icons/puzzle.png">%s' % p.name
+                    html += '<img alt="" src="/dashboard/static/icons/puzzle.png">%s' % p.name
                 for i in st:
                     if len(i) == 1 and 'id' in i:
                         html += '<span class="block_data_attr">%s</span>' % i['id']
@@ -663,11 +663,11 @@ class ContentResource(resource.Resource):
         def renderProject(p):
             html = '<div class="block_data">'
             if p.isActive():
-                html += '<img src="/dashboard/static/icons/radar.png">'
+                html += '<img alt="" src="/dashboard/static/icons/radar.png">'
                 html += '<a href="#" onclick="goTo(\'#%s\')">%s</a>' % (p.name.replace(' ','-'), p.name)
                 html += '<span class="block_data_attr">active</span>'
             else:
-                html += '<img src="/dashboard/static/icons/radar-grey.png">'
+                html += '<img alt="" src="/dashboard/static/icons/radar-grey.png">'
                 html += '<a href="#" onclick="goTo(\'#%s\')">%s</a>' % (p.name.replace(' ','-'), p.name)
                 html += '<span class="block_data_attr">inactive</span>'
             if p.start:
@@ -686,7 +686,7 @@ class ContentResource(resource.Resource):
         if len(projects) <= 1:
             return ""
 
-        html = '<div id="server_block"><div class="block_title"><h3>Projects</h3></div>'
+        html = '<div id="project_block"><div class="block_title"><h3>Projects</h3></div>'
         html += '<div style="clear: both;"></div>'
         html += '<div class="block_content">'
 
@@ -713,9 +713,9 @@ class ContentResource(resource.Resource):
         html += '<div class="block_content"><div class="block_data">'
 
         if project.isActive():
-            html += '<img src="/dashboard/static/icons/radar.png">Active'
+            html += '<img alt="" src="/dashboard/static/icons/radar.png">Active'
         else:
-            html += '<img src="/dashboard/static/icons/radar-grey.png">Inactive'
+            html += '<img alt="" src="/dashboard/static/icons/radar-grey.png">Inactive'
         if project.start:
             html += '<span class="block_data_attr"><b>start</b> %s</span>' % getRelativeTime(project.start,
                 wrapper=htmlSpanWrapper)
@@ -725,7 +725,7 @@ class ContentResource(resource.Resource):
         html += '</div>'
 
         if len(project.disabled_plugins) > 0:
-            html += '<div class="block_data"><img src="/dashboard/static/icons/puzzle-grey.png">Disabled plugins'
+            html += '<div class="block_data"><img alt="" src="/dashboard/static/icons/puzzle-grey.png">Disabled plugins'
             html += '<span class="block_data_attr">%s</span>' % ', '.join(sorted(project.disabled_plugins))
             html += '</div>'
 
@@ -740,7 +740,7 @@ class ContentResource(resource.Resource):
 
         if len(project.locations) >= 8 and (scanner_status[ScannerStatus.Bad] > 0 or \
             scanner_status[ScannerStatus.Ugly] > 0):
-            html += '<div class="block_data"><img src="/dashboard/static/icons/traffic-light-single.png">Scanner status'
+            html += '<div class="block_data"><img alt="" src="/dashboard/static/icons/traffic-light-single.png">Scanner status'
             html += '<span class="block_data_attr"><b>total</b> %s</span>' % formatNumber(len(project.locations))
             html += '<span class="block_data_attr"><b>online</b> %s – %i%%</span>' % (formatNumber(scanner_status[
                 ScannerStatus.Good]), scanner_status[ScannerStatus.Good]*100/len(project.locations))
@@ -752,7 +752,7 @@ class ContentResource(resource.Resource):
 
         html += '</div></div>'
 
-        html += '<div id="navigation_block">'
+        html += '<div class="navigation_block">'
         for location in sorted(project.locations.keys()):
             html += self.plugin.match(project.locations[location]).renderNavigation()
         html += '</div>'
@@ -815,8 +815,8 @@ class ContentResource(resource.Resource):
         if len(projectless_scanners) > 0:
             html += '<div class="h2-outline" id="No-project"><h2 onclick="goTo(\'#server_block\')">No project</h2>'
             html += '<div class="block_content"><div class="block_data">'
-            html += '<img src="/dashboard/static/icons/radar-grey.png">Inactive</div></div></div>'
-            html += '<div id="navigation_block">'
+            html += '<img alt="" src="/dashboard/static/icons/radar-grey.png">Inactive</div></div></div>'
+            html += '<div class="navigation_block">'
             for scanner in projectless_scanners:
                 s = self.plugin.scanners[scanner]
                 html += s.renderNavigation()
