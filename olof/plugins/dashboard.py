@@ -120,7 +120,7 @@ class Scanner(object):
 
         if None not in [url, username, password]:
             self.mv_conn = RESTConnection(
-                base_url = url,
+                baseUrl = url,
                 username = username,
                 password = password,
                 authHandler = urllib2.HTTPBasicAuthHandler)
