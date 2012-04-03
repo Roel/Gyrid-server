@@ -60,6 +60,6 @@ class StorageManager(object):
                 f = open(self.base_path + name, 'rb')
                 variable = pickle.load(f)
                 f.close()
-        except:
-            pass
+        except Exception, e:
+            self.server.logger.logError("Could not load storage variable '%s': %s" % (name, e))
         return variable
