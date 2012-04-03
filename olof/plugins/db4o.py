@@ -13,12 +13,12 @@ from twisted.internet import reactor
 from twisted.internet.protocol import ReconnectingClientFactory
 from twisted.protocols.basic import LineReceiver
 
-import cPickle as pickle
 import os
 import time
 
 import olof.configuration
 import olof.core
+import olof.storagemanager
 
 class Db4OClient(LineReceiver):
     """
@@ -133,7 +133,7 @@ class Plugin(olof.core.Plugin):
     def __init__(self, server, filename):
         """
         Initialisation. Set up connection details and open cache file.
-        Read pickled location and scansetup data from disk.
+        Read saved location and scansetup data from disk.
 
         Connect to the Db4O server.
         """
@@ -154,17 +154,8 @@ class Plugin(olof.core.Plugin):
         self.connected = False
         self.conn_time = None
 
-        self.locations = []
-        if os.path.isfile('olof/plugins/db4o/locations.pickle'):
-            f = open('olof/plugins/db4o/locations.pickle', 'rb')
-            self.locations = pickle.load(f)
-            f.close()
-
-        self.scanSetups = []
-        if os.path.isfile('olof/plugins/db4o/scanSetups.pickle'):
-            f = open('olof/plugins/db4o/scanSetups.pickle', 'rb')
-            self.locations = pickle.load(f)
-            f.close()
+        self.locations = self.storage.loadVariable('locations', [])
+        self.scanSetups = self.storage.loadVariable('scanSetups', [])
 
         self.db4o_factory = Db4OClientFactory(self)
         reactor.connectTCP(self.host, self.port, self.db4o_factory)
@@ -196,13 +187,8 @@ class Plugin(olof.core.Plugin):
         Unload. Save locations and scansetups to disk.
         """
         olof.core.Plugin.unload(self)
-        f = open('olof/plugins/db4o/locations.pickle', 'wb')
-        pickle.dump(self.locations, f)
-        f.close()
-
-        f = open('olof/plugins/db4o/scanSetups.pickle', 'wb')
-        pickle.dump(self.scanSetups, f)
-        f.close()
+        self.storage.saveVariable(self.locations, 'locations')
+        self.storage.saveVariable(self.scanSetups, 'scanSetups')
 
     def getStatus(self):
         """

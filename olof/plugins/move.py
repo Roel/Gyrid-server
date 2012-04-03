@@ -12,13 +12,13 @@ Module that handles the communication with the Move REST API.
 from twisted.internet import reactor, task
 
 import copy
-import cPickle as pickle
 import os
 import time
 import urllib2
 
 import olof.configuration
 import olof.core
+import olof.storagemanager
 from olof.tools.webprotocols import RESTConnection
 
 class Connection(RESTConnection):
@@ -251,35 +251,10 @@ class Plugin(olof.core.Plugin):
                         'uploads': 0,
                         'uploaded': 0,
                         'cached': 0}
-        measurements = {}
-        locations = {}
 
-        if os.path.isfile("olof/plugins/move/measureCount.pickle"):
-            f = open("olof/plugins/move/measureCount.pickle", "rb")
-            try:
-                measureCount = pickle.load(f)
-            except:
-                pass
-            f.close()
-
-        if os.path.isfile("olof/plugins/move/measurements.pickle"):
-            f = open("olof/plugins/move/measurements.pickle", "rb")
-            try:
-                measurements = pickle.load(f)
-                for s in measurements:
-                    if type(measurements[s]) is not set:
-                        measurements[s] = set(measurements[s])
-            except:
-                pass
-            f.close()
-
-        if os.path.isfile("olof/plugins/move/locations.pickle"):
-            f = open("olof/plugins/move/locations.pickle", "rb")
-            try:
-                locations = pickle.load(f)
-            except:
-                pass
-            f.close()
+        measureCount = self.storage.loadVariable('measureCount', measureCount)
+        measurements = self.storage.loadVariable('measurements', {})
+        locations = self.storage.loadVariable('locations', {})
 
         url = self.config.getValue('url')
         user = self.config.getValue('username')
@@ -315,18 +290,9 @@ class Plugin(olof.core.Plugin):
         Unload. Save cache to disk.
         """
         olof.core.Plugin.unload(self)
-
-        f = open("olof/plugins/move/measureCount.pickle", "wb")
-        pickle.dump(self.conn.measureCount, f)
-        f.close()
-
-        f = open("olof/plugins/move/measurements.pickle", "wb")
-        pickle.dump(self.conn.measurements, f)
-        f.close()
-
-        f = open("olof/plugins/move/locations.pickle", "wb")
-        pickle.dump(self.conn.locations, f)
-        f.close()
+        self.storage.saveVariable(self.conn.measureCount, 'measureCount')
+        self.storage.saveVariable(self.conn.measurements, 'measurements')
+        self.storage.saveVariable(self.conn.locations, 'locations')
 
     def getStatus(self):
         """

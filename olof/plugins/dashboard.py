@@ -20,10 +20,10 @@ from twisted.web.static import File
 
 from zope.interface import implements
 
-import cPickle as pickle
 import datetime
 import math
 import os
+import pickle
 import re
 import subprocess
 import time
@@ -33,6 +33,7 @@ import urlparse
 import olof.configuration
 import olof.core
 import olof.plugins.dashboard.macvendor as macvendor
+import olof.storagemanager
 import olof.tools.validation
 
 from olof.tools.datetimetools import getRelativeTime
@@ -909,19 +910,11 @@ class Plugin(olof.core.Plugin):
         status_resource.putChild("static",
             StaticResource("olof/plugins/dashboard/static/"))
 
-        if os.path.isfile("olof/plugins/dashboard/data/obj.pickle"):
-            try:
-                f = open("olof/plugins/dashboard/data/obj.pickle", "rb")
-                self.scanners = pickle.load(f)
-                f.close()
-                for s in self.scanners.values():
-                    s.init(self)
-                    for sens in s.sensors.values():
-                        sens.init()
-            except:
-                self.scanners = {}
-        else:
-            self.scanners = {}
+        self.scanners = self.storage.loadVariable('scanners', {})
+        for s in self.scanners.values():
+            s.init(self)
+            for sens in s.sensors.values():
+                sens.init()
 
         try:
             import multiprocessing
@@ -1095,9 +1088,7 @@ class Plugin(olof.core.Plugin):
         for s in self.scanners.values():
             s.unload(shutdown)
 
-        f = open("olof/plugins/dashboard/data/obj.pickle", "wb")
-        pickle.dump(self.scanners, f)
-        f.close()
+        self.storage.saveVariable(self.scanners, 'scanners')
 
     def getScanner(self, hostname, create=True):
         """

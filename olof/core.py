@@ -10,6 +10,7 @@ Module that provides the plugin interface.
 """
 
 import olof.logger
+import olof.storagemanager
 
 class Plugin(object):
     """
@@ -32,6 +33,7 @@ class Plugin(object):
         self.name = name
 
         self.logger = olof.logger.Logger(self.server, self.filename)
+        self.storage = olof.storagemanager.StorageManager(self, self.filename)
 
         options = self.defineConfiguration()
         if len(options) > 0:

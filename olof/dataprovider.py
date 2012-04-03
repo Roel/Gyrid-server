@@ -13,13 +13,13 @@ this information to the server.
 from twisted.internet import reactor, task, threads
 
 import copy
-import cPickle as pickle
 import imp
 import os
 import time
 
 import olof.configuration
 import olof.datatypes
+import olof.storagemanager
 from olof.tools.inotifier import INotifier
 
 class DataProvider(object):
@@ -30,18 +30,15 @@ class DataProvider(object):
         """
         Initialisation.
 
-        Read previous pickled data and initialise the data configuration file.
+        Read previous saved data and initialise the data configuration file.
 
         @param   server (Olof)   Reference to the main Olof server instance.
         """
         self.server = server
 
+        self.storagemgr = olof.storagemanager.StorageManager(self.server, 'data')
+        self.locations = self.storagemgr.loadVariable('locations', {})
         self.projects = {}
-        self.locations = {}
-        if os.path.isfile("olof/data/data.pickle"):
-            f = open("olof/data/data.pickle", "rb")
-            self.locations = pickle.load(f)
-            f.close()
 
         self.dataconfig = olof.configuration.Configuration(self.server, 'data')
         self.defineConfiguration()
@@ -81,9 +78,7 @@ class DataProvider(object):
         Unload this data provider. Saves the current location data to disk.
         """
         self.dataconfig.unload()
-        f = open("olof/data/data.pickle", "wb")
-        pickle.dump(self.locations, f)
-        f.close()
+        self.storagemgr.saveVariable(self.locations, 'locations')
 
     def readLocations(self, value=None):
         """

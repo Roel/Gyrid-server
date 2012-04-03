@@ -19,13 +19,12 @@ import traceback
 import warnings
 import zlib
 
-import cPickle as pickle
-
 import olof.configuration
 import olof.dataprovider
 import olof.datatypes
 import olof.logger
 import olof.pluginmanager
+import olof.storagemanager
 import olof.tools.validation
 
 def verifyCallback(connection, x509, errnum, errdepth, ok):
@@ -279,23 +278,16 @@ class Olof(object):
         self.git_commit = commit.id
         self.git_date = int(time.strftime('%s', commit.committed_date))
 
-        self.mac_dc = {}
-        if os.path.isfile('olof/data/mac_dc.pickle'):
-            f = open('olof/data/mac_dc.pickle', 'rb')
-            try:
-                self.mac_dc = pickle.load(f)
-            except:
-                self.mac_dc = {}
-            f.close()
-
         olof.datatypes.server = self
 
         self.configmgr = olof.configuration.Configuration(self, 'server')
         self.__defineConfiguration()
 
         self.pluginmgr = olof.pluginmanager.PluginManager(self)
+        self.storagemgr = olof.storagemanager.StorageManager(self, 'server')
         self.dataprovider = olof.dataprovider.DataProvider(self)
 
+        self.mac_dc = self.storagemgr.loadVariable('mac_dc', {})
         self.port = self.configmgr.getValue('tcp_listening_port')
 
     def __defineConfiguration(self):
@@ -336,10 +328,7 @@ class Olof(object):
         self.dataprovider.unload()
         self.configmgr.unload()
         self.pluginmgr.unload(shutdown=True)
-
-        f = open('olof/data/mac_dc.pickle', 'wb')
-        pickle.dump(self.mac_dc, f)
-        f.close()
+        self.storagemgr.saveVariable(self.mac_dc, 'mac_dc')
 
     def getDeviceclass(self, mac):
         """
