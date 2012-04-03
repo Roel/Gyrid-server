@@ -111,14 +111,14 @@ class ScanSetup(Logger):
     Class that represents a logger for a scanner-setup, i.e. a combination of a scanner and a Bluetooth sensor.
     This logger logs all Bluetooth data, such as cell-based and RSSI data.
     """
-    def __init__(self, plugin, hostname, sensor_mac):
+    def __init__(self, plugin, hostname, sensorMac):
         """
         Initialisation.
 
-        @param   sensor_mac (str)   The MAC-address of the Bluetooth sensor.
+        @param   sensorMac (str)   The MAC-address of the Bluetooth sensor.
         """
         Logger.__init__(self, plugin, hostname)
-        self.sensor = sensor_mac
+        self.sensor = sensorMac
 
         self.logFiles = ['scan', 'rssi']
         self.logs = dict(zip(self.logFiles, [open('/'.join([
@@ -181,20 +181,20 @@ class Plugin(olof.core.Plugin):
         project = self.server.dataprovider.getProjectName(hostname)
         return project if project != None else 'No-project'
 
-    def getScanSetup(self, hostname, sensor_mac):
+    def getScanSetup(self, hostname, sensorMac):
         """
         Get the ScanSetup for the given hostname and sensor. Create a new one when none available.
 
-        @param    hostname (str)     The hostname of the scanner.
-        @param    sensor_mac (str)   The MAC-address of the Bluetooth sensor.
-        @return   (ScanSetup)        The corresponding ScanSetup.
+        @param    hostname (str)    The hostname of the scanner.
+        @param    sensorMac (str)   The MAC-address of the Bluetooth sensor.
+        @return   (ScanSetup)       The corresponding ScanSetup.
         """
         project = self.getProject(hostname)
-        if not (project, hostname, sensor_mac) in self.scanSetups:
-            ss = ScanSetup(self, hostname, sensor_mac)
-            self.scanSetups[(project, hostname, sensor_mac)] = ss
+        if not (project, hostname, sensorMac) in self.scanSetups:
+            ss = ScanSetup(self, hostname, sensorMac)
+            self.scanSetups[(project, hostname, sensorMac)] = ss
         else:
-            ss = self.scanSetups[(project, hostname, sensor_mac)]
+            ss = self.scanSetups[(project, hostname, sensorMac)]
         return ss
 
     def getScanner(self, hostname):
@@ -236,16 +236,16 @@ class Plugin(olof.core.Plugin):
         sc = self.getScanner(hostname)
         sc.logInfo(timestamp, info)
 
-    def dataFeedCell(self, hostname, timestamp, sensor_mac, mac, deviceclass, move):
+    def dataFeedCell(self, hostname, timestamp, sensorMac, mac, deviceclass, move):
         """
         Pass the information to the corresponding ScanSetup to be saved to the cell-data log.
         """
-        ss = self.getScanSetup(hostname, sensor_mac)
+        ss = self.getScanSetup(hostname, sensorMac)
         ss.logCell(timestamp, mac, deviceclass, move)
 
-    def dataFeedRssi(self, hostname, timestamp, sensor_mac, mac, rssi):
+    def dataFeedRssi(self, hostname, timestamp, sensorMac, mac, rssi):
         """
         Pass the information to the corresponding ScanSetup to be saved to the RSSI-data log.
         """
-        ss = self.getScanSetup(hostname, sensor_mac)
+        ss = self.getScanSetup(hostname, sensorMac)
         ss.logRssi(timestamp, mac, rssi)

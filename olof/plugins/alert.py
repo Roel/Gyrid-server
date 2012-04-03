@@ -363,20 +363,20 @@ class Plugin(olof.core.Plugin):
             else:
                 a[0].etime = int(time.time())
 
-    def stateFeed(self, hostname, timestamp, sensor_mac, info):
+    def stateFeed(self, hostname, timestamp, sensorMac, info):
         """
         On 'started_scanning': remove SensorDisconnect alerts and add SensorConnect info alert.
         On 'stopped_scanning': add SensorDisconnect alert.
         """
         if info == 'started_scanning':
             a = self.mailer.getAlerts(hostname, [Alert.Type.SensorDisconnect,
-                Alert.Type.SensorConnect], sensor_mac)
+                Alert.Type.SensorConnect], sensorMac)
             self.mailer.removeAlerts(a)
             self.mailer.addAlert(Alert(hostname, Alert.Type.SensorConnect,
-                sensor_mac, info=1, warning=None, alert=None, fire=None))
+                sensorMac, info=1, warning=None, alert=None, fire=None))
         elif info == 'stopped_scanning':
             self.mailer.addAlert(Alert(hostname, Alert.Type.SensorDisconnect,
-                sensor_mac))
+                sensorMac))
 
     def sysStateFeed(self, hostname, module, info):
         """

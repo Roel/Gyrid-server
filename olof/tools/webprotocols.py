@@ -36,24 +36,24 @@ class RESTConnection(object):
     """
     Class that defines a REST connection.
     """
-    def __init__(self, base_url, timeout=40, username=None, password=None, authHandler=None):
+    def __init__(self, baseUrl, timeout=40, username=None, password=None, authHandler=None):
         """
         Initialisation. Username, password and authHandler are optional, but depend on each other.
 
-        @param   base_url (str)   The base URL to connect to.
+        @param   baseUrl (str)    The base URL to connect to.
         @param   timeout (int)    The timeout of the connection, in seconds. Defaults to 40.
         @param   username (str)   The username to log in. Optional.
         @param   password (str)   The password to log in. Optional.
         @param   authHandler      A urllib2 authenication handler object. Optional.
         """
-        self.base_url = base_url
+        self.baseUrl = baseUrl
         self.timeout = float(timeout)
         self.username = username
-        self.url = urlparse.urlparse(base_url)
+        self.url = urlparse.urlparse(baseUrl)
 
         if username and password and authHandler:
             passman = urllib2.HTTPPasswordMgrWithDefaultRealm()
-            passman.add_password(None, self.base_url, username, password)
+            passman.add_password(None, self.baseUrl, username, password)
             self.opener = urllib2.build_opener(authHandler(passman))
         else:
             self.opener = None
@@ -61,7 +61,7 @@ class RESTConnection(object):
         self.returns = {}
         self.returnCount = 0
 
-        (scheme, netloc, path, query, fragment) = urlparse.urlsplit(base_url)
+        (scheme, netloc, path, query, fragment) = urlparse.urlsplit(baseUrl)
 
         self.scheme = scheme
         self.host = netloc
@@ -137,9 +137,9 @@ class RESTConnection(object):
         Perform the actual HTTP request. Should not be called directly.
         """
         if resource.startswith('/'):
-            req = ExtRequest(self.base_url+resource)
+            req = ExtRequest(self.baseUrl+resource)
         else:
-            req = ExtRequest(self.base_url+'/'+resource)
+            req = ExtRequest(self.baseUrl+'/'+resource)
 
         req.set_method(method.upper())
         req.add_data(body)

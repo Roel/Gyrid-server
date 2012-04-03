@@ -436,12 +436,12 @@ class Scanner(object):
             else:
                 return ""
 
-        def renderNotconnected(disconnect_time, pastSuffix=""):
-            html = '<div class="block_data"><img alt="" src="/dashboard/static/icons/traffic-cone.png">No connection%s' % \
-                pastSuffix
-            if disconnect_time != None:
+        def renderNotconnected(disconnectTime, pastSuffix=""):
+            html = '<div class="block_data"><img alt="" src="/dashboard/static/icons/traffic-cone.png">' + \
+                'No connection%s' % pastSuffix
+            if disconnectTime != None:
                 html += '<span class="block_data_attr"><b>disconnected</b> %s</span>' % getRelativeTime(int(float(
-                    disconnect_time)), wrapper=htmlSpanWrapper)
+                    disconnectTime)), wrapper=htmlSpanWrapper)
             elif pastSuffix == "" and self.lastConnected != None:
                 html += '<span class="block_data_attr"><b>last connected</b> %s</span>' % getRelativeTime(int(float(
                     self.lastConnected)), wrapper=htmlSpanWrapper)
@@ -1062,17 +1062,17 @@ class Plugin(olof.core.Plugin):
         s = os.statvfs('.')
         self.diskfree_mb = (s.f_bavail * s.f_bsize)/1024/1024
 
-    def parseMVNumbers(self, msisdn_map=None):
+    def parseMVNumbers(self, msisdnMap=None):
         """
         Parse the Mobile Vikings MSISDN mapping, matching the numbers to the corresponding scanners.
 
-        @param   msisdn_map (dict)   MSISDN mapping. Optional: when omitted the current configuration value is used.
+        @param   msisdnMap (dict)   MSISDN mapping. Optional: when omitted the current configuration value is used.
         """
-        if msisdn_map == None:
-            msisdn_map = self.config.getValue('mobilevikings_msisdn_mapping')
+        if msisdnMap == None:
+            msisdnMap = self.config.getValue('mobilevikings_msisdn_mapping')
         for s in self.scanners.values():
-            if s.hostname in msisdn_map:
-                s.msisdn = msisdn_map[s.hostname]
+            if s.hostname in msisdnMap:
+                s.msisdn = msisdnMap[s.hostname]
             else:
                 s.msisdn = None
                 s.mv_balance = {}
@@ -1125,13 +1125,13 @@ class Plugin(olof.core.Plugin):
             sens = s.sensors[mac]
         return sens
 
-    def uptime(self, hostname, host_uptime, gyrid_uptime):
+    def uptime(self, hostname, hostUptime, gyridUptime):
         """
         Save the received uptime information in the corresponding Scanner instance.
         """
         s = self.getScanner(hostname)
-        s.host_uptime = int(float(host_uptime))
-        s.gyrid_uptime = int(float(gyrid_uptime))
+        s.host_uptime = int(float(hostUptime))
+        s.gyrid_uptime = int(float(gyridUptime))
         s.gyrid_connected = True
 
     def connectionMade(self, hostname, ip, port):
@@ -1171,11 +1171,11 @@ class Plugin(olof.core.Plugin):
                 s.gyrid_connected = False
                 s.gyrid_disconnect_time = int(time.time())
 
-    def stateFeed(self, hostname, timestamp, sensor_mac, info):
+    def stateFeed(self, hostname, timestamp, sensorMac, info):
         """
         Save the Bluetooth sensor informatio in the corresponding Sensor instance.
         """
-        sens = self.getSensor(hostname, sensor_mac)
+        sens = self.getSensor(hostname, sensorMac)
         if info == 'new_inquiry':
             sens.connected = True
             if sens.last_inquiry == None or timestamp > sens.last_inquiry:
@@ -1186,11 +1186,11 @@ class Plugin(olof.core.Plugin):
             sens.connected = False
             sens.disconnect_time = int(float(timestamp))
 
-    def dataFeedRssi(self, hostname, timestamp, sensor_mac, mac, rssi):
+    def dataFeedRssi(self, hostname, timestamp, sensorMac, mac, rssi):
         """
         Save detection information in the corresponding Sensor instance.
         """
-        sens = self.getSensor(hostname, sensor_mac)
+        sens = self.getSensor(hostname, sensorMac)
         sens.detections += 1
         if sens.last_data == None or timestamp > sens.last_data:
             sens.last_data = timestamp

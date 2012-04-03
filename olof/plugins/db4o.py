@@ -279,31 +279,28 @@ class Plugin(olof.core.Plugin):
                 self.addLocation(obj.mac, obj.location.id, obj.location.description, obj.lon, obj.lat)
                 self.addScanSetup(hostname, obj.mac, obj.location.id, obj.start)
 
-    def stateFeed(self, hostname, timestamp, sensor_mac, info):
+    def stateFeed(self, hostname, timestamp, sensorMac, info):
         """
         Send new_inquiry status messages to the Db4O server.
         """
         dp = self.server.dataprovider
         if info == 'new_inquiry':
-            self.db4o_factory.sendLine(','.join([str(dp.getProjectName(hostname)),
-                hostname, 'INFO', str(int(timestamp*1000)), 'new_inquiry',
-                sensor_mac]))
+            self.db4o_factory.sendLine(','.join([str(dp.getProjectName(hostname)), hostname, 'INFO',
+                str(int(timestamp*1000)), 'new_inquiry', sensorMac]))
 
-    def dataFeedCell(self, hostname, timestamp, sensor_mac, mac, deviceclass, move):
+    def dataFeedCell(self, hostname, timestamp, sensorMac, mac, deviceclass, move):
         """
         Send cell data to the Db4O server.
         """
         dp = self.server.dataprovider
-        self.db4o_factory.sendLine(','.join([str(dp.getProjectName(hostname)),
-            hostname, sensor_mac, mac, str(deviceclass),
-            str(int(timestamp*1000)), move]))
+        self.db4o_factory.sendLine(','.join([str(dp.getProjectName(hostname)), hostname, sensorMac, mac,
+            str(deviceclass), str(int(timestamp*1000)), move]))
 
-    def dataFeedRssi(self, hostname, timestamp, sensor_mac, mac, rssi):
+    def dataFeedRssi(self, hostname, timestamp, sensorMac, mac, rssi):
         """
         Send RSSI data to the Db4O server.
         """
         dp = self.server.dataprovider
         deviceclass = str(self.server.getDeviceclass(mac))
-        self.db4o_factory.sendLine(','.join([str(dp.getProjectName(hostname)),
-            hostname, sensor_mac, mac, str(deviceclass),
-            str(int(timestamp*1000)), str(rssi)]))
+        self.db4o_factory.sendLine(','.join([str(dp.getProjectName(hostname)), hostname, sensorMac, mac,
+            str(deviceclass), str(int(timestamp*1000)), str(rssi)]))

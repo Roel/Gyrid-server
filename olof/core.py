@@ -86,13 +86,13 @@ class Plugin(object):
         if 'config' in self.__dict__:
             self.config.unload()
 
-    def uptime(self, hostname, host_uptime, gyrid_uptime):
+    def uptime(self, hostname, hostUptime, gyridUptime):
         """
         Called when new uptime information is received from the scanner.
 
-        @param   hostname (str)       The hostname of the scanner.
-        @param   host_uptime (int)    The timestamp since when the scanner is last booted up, in UNIX time.
-        @param   gyrid_uptime (int)   The timestamp since when the Gyrid daemon in running, in UNIX time.
+        @param   hostname (str)      The hostname of the scanner.
+        @param   hostUptime (int)    The timestamp since when the scanner is last booted up, in UNIX time.
+        @param   gyridUptime (int)   The timestamp since when the Gyrid daemon in running, in UNIX time.
         """
         pass
 
@@ -128,13 +128,13 @@ class Plugin(object):
         """
         pass
 
-    def stateFeed(self, hostname, timestamp, sensor_mac, info):
+    def stateFeed(self, hostname, timestamp, sensorMac, info):
         """
         Called when new structured status information is received for a specific sensor.
 
         @param   hostname (str)      The hostname of the scanner.
         @param   timestamp (float)   The timestamp of the status update, in UNIX time.
-        @param   sensor_mac (str)    The MAC-address of the respective Bluetooth sensor.
+        @param   sensorMac (str)     The MAC-address of the respective Bluetooth sensor.
         @param   info (str)          The status info. Currently implemented:
                                        "new_inquiry": A new inquiry started on the sensor.
                                        "started_scanning": Started scanning with the sensor.
@@ -165,7 +165,7 @@ class Plugin(object):
         """
         pass
 
-    def dataFeedCell(self, hostname, timestamp, sensor_mac, mac, deviceclass,
+    def dataFeedCell(self, hostname, timestamp, sensorMac, mac, deviceclass,
             move):
         """
         Called when new cell data is received.
@@ -173,7 +173,7 @@ class Plugin(object):
         @param   hostname (str)      The hostname of the scanner that detected the device.
         @param   timestamp (float)   The timestamp at which the device was first or last detected, depending on the
                                        move. In UNIX time.
-        @param   sensor_mac (str)    The MAC-address of the Bluetooth sensor that discovered the device. Representation
+        @param   sensorMac (str)    The MAC-address of the Bluetooth sensor that discovered the device. Representation
                                        without colons, f.ex. 001122334455
         @param   mac (str)           The Bluetooth MAC-address of the detected device. Representation without colons,
                                        f.ex. 001122334455
@@ -183,13 +183,13 @@ class Plugin(object):
         """
         pass
 
-    def dataFeedRssi(self, hostname, timestamp, sensor_mac, mac, rssi):
+    def dataFeedRssi(self, hostname, timestamp, sensorMac, mac, rssi):
         """
         Called when new RSSI data is received.
 
         @param   hostname (str)      The hostname of the scanner that detected the device.
         @param   timestamp (float)   The timestamp at which the device was detected. In UNIX time.
-        @param   sensor_mac (str)    The MAC-address of the Bluetooth sensor that discovered the device. Representation
+        @param   sensorMac (str)     The MAC-address of the Bluetooth sensor that discovered the device. Representation
                                        without colons, f.ex. 001122334455
         @param   mac (str)           The Bluetooth MAC-address of the detected device. Representation without colons,
                                        f.ex. 001122334455
