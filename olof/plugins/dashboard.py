@@ -770,7 +770,7 @@ class ContentResource(resource.Resource):
         """
         html = '<div id="footer"><p>Gyrid Server version <span title="%s">%s</span>.</p>' % (
             self.plugin.server.git_commit, time.strftime('%Y-%m-%d', time.localtime(self.plugin.server.git_date)))
-        html += '<p>© 2011-2012 Universiteit Gent, Roel Huybrechts. '
+        html += '<p>&#169; 2011-2012 Universiteit Gent, Roel Huybrechts. '
         html += '<br>Icons by <a href="http://p.yusukekamiyamane.com/">Yusuke Kamiyamane</a>.</p>'
         html += '</div>'
         return html
