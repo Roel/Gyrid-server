@@ -11,9 +11,9 @@ Module that handles configuration files of the server and its plugins.
 
 import imp
 import os
+import random
 import re
 import textwrap
-import time
 
 from olof.tools import validation
 from olof.tools.inotifier import INotifier
@@ -155,7 +155,8 @@ class Configuration(object):
         Read the configuration file from disk.
         """
         try:
-            c = imp.load_source(str(time.time()), self.location)
+            r = str(random.random())
+            c = imp.load_source(r[r.find('.')+1:], self.location)
         except Exception, e:
             self.server.logger.logError("Failed to load config file: %s.conf.py: %s" % (
                 self.filename, e))

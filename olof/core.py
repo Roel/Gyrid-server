@@ -13,6 +13,9 @@ import olof.configuration
 import olof.logger
 import olof.storagemanager
 
+# Add the module variable ENABLED to enable or disable a plugin. By default and when not specified, plugins are enabled.
+# ENABLED = False  ## Add to disable a plugin.
+
 class Plugin(object):
     """
     This is the superclass interface for Olof plugins.
@@ -50,14 +53,6 @@ class Plugin(object):
         @return   iterable (list, set)   A list or set with Options for this plugin.
         """
         return []
-
-    def isEnabled(self):
-        """
-        Check if this plugin is enabled. Set this to False to disable the plugin and thus prevent from loading.
-
-        @return   (bool)   If this plugin is enabled. Default implementation is True.
-        """
-        return True
 
     def getStatus(self):
         """

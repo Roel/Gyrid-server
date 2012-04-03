@@ -12,10 +12,9 @@ Module that handles the loading, unloading and dynamically reloading of plugins.
 import imp
 import os
 import pyinotify
+import random
 import sys
 import traceback
-
-from twisted.internet import reactor
 
 from olof.tools.inotifier import INotifier
 
@@ -62,10 +61,12 @@ class PluginManager(object):
         """
         name = os.path.basename(path)[:-3]
         try:
-            plugin = imp.load_source(name, path).Plugin(self.server, name)
-            if not plugin.isEnabled():
-                plugin.unload()
+            r = str(random.random())
+            pluginModule = imp.load_source(r[r.find('.')+1:], path)
+            if 'ENABLED' in pluginModule.__dict__ and pluginModule.ENABLED == False:
                 return
+            else:
+                plugin = pluginModule.Plugin(self.server, name)
         except Exception, e:
             self.server.logger.logError("Error while loading plugin %s: %s" % (name, e))
             self.server.logger.logError(traceback.format_exc())
