@@ -10,6 +10,17 @@ Module providing useful tools regarding dates and times.
 """
 
 import datetime
+import time
+
+def getUnixtime(timestamp, format='%Y%m%d-%H%M%S-%Z'):
+    """
+    Convert the given timestamp to UNIX time.
+
+    @param   timestamp (str)   The timestamp to convert.
+    @param   format (str)      The format of the timestamp.
+    @return  (float)           The equivalent UNIX time of the given timestamp.
+    """
+    return time.mktime(time.strptime(timestamp, format))
 
 def getRelativeTime(timestamp, now=None, levels=1, futurePrefix="in ", pastSuffix=" ago", wrapper=None):
     """

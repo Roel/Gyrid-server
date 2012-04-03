@@ -18,16 +18,6 @@ server = None
 # Plugins that cannot be disabled by the user.
 ENABLED_PLUGINS = ['dashboard', 'debug']
 
-def unixtime(timestamp, format='%Y%m%d-%H%M%S-%Z'):
-    """
-    Convert the given timestamp to UNIX time.
-
-    @param   timestamp (str)   The timestamp to convert.
-    @param   format (str)      The format of the timestamp.
-    @return  (float)           The equivalent UNIX time of the given timestamp.
-    """
-    return time.mktime(time.strptime(timestamp, format))
-
 class Location(object):
     """
     Class that represents a location, meaning a scanner at a specific
