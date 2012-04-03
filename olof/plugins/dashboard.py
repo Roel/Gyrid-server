@@ -36,7 +36,6 @@ import olof.plugins.dashboard.macvendor as macvendor
 import olof.tools.validation
 
 from olof.tools.datetimetools import getRelativeTime
-from olof.tools.inotifier import INotifier
 from olof.tools.webprotocols import RESTConnection
 
 def htmlSpanWrapper(timestamp):

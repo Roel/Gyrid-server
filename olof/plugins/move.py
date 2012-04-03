@@ -19,7 +19,6 @@ import urllib2
 
 import olof.configuration
 import olof.core
-from olof.tools.inotifier import INotifier
 from olof.tools.webprotocols import RESTConnection
 
 class Connection(RESTConnection):
