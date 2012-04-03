@@ -11,6 +11,7 @@ Module that handles configuration files of the server and its plugins.
 
 import imp
 import os
+import re
 import textwrap
 import time
 
@@ -113,11 +114,20 @@ class Configuration(object):
         """
         Update the configuration file, adding new options when appropriate.
         """
+        commentedOptions = []
+        f = open(self.location, 'r')
+        for line in f:
+            for o in self.options:
+                if re.match(r' *#+ *%s *=[ ]*[^ #]+' % o, line):
+                    commentedOptions.append(o)
+        f.close()
+
         to_append = []
         if len(self.options) > 0 and os.path.exists(self.location):
             if self.__readConfig():
                 for o in self.options:
-                    if not self.options[o].name in self.config.__dict__:
+                    if not self.options[o].name in self.config.__dict__ and \
+                        self.options[o].name not in commentedOptions:
                         to_append.append(o)
 
         if len(to_append) > 0:
