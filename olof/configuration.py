@@ -115,10 +115,10 @@ class Configuration(object):
         """
         to_append = []
         if len(self.options) > 0 and os.path.exists(self.location):
-            self.__readConfig()
-            for o in self.options:
-                if not self.options[o].name in self.config.__dict__:
-                    to_append.append(o)
+            if self.__readConfig():
+                for o in self.options:
+                    if not self.options[o].name in self.config.__dict__:
+                        to_append.append(o)
 
         if len(to_append) > 0:
             f = open(self.location, 'a')
@@ -150,9 +150,11 @@ class Configuration(object):
             self.server.logger.logError("Failed to load config file: %s.conf.py: %s" % (
                 self.filename, e))
             self.config = DummyConfig()
+            return False
         else:
             self.__parseConfig(c)
             self.config = c
+            return True
 
     def __parseConfig(self, config):
         """
