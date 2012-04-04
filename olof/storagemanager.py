@@ -54,7 +54,6 @@ class StorageManager(object):
             if 'dynamic-plugin-module' in str(e):
                 self.server.logger.logInfo("Objects of types/classes defined in plugin modules cannot be stored")
 
-
     def loadObject(self, name, default=None):
         """
         Load the object from disk.
