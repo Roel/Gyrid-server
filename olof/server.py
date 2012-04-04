@@ -303,17 +303,17 @@ class Olof(object):
         options.add(o)
 
         o = olof.configuration.Option('ssl_server_key')
-        o.setDescription("Path to the server's SSL key.")
+        o.setDescription("Path to the server's SSL key. None to disable SSL.")
         o.addValue(olof.configuration.OptionValue('keys/server.key', default=True))
         options.add(o)
 
         o = olof.configuration.Option('ssl_server_crt')
-        o.setDescription("Path to the server's SSL certificate.")
+        o.setDescription("Path to the server's SSL certificate. None to disable SSL.")
         o.addValue(olof.configuration.OptionValue('keys/server.crt', default=True))
         options.add(o)
 
         o = olof.configuration.Option('ssl_server_ca')
-        o.setDescription("Path to the server's SSL CA.")
+        o.setDescription("Path to the server's SSL CA. None to disable SSL.")
         o.addValue(olof.configuration.OptionValue('keys/ca.pem', default=True))
         options.add(o)
 
@@ -368,24 +368,38 @@ class Olof(object):
         """
         Start up the server reactor.
         """
-        self.logger.logInfo("Listening on TCP port %s" % self.port)
-
-        gyridCtxFactory = ssl.DefaultOpenSSLContextFactory(
-            self.configmgr.getValue('ssl_server_key'),
-            self.configmgr.getValue('ssl_server_crt'))
-
-        ctx = gyridCtxFactory.getContext()
-
-        ctx.set_verify(
-            SSL.VERIFY_PEER | SSL.VERIFY_FAIL_IF_NO_PEER_CERT,
-            verifyCallback)
-
-        # Since we have self-signed certs we have to explicitly
-        # tell the server to trust them.
-        ctx.load_verify_locations(self.configmgr.getValue('ssl_server_ca'))
-
+        reactor.addSystemEventTrigger("before", "shutdown", self.unload)
         gsf = GyridServerFactory(self)
 
-        reactor.addSystemEventTrigger("before", "shutdown", self.unload)
-        reactor.listenSSL(self.port, gsf, gyridCtxFactory)
-        reactor.run()
+        ssl_server_key = self.configmgr.getValue('ssl_server_key')
+        ssl_server_crt = self.configmgr.getValue('ssl_server_crt')
+        ssl_server_ca = self.configmgr.getValue('ssl_server_ca')
+
+        listen = False
+        if ssl_server_key == ssl_server_crt == ssl_server_ca == None:
+            # Disable SSL
+            reactor.listenTCP(self.port, gsf)
+            self.logger.logInfo("Listening on TCP port %s" % self.port)
+            listen = True
+        else:
+            # Enable SSL
+            if False in [os.path.isfile(i) for i in [ssl_server_key, ssl_server_crt, ssl_server_ca]]:
+                self.logger.logError("SSL credentials missing")
+            else:
+                gyridCtxFactory = ssl.DefaultOpenSSLContextFactory(ssl_server_key, ssl_server_crt)
+                ctx = gyridCtxFactory.getContext()
+                ctx.set_verify(SSL.VERIFY_PEER | SSL.VERIFY_FAIL_IF_NO_PEER_CERT, verifyCallback)
+
+                # Since we have self-signed certs we have to explicitly
+                # tell the server to trust them.
+                ctx.load_verify_locations(self.configmgr.getValue('ssl_server_ca'))
+
+                reactor.listenSSL(self.port, gsf, gyridCtxFactory)
+                self.logger.logInfo("Listening on TCP port %s, with SSL enabled" % self.port)
+                listen = True
+
+        if listen:
+            reactor.run()
+        else:
+            self.unload()
+            sys.exit(1)
