@@ -363,11 +363,14 @@ class Plugin(olof.core.Plugin):
         status_resource = self.root
         self.root.putChild("dashboard", status_resource)
 
-        portal = Portal(AuthenticationRealm(self), [FilePasswordDB(
-            'olof/plugins/dashboard/data/auth.password')])
-        credfac = BasicCredentialFactory("Gyrid Server")
-        rsrc = HTTPAuthSessionWrapper(portal, [credfac])
-        status_resource.putChild("content", rsrc)
+        authFile = 'olof/plugins/dashboard/data/auth.password'
+        if os.path.isfile(authFile):
+            portal = Portal(AuthenticationRealm(self), [FilePasswordDB('olof/plugins/dashboard/data/auth.password')])
+            credfac = BasicCredentialFactory("Gyrid Server")
+            rsrc = HTTPAuthSessionWrapper(portal, [credfac])
+            status_resource.putChild("content", rsrc)
+        else:
+            status_resource.putChild("content", ContentResource(self))
 
         status_resource.putChild("static",
             StaticResource("olof/plugins/dashboard/static/"))
