@@ -62,7 +62,7 @@ class PluginManager(object):
         name = os.path.basename(path)[:-3]
         try:
             r = str(random.random())
-            pluginModule = imp.load_source(r[r.find('.')+1:], path)
+            pluginModule = imp.load_source('dynamic-plugin-module-' + r[r.find('.')+1:], path)
             if 'ENABLED' in pluginModule.__dict__ and pluginModule.ENABLED == False:
                 return
             else:

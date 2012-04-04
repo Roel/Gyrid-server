@@ -42,11 +42,16 @@ class StorageManager(object):
         """
         self.__createDir()
         try:
+            if 'dynamic-plugin-module' in type(variable).__module__:
+                raise ValueError('Object type is defined in dynamic-plugin-module')
             f = open(self.base_path + name, 'wb')
             pickle.dump(variable, f)
             f.close()
         except Exception, e:
             self.server.logger.logError("Could not save storage variable '%s': %s" % (name, e))
+            if 'dynamic-plugin-module' in str(e):
+                self.server.logger.logInfo("Objects of types/classes defined in plugin modules cannot be stored")
+
 
     def loadVariable(self, name, default=None):
         """
@@ -65,4 +70,6 @@ class StorageManager(object):
                 f.close()
         except Exception, e:
             self.server.logger.logError("Could not load storage variable '%s': %s" % (name, e))
+            if 'dynamic-plugin-module' in str(e):
+                self.server.logger.logInfo("Objects of types/classes defined in plugin modules cannot be stored")
         return variable
