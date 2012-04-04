@@ -31,14 +31,8 @@ import olof.core
 import olof.storagemanager
 import olof.tools.validation
 
-from olof.plugins.dashboard.scanner import Scanner, ScannerStatus, Sensor
+from olof.plugins.dashboard.scanner import htmlSpanWrapper, Scanner, ScannerStatus, Sensor
 from olof.tools.datetimetools import getRelativeTime
-
-def htmlSpanWrapper(timestamp):
-    """
-    Wrapper method to use when formatting relative timestamps using olof.tools.datetimetools.getRelativeTime
-    """
-    return '<span title="%s">' % timestamp.strftime('%a %Y-%m-%d %H:%M:%S'), '</span>'
 
 class RootResource(resource.Resource):
     """

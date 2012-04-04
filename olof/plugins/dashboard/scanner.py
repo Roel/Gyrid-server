@@ -9,7 +9,7 @@
 Module providing storage-safe classes for use in dashboard plugin.
 """
 
-from twisted.internet import reactor, task
+from twisted.internet import reactor, task, threads
 
 import pickle
 import subprocess
@@ -20,6 +20,12 @@ import olof.plugins.dashboard.macvendor as macvendor
 
 from olof.tools.datetimetools import getRelativeTime
 from olof.tools.webprotocols import RESTConnection
+
+def htmlSpanWrapper(timestamp):
+    """
+    Wrapper method to use when formatting relative timestamps using olof.tools.datetimetools.getRelativeTime
+    """
+    return '<span title="%s">' % timestamp.strftime('%a %Y-%m-%d %H:%M:%S'), '</span>'
 
 class ScannerStatus:
     """
