@@ -39,7 +39,7 @@ def getVendor(macAddress):
 
     @param  macAddress  The mac address of the device.
     """
-    return VENDOR_MAC.get(mac_address[:6].upper(), None)
+    return VENDOR_MAC.get(macAddress[:6].upper(), None)
 
 #Parse the oui file on importing
 try:
