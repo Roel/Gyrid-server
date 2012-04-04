@@ -30,7 +30,7 @@ class Plugin(object):
         @param   server (Olof)    Reference to the main Olof server instance. This is made automatically when a plugin
                                     is initialised.
         @param   filename (str)   The filename of the plugins module file (without trailing '.py')
-        @param   name (str)       The name of the plugin.
+        @param   name (str)       The name of the plugin. Optional.
         """
         self.server = server
         self.filename = filename
