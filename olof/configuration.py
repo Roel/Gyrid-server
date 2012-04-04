@@ -29,6 +29,12 @@ class Configuration(object):
     """
     Main Configuration object representing a specific configuration file.
     """
+    class Value:
+        """
+        Class containing a constant for missing configuration values.
+        """
+        Missing = random.random()
+
     def __init__(self, server, filename, name=None):
         """
         Initialisation.
@@ -177,7 +183,7 @@ class Configuration(object):
             if o.name in config.__dict__:
                 o.setValue(config.__dict__[o.name])
             else:
-                o.setValue(None)
+                o.setValue(Configuration.Value.Missing)
 
     def readConfig(self):
         """
@@ -269,7 +275,7 @@ class Option(object):
         if not 'value' in self.__dict__:
             return self.getDefaultValue()
         else:
-            return self.value if self.value != None else self.getDefaultValue()
+            return self.value
 
     def addCallback(self, callback):
         """
@@ -301,11 +307,15 @@ class Option(object):
         @return           The validated value, depending on the validation result this is the given value or the
                             default value.
         """
-        if value != None and self.validation != None:
-            v = self.validation[0](value, *self.validation[1])
-            v = v if v != None else self.getDefaultValue()
+        if value == Configuration.Value.Missing:
+            v = self.getDefaultValue()
+        elif self.validation != None:
+            try:
+                v = self.validation[0](value, *self.validation[1])
+            except validation.ValidationError:
+                v = self.getDefaultValue()
         else:
-            v = value if value != None else self.getDefaultValue()
+            v = value
 
         if len(self.values) > 1:
             return v if v in [i.value for i in self.values] else self.getDefaultValue()

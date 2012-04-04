@@ -9,10 +9,21 @@
 Module that provides a few simple tests and conversions. Can for instance be used to validate configuration file values.
 
 All tests take at least the value to validate as an argument. When the test passes, the value (or converted value)
-should be returned. When the test fails it should return None.
+should be returned. When the test fails it should raise a ValidationError.
 """
 
+import random
 import re
+
+class ValidationError(Exception):
+    """
+    Exception to raise when the test fails.
+    """
+    def __init__(self, value=""):
+        self.value = value
+
+    def __str__(self):
+        return repr(self.value)
 
 def parseInt(value):
     """
@@ -21,7 +32,7 @@ def parseInt(value):
     try:
         return int(value)
     except:
-        return None
+        raise ValidationError()
 
 def parseFloat(value):
     """
@@ -30,7 +41,7 @@ def parseFloat(value):
     try:
         return float(value)
     except:
-        return None
+        raise ValidationError()
 
 def isEmail(value):
     """
@@ -45,4 +56,7 @@ def isEmail(value):
         r')@((?:[A-Z0-9](?:[A-Z0-9-]{0,61}[A-Z0-9])?\.)+[A-Z]{2,6}\.?$)'  # domain
         r'|\[(25[0-5]|2[0-4]\d|[0-1]?\d?\d)(\.(25[0-5]|2[0-4]\d|[0-1]?\d?\d)){3}\]$', re.IGNORECASE)
         # literal form, ipv4 address (SMTP 4.1.3)
-    return value if email_re.match(value) != None else None
+    if email_re.match(value) == None:
+        raise ValidationError()
+    else:
+        return value
