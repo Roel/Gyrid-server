@@ -360,6 +360,8 @@ class Scanner(object):
                 provider = self.ip_provider.get(list(self.connections)[0][0], (None, None))[0]
                 html = '<div class="block_data"><img alt="" src="/dashboard/static/icons/network-cloud.png">Network'
                 html += '<span class="block_data_attr"><b>ip</b> %s</span>' % list(self.connections)[0][0]
+                if provider:
+                    html += '<span class="block_data_attr"><b>provider</b> %s</span>' % provider
                 l = []
                 for i in sorted(self.lag.keys()):
                     if i <= 15:
@@ -374,8 +376,6 @@ class Scanner(object):
                 if len([i for i in l if i != 'nd']) > 0:
                     html += '<span class="block_data_attr"><b>lag</b> ' + \
                         '<span title="1, 5 and 15 minutes moving averages">%s</span></span>' %  ', '.join(l)
-                if provider:
-                    html += '<span class="block_data_attr"><b>provider</b> %s</span>' % provider
                 html += '</div>'
                 return html
             else:
