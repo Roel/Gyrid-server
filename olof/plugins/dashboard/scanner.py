@@ -538,7 +538,7 @@ class Sensor(object):
         @return   (str)   HTML representation of this sensor.
         """
         html = '<div class="block_data">'
-        vendor = macvendor.get_vendor(self.mac)
+        vendor = macvendor.getVendor(self.mac)
         mac = self.mac if vendor == None else '<span title="%s">%s</span>' % (vendor, self.mac)
         if self.connected == False:
             html += '<img alt="" src="/dashboard/static/icons/plug-disconnect.png">%s' % mac
