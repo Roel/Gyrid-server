@@ -37,7 +37,9 @@ class StorageManager(object):
         """
         Save the object to disk.
 
-        @param   object       Object to save.
+        @param   object       Object to save. Dynamically typed objects (i.e. objects of classes defined in plugin
+                                modules) cannot be saved. If you do need to save them, move those classes to a different
+                                module; however losing the dynamic reloading of those objects.
         @param   name (str)   Unique name to identify this object, later used to load the same object from disk.
         """
         self.__createDir()
