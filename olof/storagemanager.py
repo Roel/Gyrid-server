@@ -41,9 +41,12 @@ class StorageManager(object):
         @param   name (str)   Unique name to identify this variable, later used to load the same variable from disk.
         """
         self.__createDir()
-        f = open(self.base_path + name, 'wb')
-        pickle.dump(variable, f)
-        f.close()
+        try:
+            f = open(self.base_path + name, 'wb')
+            pickle.dump(variable, f)
+            f.close()
+        except Exception, e:
+            self.server.logger.logError("Could not save storage variable '%s': %s" % (name, e))
 
     def loadVariable(self, name, default=None):
         """
