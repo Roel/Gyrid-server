@@ -255,7 +255,7 @@ class Scanner(object):
                     self.plugin.logger.logError('Error requesting Mobile Vikings balance for %s (%s): %s' % \
                         (self.hostname, self.msisdn, e))
             else:
-                self.plugin.logger.logError('Error requesting Mobile Vikings balance for %s (%s).' % \
+                self.plugin.logger.logError('Error requesting Mobile Vikings balance for %s (%s)' % \
                     (self.hostname, self.msisdn))
 
         if self.mv_conn != None and self.msisdn:
