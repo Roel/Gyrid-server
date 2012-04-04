@@ -372,7 +372,7 @@ class Plugin(olof.core.Plugin):
         status_resource.putChild("static",
             StaticResource("olof/plugins/dashboard/static/"))
 
-        self.scanners = self.storage.loadVariable('scanners', {})
+        self.scanners = self.storage.loadObject('scanners', {})
         for s in self.scanners.values():
             s.init(self)
             for sens in s.sensors.values():
@@ -550,7 +550,7 @@ class Plugin(olof.core.Plugin):
         for s in self.scanners.values():
             s.unload(shutdown)
 
-        self.storage.saveVariable(self.scanners, 'scanners')
+        self.storage.storeObject(self.scanners, 'scanners')
 
     def getScanner(self, hostname, create=True):
         """

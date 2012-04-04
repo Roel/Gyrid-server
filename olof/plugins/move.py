@@ -252,9 +252,9 @@ class Plugin(olof.core.Plugin):
                         'uploaded': 0,
                         'cached': 0}
 
-        measureCount = self.storage.loadVariable('measureCount', measureCount)
-        measurements = self.storage.loadVariable('measurements', {})
-        locations = self.storage.loadVariable('locations', {})
+        measureCount = self.storage.loadObject('measureCount', measureCount)
+        measurements = self.storage.loadObject('measurements', {})
+        locations = self.storage.loadObject('locations', {})
 
         url = self.config.getValue('url')
         user = self.config.getValue('username')
@@ -290,9 +290,9 @@ class Plugin(olof.core.Plugin):
         Unload. Save cache to disk.
         """
         olof.core.Plugin.unload(self)
-        self.storage.saveVariable(self.conn.measureCount, 'measureCount')
-        self.storage.saveVariable(self.conn.measurements, 'measurements')
-        self.storage.saveVariable(self.conn.locations, 'locations')
+        self.storage.storeObject(self.conn.measureCount, 'measureCount')
+        self.storage.storeObject(self.conn.measurements, 'measurements')
+        self.storage.storeObject(self.conn.locations, 'locations')
 
     def getStatus(self):
         """

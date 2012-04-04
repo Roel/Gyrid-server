@@ -14,7 +14,7 @@ import os
 
 class StorageManager(object):
     """
-    Class that manages saving and loading variables to and from disk.
+    Class that manages saving and loading objects to and from disk.
     """
     def __init__(self, server, directoryName):
         """
@@ -33,43 +33,43 @@ class StorageManager(object):
         if not os.path.exists(self.base_path):
             os.makedirs(self.base_path)
 
-    def saveVariable(self, variable, name):
+    def storeObject(self, object, name):
         """
-        Save the variable to disk.
+        Save the object to disk.
 
-        @param   variable     Variable to save.
-        @param   name (str)   Unique name to identify this variable, later used to load the same variable from disk.
+        @param   object       Object to save.
+        @param   name (str)   Unique name to identify this object, later used to load the same object from disk.
         """
         self.__createDir()
         try:
-            if 'dynamic-plugin-module' in type(variable).__module__:
+            if 'dynamic-plugin-module' in type(object).__module__:
                 raise ValueError('Object type is defined in dynamic-plugin-module')
             f = open(self.base_path + name, 'wb')
-            pickle.dump(variable, f)
+            pickle.dump(object, f)
             f.close()
         except Exception, e:
-            self.server.logger.logError("Could not save storage variable '%s': %s" % (name, e))
+            self.server.logger.logError("Could not save storage object '%s': %s" % (name, e))
             if 'dynamic-plugin-module' in str(e):
                 self.server.logger.logInfo("Objects of types/classes defined in plugin modules cannot be stored")
 
 
-    def loadVariable(self, name, default=None):
+    def loadObject(self, name, default=None):
         """
-        Load the variable from disk.
+        Load the object from disk.
 
-        @param   name (str)   Unique name of the variable to load.
-        @param   default      A default value to return in case of an error or a non-existing variable.
-        @return               The requested variable or the default value in case things went wrong.
+        @param   name (str)   Unique name of the object to load.
+        @param   default      A default value to return in case of an error or a non-existing object.
+        @return               The requested object or the default value in case things went wrong.
         """
         self.__createDir()
-        variable = default
+        object = default
         try:
             if os.path.isfile(self.base_path + name):
                 f = open(self.base_path + name, 'rb')
-                variable = pickle.load(f)
+                object = pickle.load(f)
                 f.close()
         except Exception, e:
-            self.server.logger.logError("Could not load storage variable '%s': %s" % (name, e))
+            self.server.logger.logError("Could not load storage object '%s': %s" % (name, e))
             if 'dynamic-plugin-module' in str(e):
                 self.server.logger.logInfo("Objects of types/classes defined in plugin modules cannot be stored")
-        return variable
+        return object

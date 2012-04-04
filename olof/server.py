@@ -287,7 +287,7 @@ class Olof(object):
         self.storagemgr = olof.storagemanager.StorageManager(self, 'server')
         self.dataprovider = olof.dataprovider.DataProvider(self)
 
-        self.mac_dc = self.storagemgr.loadVariable('mac_dc', {})
+        self.mac_dc = self.storagemgr.loadObject('mac_dc', {})
         self.port = self.configmgr.getValue('tcp_listening_port')
 
     def __defineConfiguration(self):
@@ -328,7 +328,7 @@ class Olof(object):
         self.dataprovider.unload()
         self.configmgr.unload()
         self.pluginmgr.unload(shutdown=True)
-        self.storagemgr.saveVariable(self.mac_dc, 'mac_dc')
+        self.storagemgr.storeObject(self.mac_dc, 'mac_dc')
 
     def getDeviceclass(self, mac):
         """

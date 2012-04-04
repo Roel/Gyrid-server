@@ -154,8 +154,8 @@ class Plugin(olof.core.Plugin):
         self.connected = False
         self.conn_time = None
 
-        self.locations = self.storage.loadVariable('locations', [])
-        self.scanSetups = self.storage.loadVariable('scanSetups', [])
+        self.locations = self.storage.loadObject('locations', [])
+        self.scanSetups = self.storage.loadObject('scanSetups', [])
 
         self.db4o_factory = Db4OClientFactory(self)
         reactor.connectTCP(self.host, self.port, self.db4o_factory)
@@ -187,8 +187,8 @@ class Plugin(olof.core.Plugin):
         Unload. Save locations and scansetups to disk.
         """
         olof.core.Plugin.unload(self)
-        self.storage.saveVariable(self.locations, 'locations')
-        self.storage.saveVariable(self.scanSetups, 'scanSetups')
+        self.storage.storeObject(self.locations, 'locations')
+        self.storage.storeObject(self.scanSetups, 'scanSetups')
 
     def getStatus(self):
         """

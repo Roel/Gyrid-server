@@ -37,7 +37,7 @@ class DataProvider(object):
         self.server = server
 
         self.storagemgr = olof.storagemanager.StorageManager(self.server, 'data')
-        self.locations = self.storagemgr.loadVariable('locations', {})
+        self.locations = self.storagemgr.loadObject('locations', {})
         self.projects = {}
 
         self.dataconfig = olof.configuration.Configuration(self.server, 'data')
@@ -78,7 +78,7 @@ class DataProvider(object):
         Unload this data provider. Saves the current location data to disk.
         """
         self.dataconfig.unload()
-        self.storagemgr.saveVariable(self.locations, 'locations')
+        self.storagemgr.storeObject(self.locations, 'locations')
 
     def readLocations(self, value=None):
         """
