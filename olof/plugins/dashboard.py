@@ -31,7 +31,7 @@ import olof.core
 import olof.storagemanager
 import olof.tools.validation
 
-from olof.plugins.dashboard.scanner import htmlSpanWrapper, Scanner, ScannerStatus, Sensor
+from olof.plugins.dashboard.scanner import formatNumber, htmlSpanWrapper, Scanner, ScannerStatus, Sensor
 from olof.tools.datetimetools import getRelativeTime
 
 class RootResource(resource.Resource):
@@ -345,18 +345,6 @@ class AuthenticationRealm(object):
             return (IResource, ContentResource(self.plugin), lambda: None)
         else:
             raise NotImplementedError()
-
-def formatNumber(number):
-    """
-    Format the given number with a HTML span-class as thousand separator and two decimals in the case of a float.
-
-    @param    number (int, long, float)   The number to format.
-    @return   (str)                       HTML representation of the given number.
-    """
-    if (type(number) is int) or (type(number) is long):
-        return '{:,.0f}'.format(number).replace(',', '<span class="thousandSep"></span>')
-    elif type(number) is float:
-        return '{:,.2f}'.format(number).replace(',', '<span class="thousandSep"></span>')
 
 class Plugin(olof.core.Plugin):
     """

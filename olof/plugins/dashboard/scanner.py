@@ -27,6 +27,18 @@ def htmlSpanWrapper(timestamp):
     """
     return '<span title="%s">' % timestamp.strftime('%a %Y-%m-%d %H:%M:%S'), '</span>'
 
+def formatNumber(number):
+    """
+    Format the given number with a HTML span-class as thousand separator and two decimals in the case of a float.
+
+    @param    number (int, long, float)   The number to format.
+    @return   (str)                       HTML representation of the given number.
+    """
+    if (type(number) is int) or (type(number) is long):
+        return '{:,.0f}'.format(number).replace(',', '<span class="thousandSep"></span>')
+    elif type(number) is float:
+        return '{:,.2f}'.format(number).replace(',', '<span class="thousandSep"></span>')
+
 class ScannerStatus:
     """
     Class providing an enumeration for scanner status.
