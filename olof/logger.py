@@ -100,14 +100,14 @@ class Logger(object):
 
         if self.server.debug_mode:
             f = ' (%s)' % self.filename if self.filename != 'server' else ''
-            dbgStr = "%s Gyrid Server%s: Error: " % (t, f)
+            dbgStr = "\n%s Gyrid Server%s: Error: " % (t, f)
             if message != None:
-                dbgStr += '%s. ' % message.strip()
+                dbgStr += '%s. \n%s Gyrid Server%s:        ' % (message.strip(), t, f)
             dbgStr += '%s exception: %s.\n' % (eType, str(exception))
             sys.stderr.write(dbgStr)
-            sys.stderr.write(eTraceback + '\n')
+            sys.stderr.write('   ' + '\n   '.join(eTraceback.rstrip().split('\n')) + '\n\n')
 
         m = m.replace('\n', '\nE   ')
         mLog = '%s. ' % m if m != '' else ''
         self.logger.info("E %s: %s%s exception: %s." % (t, mLog, eType, str(exception)))
-        self.logger.info("E %s" % eTraceback.rstrip().replace('\n', '\nE   '))
+        self.logger.info("E   %s" % eTraceback.rstrip().replace('\n', '\nE   '))
