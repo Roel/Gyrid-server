@@ -114,6 +114,7 @@ class Mailer(object):
             except Exception, e:
                 self.plugin.logger.logError('Cannot send e-mail: SMTP connection failed: %s' % e)
                 self.plugin.logger.logInfo('You may want to check your SMTP configuration')
+                return False
             else:
                 return True
 
