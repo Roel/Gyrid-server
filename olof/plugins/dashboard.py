@@ -503,8 +503,9 @@ class Plugin(olof.core.Plugin):
                     found_location = True
                     break
             if not found_location:
-                s.project = None
-                s.sensors = {}
+                if s.project != None:
+                    s.sensors = {}
+                    s.project = None
 
     def checkResources(self):
         """
