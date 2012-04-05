@@ -352,13 +352,10 @@ class Olof(object):
             if not os.path.exists(os.path.dirname(path)):
                 os.makedirs(os.path.dirname(path))
             elif (os.path.exists(path)) and (os.access(path, os.W_OK) == False):
-                self.logger.logError("Error: Needs write access to %s" \
-                    % path, sys.stderr)
+                self.logger.logError("Error: Needs write access to %s" % path)
                 access = False
-            elif (not os.path.exists(path)) and (os.access(os.path.dirname(
-                path), os.W_OK) == False):
-                self.logger.logError("Error: Needs write access to %s" \
-                    % path, sys.stderr)
+            elif (not os.path.exists(path)) and (os.access(os.path.dirname(path), os.W_OK) == False):
+                self.logger.logError("Error: Needs write access to %s" % path)
                 access = False
 
         if not access:

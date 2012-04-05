@@ -49,8 +49,8 @@ class StorageManager(object):
             f = open(self.base_path + name, 'wb')
             pickle.dump(object, f)
             f.close()
-        except Exception, e:
-            self.server.logger.logError("Could not save storage object '%s': %s" % (name, e))
+        except Exception as e:
+            self.server.logger.logException(e, "Could not save storage object '%s'" % name)
             if 'dynamic-plugin-module' in str(e):
                 self.server.logger.logInfo("Objects of types/classes defined in plugin modules cannot be stored")
 
@@ -69,8 +69,8 @@ class StorageManager(object):
                 f = open(self.base_path + name, 'rb')
                 object = pickle.load(f)
                 f.close()
-        except Exception, e:
-            self.server.logger.logError("Could not load storage object '%s': %s" % (name, e))
+        except Exception as e:
+            self.server.logger.logException(e, "Could not load storage object '%s'" % name)
             if 'dynamic-plugin-module' in str(e):
                 self.server.logger.logInfo("Objects of types/classes defined in plugin modules cannot be stored")
         return object

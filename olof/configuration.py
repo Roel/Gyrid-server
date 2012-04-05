@@ -163,9 +163,8 @@ class Configuration(object):
         try:
             r = str(random.random())
             c = imp.load_source('dynamic-configuration-module-' + r[r.find('.')+1:], self.location)
-        except Exception, e:
-            self.server.logger.logError("Failed to load config file: %s.conf.py: %s" % (
-                self.filename, e))
+        except Exception as e:
+            self.server.logger.logException(e, "Failed to load config file: %s.conf.py" % self.filename)
             self.config = DummyConfig()
             return False
         else:

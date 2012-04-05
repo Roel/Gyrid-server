@@ -111,8 +111,8 @@ class Mailer(object):
                     self.s.ehlo()
                 if None not in [smtp_username, smtp_password]:
                     self.s.login(smtp_username, smtp_password)
-            except Exception, e:
-                self.plugin.logger.logError('Cannot send e-mail: SMTP connection failed: %s' % e)
+            except Exception as e:
+                self.plugin.logger.logException(e, 'Cannot send e-mail: SMTP connection failed')
                 self.plugin.logger.logInfo('You may want to check your SMTP configuration')
                 return False
             else:
@@ -133,8 +133,8 @@ class Mailer(object):
         msg += message
         try:
             self.s.sendmail(from_address, to, msg)
-        except Exception, e:
-            self.plugin.logger.logError('Cannot send e-mail: %s' % e)
+        except Exception as e:
+            self.plugin.logger.logException(e, 'Cannot send e-mail')
             self.plugin.logger.logInfo('You may want to check your SMTP configuration')
 
     def __disconnect(self):

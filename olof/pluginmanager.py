@@ -67,9 +67,8 @@ class PluginManager(object):
                 return
             else:
                 plugin = pluginModule.Plugin(self.server, name)
-        except Exception, e:
-            self.server.logger.logError("Error while loading plugin %s: %s" % (name, e))
-            self.server.logger.logError(traceback.format_exc())
+        except Exception as e:
+            self.server.logger.logException(e, "Failed to load plugin %s" % name)
         else:
             self.server.logger.logInfo("Loaded plugin: %s" % name)
             self.plugins[name] = plugin
