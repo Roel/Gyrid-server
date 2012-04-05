@@ -87,22 +87,35 @@ class Mailer(object):
     def __connect(self):
         """
         Connect to the SMTP server.
+
+        @return   (bool)   True if a connection has been made, else False.
         """
         smtp_server = self.plugin.config.getValue('smtp_server')
         smtp_port = self.plugin.config.getValue('smtp_port')
+        smtp_encryption = self.plugin.config.getValue('smtp_encryption')
         smtp_username = self.plugin.config.getValue('smtp_username')
         smtp_password = self.plugin.config.getValue('smtp_password')
 
-        if None in [smtp_server, smtp_port, smtp_username, smtp_password]:
-            self.plugin.logger.logError('Cannot send e-mail: missing configuration')
+        if None in [smtp_server, smtp_port]:
+            self.plugin.logger.logError('Cannot send e-mail: missing SMTP configuration')
             return False
         else:
-            self.s = smtplib.SMTP(smtp_server, smtp_port)
-            self.s.ehlo()
-            self.s.starttls()
-            self.s.ehlo()
-            self.s.login(smtp_username, smtp_password)
-            return True
+            try:
+                if smtp_encryption == 'SSL':
+                    self.s = smtplib.SMTP_SSL(smtp_server, smtp_port)
+                else:
+                    self.s = smtplib.SMTP(smtp_server, smtp_port)
+                self.s.ehlo()
+                if smtp_encryption == 'TLS':
+                    self.s.starttls()
+                    self.s.ehlo()
+                if None not in [smtp_username, smtp_password]:
+                    self.s.login(smtp_username, smtp_password)
+            except Exception, e:
+                self.plugin.logger.logError('Cannot send e-mail: SMTP connection failed: %s' % e)
+                self.plugin.logger.logInfo('You may want to check your SMTP configuration')
+            else:
+                return True
 
     def __sendMail(self, to, subject, message):
         """
@@ -117,13 +130,20 @@ class Mailer(object):
         msg += "To: %s\r\n" % to
         msg += "Subject: %s\r\n\r\n" % subject
         msg += message
-        self.s.sendmail(from_address, to, msg)
+        try:
+            self.s.sendmail(from_address, to, msg)
+        except Exception, e:
+            self.plugin.logger.logError('Cannot send e-mail: %s' % e)
+            self.plugin.logger.logInfo('You may want to check your SMTP configuration')
 
     def __disconnect(self):
         """
         Disconnect from the SMTP server.
         """
-        self.s.quit()
+        try:
+            self.s.quit()
+        except smtplib.SMTPServerDisconnected:
+            pass
 
     def __sendAlerts(self):
         """
@@ -290,12 +310,21 @@ class Plugin(olof.core.Plugin):
             """
             d = {}
             if type(value) is not dict:
-                return None
+                raise olof.tools.validation.ValidationError()
             else:
                 for i in value:
                     if olof.tools.validation.isEmail(i) and Alert.Level.Info <= value[i] <= Alert.Level.Fire:
                         d[i] = value[i]
             return d
+
+        def validateEncryption(value):
+            """
+            Validate encryption settings.
+            """
+            if value not in [None, 'SSL', 'TLS']:
+                raise olof.tools.validation.ValidationError()
+            else:
+                return value
 
         options = []
 
@@ -305,7 +334,17 @@ class Plugin(olof.core.Plugin):
 
         o = olof.configuration.Option('smtp_port')
         o.setDescription('TCP port to use while connecting to the SMTP server.')
+        o.addValue(olof.configuration.OptionValue(25, default=True))
         o.setValidation(olof.tools.validation.parseInt)
+        options.append(o)
+
+        o = olof.configuration.Option('smtp_encryption')
+        o.setDescription('Type of encryption to use for the SMTP connection.')
+        o.addValue(olof.configuration.OptionValue(None, 'Use no encryption. Typically connect on port 25.',
+            default=True))
+        o.addValue(olof.configuration.OptionValue('SSL', 'Use SSL encryption. Typically connect on port 465.'))
+        o.addValue(olof.configuration.OptionValue('TLS', 'Use TLS encryption. Typically connect on port 587.'))
+        o.setValidation(validateEncryption)
         options.append(o)
 
         o = olof.configuration.Option('smtp_username')
