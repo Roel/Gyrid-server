@@ -402,6 +402,9 @@ class Plugin(olof.core.Plugin):
             """
             Validate Mobile Vikings MSISDN mapping.
             """
+            if type(value) is not dict:
+                raise olof.tools.validation.ValidationError()
+
             d = {}
             tel_re = re.compile(r'\+32[0-9]{9}')
 

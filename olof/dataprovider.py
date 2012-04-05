@@ -51,6 +51,9 @@ class DataProvider(object):
         Define the data configuration options.
         """
         def validate(value, datatype):
+            if type(value) is not dict:
+                raise olof.tools.validation.ValidationError()
+
             d = {}
             for i in value:
                 if type(i) is str and type(value[i]) is datatype:
