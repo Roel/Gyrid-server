@@ -13,6 +13,7 @@ import logging, logging.handlers
 import os
 import sys
 import time
+import traceback
 
 class Logger(object):
     """
@@ -56,7 +57,9 @@ class Logger(object):
         """
         if self.logger == None:
             self.logger = self.__getLogger()
-        return time.strftime('%Y%m%d-%H%M%S-%Z'), message.strip()
+
+        message = message.strip() if message != None else ""
+        return time.strftime('%Y%m%d-%H%M%S-%Z'), message
 
     def logInfo(self, message):
         """
@@ -83,3 +86,28 @@ class Logger(object):
             sys.stderr.write("%s Gyrid Server%s: Error: %s.\n" % (t, f, m))
         m = m.replace('\n', '\nE   ')
         self.logger.info("E %s: %s." % (t, m))
+
+    def logException(self, exception, message=None):
+        """
+        Log the given exception as error. When running in debug mode, print to stderr too.
+
+        @param   exception (Exception)   The exception to log.
+        @param   message (str)           A message to clarify the exception. Optional.
+        """
+        eType = sys.exc_info()[0].__name__
+        eTraceback = traceback.format_exc()
+        t, m = self.__procMsg(message)
+
+        if self.server.debug_mode:
+            f = ' (%s)' % self.filename if self.filename != 'server' else ''
+            dbgStr = "%s Gyrid Server%s: Error: " % (t, f)
+            if message != None:
+                dbgStr += '%s. ' % message.strip()
+            dbgStr += '%s exception: %s.\n' % (eType, str(exception))
+            sys.stderr.write(dbgStr)
+            sys.stderr.write(eTraceback + '\n')
+
+        m = m.replace('\n', '\nE   ')
+        mLog = '%s. ' % m if m != '' else ''
+        self.logger.info("E %s: %s%s exception: %s." % (t, mLog, eType, str(exception)))
+        self.logger.info("E %s" % eTraceback.rstrip().replace('\n', '\nE   '))
