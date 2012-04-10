@@ -62,6 +62,7 @@ class Scanner(object):
         self.project = None
         self.host_uptime = None
         self.sensors = {}
+        self.sensor_count = None
         self.lagData = []
         self.ip_provider = {}
         self.msisdn = None
@@ -162,6 +163,7 @@ class Scanner(object):
           - Not connected,
           - Gyrid daemon not connected,
           - No Bluetooth sensors connected,
+          - Less Bluetooth sensors connected than specified in data.conf.py,
           - No recent (< 80 seconds) Bluetooth inquiry.
 
         Status is Ugly when:
@@ -180,6 +182,10 @@ class Scanner(object):
             return ScannerStatus.Bad
         elif len([s for s in self.sensors.values() if s.connected == True]) == 0:
             # No sensors connected
+            return ScannerStatus.Bad
+        elif self.sensor_count != None and len([
+            s for s in self.sensors.values() if s.connected == True]) < self.sensor_count:
+            # Not all sensors connected
             return ScannerStatus.Bad
         elif len([s for s in self.sensors.values() if (s.last_inquiry == None or t-s.last_inquiry >= 80)]) == len(
             self.sensors):

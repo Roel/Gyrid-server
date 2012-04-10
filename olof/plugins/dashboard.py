@@ -486,6 +486,7 @@ class Plugin(olof.core.Plugin):
             s.lon = location.lon
             s.lat = location.lat
             s.location = location.name
+            s.sensor_count = len(location.sensors)
             s.location_description = location.description
         return s
 
@@ -506,6 +507,7 @@ class Plugin(olof.core.Plugin):
                 if s.project != None:
                     s.sensors = {}
                     s.project = None
+                    s.sensor_count = None
 
     def checkResources(self):
         """
