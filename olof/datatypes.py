@@ -48,8 +48,9 @@ class Location(object):
 
         @param   sensor (Sensor)   The Sensor object to add.
         """
-        if not sensor.mac in self.sensors:
-            self.sensors[sensor.mac] = sensor
+        id = sensor.mac if sensor.mac != None else sensor.__hash__()
+        if not id in self.sensors:
+            self.sensors[id] = sensor
             sensor.location = self
             if sensor.lat == None or sensor.lon == None:
                 sensor.lat = self.lat
@@ -130,11 +131,11 @@ class Sensor(object):
     """
     Class that represents a Bluetooth sensor.
     """
-    def __init__(self, mac):
+    def __init__(self, mac=None):
         """
         Initialisation.
 
-        @param   mac (str)   The MAC-address of the Bluetooth sensor.
+        @param   mac (str)   The MAC-address of the Bluetooth sensor. Optional.
         """
         self.mac = mac
         self.location = None

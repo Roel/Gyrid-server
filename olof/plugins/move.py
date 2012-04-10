@@ -333,7 +333,7 @@ class Plugin(olof.core.Plugin):
                     desc = ' - '.join([i for i in [obj.id, obj.description] if i != None])
                     self.conn.addLocation(sensor.mac, sensor.end, None, desc)
 
-        elif module == 'sensor':
+        elif module == 'sensor' and obj.mac != None:
             if (obj.lat == None or obj.lon == None) and obj.end != None:
                 timestamp = obj.end
                 desc = ' - '.join([i for i in [obj.location.id, obj.location.description] if i != None])

@@ -272,7 +272,7 @@ class Plugin(olof.core.Plugin):
                 if sensor.end != None:
                     self.removeScanSetup(hostname, sensor.mac, obj.id, sensor.end)
 
-        elif module == 'sensor':
+        elif module == 'sensor' and obj.mac != None:
             if (obj.lat == None or obj.lon == None) and obj.end != None:
                 self.removeScanSetup(hostname, obj.mac, obj.location.id, obj.end)
             elif (obj.lat != None and obj.lon != None) and obj.start != None:
