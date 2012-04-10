@@ -60,9 +60,9 @@ class Location(object):
         """
         Add multiple Bluetooth sensors.
 
-        @param   sensors (int or iterable(Sensor))   Either an integer, in which case this number of default Sensor's
+        @param   sensors (int or iterable(Sensor))   Either an integer, in which case this number of default Sensors
                                                        will be added, or an iterable (list, set) of Sensor objects, in
-                                                       which case these Sensor's will be added.
+                                                       which case these Sensors will be added.
         """
         if type(sensors) is int:
             for i in range(sensors):
