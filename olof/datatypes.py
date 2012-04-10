@@ -56,6 +56,21 @@ class Location(object):
                 sensor.lat = self.lat
                 sensor.lon = self.lon
 
+    def addSensors(self, sensors):
+        """
+        Add multiple Bluetooth sensors.
+
+        @param   sensors (int or iterable(Sensor))   Either an integer, in which case this number of default Sensor's
+                                                       will be added, or an iterable (list, set) of Sensor objects, in
+                                                       which case these Sensor's will be added.
+        """
+        if type(sensors) is int:
+            for i in range(sensors):
+                self.addSensor(Sensor())
+        else:
+            for i in sensors:
+                self.addSensor(i)
+
     def isActive(self, plugin, timestamp=None):
         """
         Check if the given plugin is active for this location at the given timestamp.
