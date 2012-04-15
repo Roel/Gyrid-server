@@ -276,10 +276,11 @@ class Scanner(object):
                     self.mv_balance = pickle.loads("".join(r))
                     self.mv_updated = int(time.time())
                 except Exception, e:
-                    self.plugin.logger.logError('Error requesting Mobile Vikings balance for %s (%s): %s' % \
+                    e = ': %s' % str(e) if str(e) != "" else ""
+                    self.plugin.logger.logError('Failed request to get Mobile Vikings balance for %s (%s)%s' % \
                         (self.hostname, self.msisdn, e))
             else:
-                self.plugin.logger.logError('Error requesting Mobile Vikings balance for %s (%s)' % \
+                self.plugin.logger.logError('Failed request to get Mobile Vikings balance for %s (%s)' % \
                     (self.hostname, self.msisdn))
 
         if self.mv_conn != None and self.msisdn:
