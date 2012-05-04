@@ -65,6 +65,12 @@ class Db4OClient(LineReceiver):
             self.plugin.cache.flush()
             self.plugin.cached_lines += 1
 
+    def lineReceived(self, line):
+        """
+        Called when a line of data is received.
+        """
+        pass
+
     def pushCache(self):
         """
         Push trough the cached data. Clears the cache afterwards.
