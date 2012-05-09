@@ -11,7 +11,6 @@ from twisted.internet import reactor, ssl, task, threads
 from twisted.internet.protocol import Factory
 from twisted.protocols.basic import LineReceiver
 
-import git
 import os
 import sys
 import time
@@ -273,10 +272,6 @@ class Olof(object):
 
         self.logger.logInfo("Starting Gyrid Server")
         self.server_uptime = int(time.time())
-        repo = git.Repo('.')
-        commit = repo.commits(repo.active_branch)[0]
-        self.git_commit = commit.id
-        self.git_date = int(time.strftime('%s', commit.committed_date))
 
         olof.datatypes.server = self
 

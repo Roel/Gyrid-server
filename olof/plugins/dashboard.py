@@ -21,6 +21,7 @@ from twisted.web.static import File
 from zope.interface import implements
 
 import datetime
+import git
 import math
 import os
 import re
@@ -244,7 +245,7 @@ class ContentResource(resource.Resource):
         @return   (str)   HTML representation of the footer of the webpage.
         """
         html = '<div id="footer"><p>Gyrid Server version <span title="%s">%s</span>.</p>' % (
-            self.plugin.server.git_commit, time.strftime('%Y-%m-%d', time.localtime(self.plugin.server.git_date)))
+            self.plugin.git_commit, time.strftime('%Y-%m-%d', time.localtime(self.plugin.git_date)))
         html += '<p>&#169; 2011-2012 Universiteit Gent, Roel Huybrechts. '
         html += '<br>Icons by <a href="http://p.yusukekamiyamane.com/">Yusuke Kamiyamane</a>.</p>'
         html += '</div>'
@@ -386,6 +387,11 @@ class Plugin(olof.core.Plugin):
             self.cpuCount = multiprocessing.cpu_count()
         except:
             self.cpuCount = 1
+
+        repo = git.Repo('.')
+        commit = repo.commits(repo.active_branch)[0]
+        self.git_commit = commit.id
+        self.git_date = int(time.strftime('%s', commit.committed_date))
 
         self.parseMVNumbers()
 
