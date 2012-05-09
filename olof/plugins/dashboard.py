@@ -245,7 +245,7 @@ class ContentResource(resource.Resource):
         """
         html = '<div id="footer">'
         if self.plugin.git_commit != None and self.plugin.git_date != None:
-            html = '<p>Gyrid Server version <span title="%s">%s</span>.</p>' % (
+            html += '<p>Gyrid Server version <span title="%s">%s</span>.</p>' % (
                 self.plugin.git_commit, time.strftime('%Y-%m-%d', time.localtime(self.plugin.git_date)))
         html += '<p>&#169; 2011-2012 Universiteit Gent, Roel Huybrechts. '
         html += '<br>Icons by <a href="http://p.yusukekamiyamane.com/">Yusuke Kamiyamane</a>.</p>'
