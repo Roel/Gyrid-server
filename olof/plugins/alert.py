@@ -392,7 +392,7 @@ class Plugin(olof.core.Plugin):
         if hostname in self.connections and (ip, port) in self.connections[hostname]:
             self.connections[hostname].remove((ip, port))
 
-        if len(self.connections[hostname]) == 0:
+        if hostname in self.connections and len(self.connections[hostname]) == 0:
             a = self.mailer.getAlerts(hostname, [Alert.Type.GyridDisconnect,
                 Alert.Type.SensorDisconnect])
             self.mailer.removeAlerts(a)
