@@ -12,6 +12,7 @@ Plugin that provides e-mailalerts in case things go wrong.
 from twisted.internet import reactor, task, threads
 
 import datetime
+import re
 import smtplib
 import time
 
@@ -155,17 +156,27 @@ class Mailer(object):
 
         t = int(time.time())
         mails = []
-
         to_delete = []
+
         recipients = self.plugin.config.getValue('recipients')
+
         for alert in self.alerts:
+            recipients_sent = []
             level = alert.getStatusLevel(t)
             if level is not None and not alert.isSent(level):
                 for r in recipients:
-                    if level >= recipients[r]:
-                        mails.append([r,
-                            alert.origin,
-                            alert.getMessageBody(level)])
+                    if alert.origin == 'Server':
+                        origin = alert.origin
+                    else:
+                        origin = self.plugin.server.dataprovider.getProjectName(alert.origin)
+                    if re.match(r[0], alert.origin):
+                        for a in r[1]:
+                            if level >= r[1][a]:
+                                if a not in recipients_sent:
+                                    mails.append([a,
+                                        alert.origin,
+                                        alert.getMessageBody(level)])
+                                    recipients_sent.append(a)
                 alert.markSent(level)
 
                 al = sorted(alert.action.keys())
@@ -309,13 +320,20 @@ class Plugin(olof.core.Plugin):
             """
             Validate recipients dictionary.
             """
-            d = {}
-            if type(value) is not dict:
+            d = []
+            if type(value) is not list:
                 raise olof.tools.validation.ValidationError()
             else:
                 for i in value:
-                    if olof.tools.validation.isEmail(i) and Alert.Level.Info <= value[i] <= Alert.Level.Fire:
-                        d[i] = value[i]
+                    if type(i) is tuple and len(i) == 2 and type(i[0]) is str and type(i[1]) is dict:
+                        nd = {}
+                        d.append((i[0], nd))
+                        for a in i[1]:
+                            if Alert.Level.Info <= i[1][a] <= Alert.Level.Fire:
+                                try:
+                                    nd[olof.tools.validation.isEmail(a)] = i[1][a]
+                                except olof.tools.validation.ValidationError:
+                                    pass
             return d
 
         def validateEncryption(value):
@@ -361,10 +379,14 @@ class Plugin(olof.core.Plugin):
         options.append(o)
 
         o = olof.configuration.Option('recipients')
-        o.setDescription("Dictionary containing e-mailaddresses and Alert.Level's of recipients of e-mailalerts. " + \
-            "The e-mailaddresses are stored as the keys with for each the associated Alert.Level as value.")
+        o.setDescription("List containing e-mailaddresses of recipients of e-mailalerts. The list should contain " + \
+            "tuples mapping a regex string to a dictionary. The regex string is matched against the project name " + \
+            "of the originating scanner (or 'Server' in case of a server alert). The dictionary should map " + \
+            "e-mailaddresses to an Alert.Level. The recipient list is processed from start to end, matching " + \
+            "regexes sequentially. The processing continues when a match is found, but when the same e-mailaddress " + \
+            "is listed multiple times, the level of the first match is used.")
         o.setValidation(validateRecipients)
-        o.addValue(olof.configuration.OptionValue({}, default=True))
+        o.addValue(olof.configuration.OptionValue([], default=True))
         options.append(o)
 
         return options
