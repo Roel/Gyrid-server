@@ -50,6 +50,8 @@ class Logger(object):
         @param   timestamp (int)   The timestamp to convert.
         @return  (str)             The converted timestamp.
         """
+        if timestamp == None:
+            return None
         return time.strftime('%Y%m%d-%H%M%S-%Z', time.localtime(timestamp))
 
 class Scanner(Logger):
@@ -63,7 +65,7 @@ class Scanner(Logger):
         """
         Logger.__init__(self, plugin, hostname)
 
-        self.logFiles = ['messages', 'connections']
+        self.logFiles = ['messages', 'connections', 'locations']
         self.logs = dict(zip(self.logFiles, [open('/'.join([
             self.logDir, '%s-%s.log' % (self.hostname, i)]),
             'a') for i in self.logFiles]))
@@ -105,6 +107,27 @@ class Scanner(Logger):
         self.logs['connections'].write(','.join([str(i) for i in [
             self.formatTimestamp(timestamp), host, port, action]]) + '\n')
         self.logs['connections'].flush()
+
+    def logLocation(self, module, location):
+        """
+        Write the given information to the locations log.
+
+        @param   module (str)                                    Either 'scanner' or 'sensor', depending on the type of
+                                                                   locationUpdate.
+        @param   location (olof.datatypes.Location/o.d.Sensor)   Location or Sensor object with the new information.
+        """
+        if module == 'scanner':
+            self.logs['locations'].write(','.join([str(i) for i in [
+                self.formatTimestamp(int(time.time())), location.name, location.description, location.lat,
+                location.lon]]) + '\n')
+            self.logs['locations'].flush()
+
+        elif module == 'sensor':
+            self.logs['locations'].write(','.join([str(i) for i in [
+                self.formatTimestamp(int(time.time())), location.mac,
+                self.formatTimestamp(location.start),
+                self.formatTimestamp(location.end), location.lat, location.lon]]) + '\n')
+            self.logs['locations'].flush()
 
 class ScanSetup(Logger):
     """
@@ -161,6 +184,7 @@ class Plugin(olof.core.Plugin):
         olof.core.Plugin.__init__(self, server, filename)
 
         self.scanSetups = {}
+        self.projectList = {}
 
     def unload(self, shutdown=False):
         """
@@ -176,10 +200,13 @@ class Plugin(olof.core.Plugin):
 
         @param    hostname (str)   The hostname to check.
         @return   (str)            The name of the project the scanner with the given hostname belongs to.
-                                     'No-project' when the scanner is not attached to a project.
+                                     None when the scanner is not attached to a project.
         """
-        project = self.server.dataprovider.getProjectName(hostname)
-        return project if project != None else 'No-project'
+        if hostname in self.projectList:
+            return self.projectList[hostname]
+        if 'dataprovider' in self.server.__dict__:
+            project = self.server.dataprovider.getProjectName(hostname)
+        return None
 
     def getScanSetup(self, hostname, sensorMac):
         """
@@ -187,9 +214,12 @@ class Plugin(olof.core.Plugin):
 
         @param    hostname (str)    The hostname of the scanner.
         @param    sensorMac (str)   The MAC-address of the Bluetooth sensor.
-        @return   (ScanSetup)       The corresponding ScanSetup.
+        @return   (ScanSetup)       The corresponding ScanSetup. None if the hostname is not attached to a project.
         """
         project = self.getProject(hostname)
+        if project == None:
+            return None
+
         if not (project, hostname, sensorMac) in self.scanSetups:
             ss = ScanSetup(self, hostname, sensorMac)
             self.scanSetups[(project, hostname, sensorMac)] = ss
@@ -202,9 +232,12 @@ class Plugin(olof.core.Plugin):
         Get the Scanner for the given hostname. Create a new one when none available.
 
         @param    hostname (str)   The hostname of the scanner.
-        @return   (Scanner)        The corresponding Scanner.
+        @return   (Scanner)        The corresponding Scanner. None if the hostname is not attached to a project.
         """
         project = self.getProject(hostname)
+        if project == None:
+            return None
+
         if not (project, hostname, None) in self.scanSetups:
             sc = Scanner(self, hostname)
             self.scanSetups[(project, hostname, None)] = sc
@@ -217,7 +250,8 @@ class Plugin(olof.core.Plugin):
         Pass the information to the corresponding Scanner to be saved to the connection log.
         """
         sc = self.getScanner(hostname)
-        sc.logConnection(time.time(), ip, port, 'made')
+        if sc:
+            sc.logConnection(time.time(), ip, port, 'made')
 
     def connectionLost(self, hostname, ip, port):
         """
@@ -225,7 +259,8 @@ class Plugin(olof.core.Plugin):
         """
         sc = self.getScanner(hostname)
         try:
-            sc.logConnection(time.time(), ip, port, 'lost')
+            if sc:
+                sc.logConnection(time.time(), ip, port, 'lost')
         except ValueError:
             pass
 
@@ -234,18 +269,34 @@ class Plugin(olof.core.Plugin):
         Pass the information to the corresponding Scanner to be saved to the info log.
         """
         sc = self.getScanner(hostname)
-        sc.logInfo(timestamp, info)
+        if sc:
+            sc.logInfo(timestamp, info)
 
     def dataFeedCell(self, hostname, timestamp, sensorMac, mac, deviceclass, move):
         """
         Pass the information to the corresponding ScanSetup to be saved to the cell-data log.
         """
         ss = self.getScanSetup(hostname, sensorMac)
-        ss.logCell(timestamp, mac, deviceclass, move)
+        if ss:
+            ss.logCell(timestamp, mac, deviceclass, move)
 
     def dataFeedRssi(self, hostname, timestamp, sensorMac, mac, rssi):
         """
         Pass the information to the corresponding ScanSetup to be saved to the RSSI-data log.
         """
         ss = self.getScanSetup(hostname, sensorMac)
-        ss.logRssi(timestamp, mac, rssi)
+        if ss:
+            ss.logRssi(timestamp, mac, rssi)
+
+    def locationUpdate(self, hostname, module, obj):
+        """
+        Pass the information to the corresponding Scanner to be saved in the locations log.
+        """
+        if module == 'scanner':
+            self.projectList[hostname] = obj.project.name
+        elif module == 'sensor':
+            self.projectList[hostname] = obj.location.project.name
+
+        sc = self.getScanner(hostname)
+        if sc:
+            sc.logLocation(module, obj)
