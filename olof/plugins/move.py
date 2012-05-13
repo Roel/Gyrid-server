@@ -101,13 +101,13 @@ class Connection(RESTConnection):
 
         if not sensor in self.locations:
             self.locations[sensor] = [[(timestamp, coordinates, description), False]]
-            self.logger.logInfo("move: Adding location for %s at %s: %s (%s)" % (sensor, timestamp, description,
+            self.plugin.logger.logInfo("move: Adding location for %s at %s: %s (%s)" % (sensor, timestamp, description,
                 coordinates))
         else:
             if not (timestamp, coordinates, description) in [i[0] for i in self.locations[sensor]]:
                 self.locations[sensor].append([(timestamp, coordinates, description), False])
-                self.logger.logInfo("move: Adding location for %s at %s: %s (%s)" % (sensor, timestamp, description,
-                    coordinates))
+                self.plugin.logger.logInfo("move: Adding location for %s at %s: %s (%s)" % (sensor, timestamp,
+                    description, coordinates))
 
     def postLocations(self):
         """
