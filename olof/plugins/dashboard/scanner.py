@@ -425,8 +425,12 @@ class Scanner(object):
                 return ''
 
         def renderDetections():
-            detc = [self.lag[i][1] for i in sorted(self.lag.keys()) if i <= 15]
-            udetc = [self.lag[i][2] for i in sorted(self.lag.keys()) if i <= 15]
+            try:
+                detc = [self.lag[i][1] for i in sorted(self.lag.keys()) if i <= 15]
+                udetc = [self.lag[i][2] for i in sorted(self.lag.keys()) if i <= 15]
+            except IndexError:
+                detc = udetc = []
+
             if len([i for i in detc if i > 0]) > 0:
                 html = '<div class="block_data"><img alt="" src="/dashboard/static/icons/users.png">Detections'
                 html += '<span class="block_data_attr"><b>recently received</b> ' + \
