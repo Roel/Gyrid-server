@@ -217,12 +217,15 @@ class ContentResource(resource.Resource):
             scanner_status[ScannerStatus.Ugly] > 0):
             html += '<div class="block_data"><img alt="" src="/dashboard/static/icons/traffic-light-single.png">Scanner status'
             html += '<span class="block_data_attr"><b>total</b> %s</span>' % formatNumber(len(project.locations))
-            html += '<span class="block_data_attr"><b>online</b> %s – %i%%</span>' % (formatNumber(scanner_status[
-                ScannerStatus.Good]), scanner_status[ScannerStatus.Good]*100/len(project.locations))
-            html += '<span class="block_data_attr"><b>offline</b> %s – %i%%</span>' % (formatNumber(scanner_status[
-                ScannerStatus.Bad]), scanner_status[ScannerStatus.Bad]*100/len(project.locations))
-            html += '<span class="block_data_attr"><b>attention</b> %s – %i%%</span>' % (formatNumber(scanner_status[
-                ScannerStatus.Ugly]), scanner_status[ScannerStatus.Ugly]*100/len(project.locations))
+            if scanner_status[ScannerStatus.Good] > 0:
+                html += '<span class="block_data_attr"><b>online</b> %s – %i%%</span>' % (formatNumber(scanner_status[
+                    ScannerStatus.Good]), scanner_status[ScannerStatus.Good]*100/len(project.locations))
+            if scanner_status[ScannerStatus.Bad] > 0:
+                html += '<span class="block_data_attr"><b>offline</b> %s – %i%%</span>' % (formatNumber(scanner_status[
+                    ScannerStatus.Bad]), scanner_status[ScannerStatus.Bad]*100/len(project.locations))
+            if scanner_status[ScannerStatus.Ugly] > 0:
+                html += '<span class="block_data_attr"><b>attention</b> %s – %i%%</span>' % (formatNumber(scanner_status[
+                    ScannerStatus.Ugly]), scanner_status[ScannerStatus.Ugly]*100/len(project.locations))
             html += '</div>'
 
         html += '</div></div>'
