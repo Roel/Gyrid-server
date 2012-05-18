@@ -32,7 +32,3 @@ class Plugin(olof.core.Plugin):
         Print connection details to terminal.
         """
         self.logger.logInfo("Connection lost with %s (%s:%s)" % (hostname, ip, port))
-
-    def locationUpdate(self, hostname, projects, module, obj):
-        for pr in projects:
-            print "locationUpdate for %s (project %s), %s" % (hostname, str(pr), module)
