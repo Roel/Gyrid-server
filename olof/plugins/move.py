@@ -320,7 +320,7 @@ class Plugin(olof.core.Plugin):
 
         return r
 
-    def locationUpdate(self, hostname, module, obj):
+    def locationUpdate(self, hostname, projects, module, obj):
         """
         Handle location updates.
         """
@@ -343,7 +343,7 @@ class Plugin(olof.core.Plugin):
                 desc = ' - '.join([i for i in [obj.location.id, obj.location.description] if i != None])
                 self.conn.addLocation(obj.mac, timestamp, (obj.lon, obj.lat), desc)
 
-    def dataFeedRssi(self, hostname, timestamp, sensorMac, mac, rssi):
+    def dataFeedRssi(self, hostname, projects, timestamp, sensorMac, mac, rssi):
         """
         Add measurements when RSSI data is received.
         """

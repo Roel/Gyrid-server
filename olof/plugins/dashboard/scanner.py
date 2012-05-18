@@ -59,7 +59,7 @@ class Scanner(object):
         @param   hostname (str)              Hostname of the scanner.
         """
         self.hostname = hostname
-        self.project = None
+        self.projects = set()
         self.host_uptime = None
         self.sensors = {}
         self.sensor_count = None
@@ -320,7 +320,7 @@ class Scanner(object):
             d = threads.deferToThread(run, ip)
             d.addCallback(process)
 
-    def render(self):
+    def render(self, projectName=None):
         """
         Render this scanner to HTML.
 
@@ -335,10 +335,10 @@ class Scanner(object):
                     self.location_description != None else self.location
                 html += '<a href="%s">%s</a><img alt="" src="/dashboard/static/icons/marker.png">' % (
                     ("http://maps.google.be/maps?z=17&amp;q=loc:%s,%s(%s)" % (self.lat, self.lon, self.hostname)), loc)
-            if self.project == None:
+            if projectName == None:
                 goto = 'No-project'
             else:
-                goto = self.project.name.replace(' ','-')
+                goto = projectName.replace(' ','-')
             html += '</div><div style="clear: both;"></div><div class="block_content" onclick="goTo(\'#%s\')">' % goto
 
             if self.location_description:
@@ -460,14 +460,20 @@ class Scanner(object):
 
         sd = {ScannerStatus.Good: 'block_status_good', ScannerStatus.Bad: 'block_status_bad', ScannerStatus.Ugly:
             'block_status_ugly'}
-        d = {'h': self.hostname, 'status': sd[self.getStatus()]}
+        p = '-%s' % projectName.replace(' ', '-') if projectName != None else ''
+        d = {'h': self.hostname, 'hp': '%s%s' % (self.hostname, p), 'status': sd[self.getStatus()],
+            'other_projects': [i.name for i in self.projects if i.name != projectName]}
         bl = False
-        html = '<div id="%(h)s" class="block">' % d
+        html = '<div id="%(hp)s" class="block">' % d
 
         if bl:
             html += '<div class="blacklist_overlay">'
 
         html += '<div class="%(status)s"><div class="block_title"><h3>%(h)s</h3></div>' % d
+        if len(self.projects) > 1:
+            p = 'project' if len(d['other_projects']) == 1 else 'projects'
+            html += '<img alt="" title="This scanner is shared with %s %s."' % (p, ", ".join(d['other_projects'])) + \
+                'src="/dashboard/static/icons/union.png">'
         html += renderLocation()
 
         if len(self.connections) >= 1:
@@ -490,14 +496,15 @@ class Scanner(object):
             html += '</div>'
         return html
 
-    def renderNavigation(self):
+    def renderNavigation(self, projectName=None):
         """
         Render the navition block for this scanner to HTML.
 
         @return   (str)   HTML representation of the navigation block for this scanner.
         """
         bl = False
-        html = '<div class="navigation_item" onclick="goTo(\'#%s\')">' % self.hostname
+        p = '-%s' % projectName.replace(' ', '-') if projectName != None else ''
+        html = '<div class="navigation_item" onclick="goTo(\'#%s%s\')">' % (self.hostname, p)
 
         if bl:
             html += '<div class="blacklist_overlay">'

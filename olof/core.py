@@ -81,41 +81,45 @@ class Plugin(object):
         if 'config' in self.__dict__:
             self.config.unload()
 
-    def uptime(self, hostname, hostUptime, gyridUptime):
+    def uptime(self, hostname, projects, hostUptime, gyridUptime):
         """
         Called when new uptime information is received from the scanner.
 
         @param   hostname (str)      The hostname of the scanner.
+        @param   projects (set)      Projectnames of the scanner. Singleton None when projectless.
         @param   hostUptime (int)    The timestamp since when the scanner is last booted up, in UNIX time.
         @param   gyridUptime (int)   The timestamp since when the Gyrid daemon in running, in UNIX time.
         """
         pass
 
-    def connectionMade(self, hostname, ip, port):
+    def connectionMade(self, hostname, projects, ip, port):
         """
         Called when a new connection is made with a scanner.
 
         @param   hostname (str)   The hostname of the connected scanner.
+        @param   projects (set)   Projectnames of the scanner. Singleton None when projectless.
         @param   ip (str)         The IP-address of the connected scanner.
         @param   port (int)       The TCP port from which the scanner is connected.
         """
         pass
 
-    def connectionLost(self, hostname, ip, port):
+    def connectionLost(self, hostname, projects, ip, port):
         """
         Called when a connection to a scanner is lost.
 
         @param   hostname (str)  The hostname of the scanner that lost a connection.
+        @param   projects (set)  Projectnames of the scanner. Singleton None when projectless.
         @param   ip (str)        The IP-address the scanner was connected from.
         @param   port (int)      The TCP port the scanner was connected from.
         """
         pass
 
-    def locationUpdate(self, hostname, module, obj):
+    def locationUpdate(self, hostname, projects, module, obj):
         """
         Called when a new or updated Location is received from the data provider.
 
         @param   hostname (str)   The hostname of the scanner.
+        @param   projects (set)   Projectnames of the scanner. Singleton None when projectless.
         @param   module (str)     The module of the new or updated location. Currently implemented:
                                     "scanner": A new or updated location for a scanner.
                                     "sensor": A new or updated location for a sensor.
@@ -123,11 +127,12 @@ class Plugin(object):
         """
         pass
 
-    def stateFeed(self, hostname, timestamp, sensorMac, info):
+    def stateFeed(self, hostname, projects, timestamp, sensorMac, info):
         """
         Called when new structured status information is received for a specific sensor.
 
         @param   hostname (str)      The hostname of the scanner.
+        @param   projects (set)      Projectnames of the scanner. Singleton None when projectless.
         @param   timestamp (float)   The timestamp of the status update, in UNIX time.
         @param   sensorMac (str)     The MAC-address of the respective Bluetooth sensor.
         @param   info (str)          The status info. Currently implemented:
@@ -137,11 +142,12 @@ class Plugin(object):
         """
         pass
 
-    def sysStateFeed(self, hostname, module, info):
+    def sysStateFeed(self, hostname, projects, module, info):
         """
         Called when new structured general status information is received.
 
         @param   hostname (str)   The hostname of the scanner.
+        @param   projects (set)   Projectnames of the scanner. Singleton None when projectless.
         @param   module (str)     The module the status info is valid for. Currently implemented:
                                     "gyrid": Status info from the Gyrid daemon.
         @param   info (str)       The status info. Currently implemented:
@@ -150,22 +156,24 @@ class Plugin(object):
         """
         pass
 
-    def infoFeed(self, hostname, timestamp, info):
+    def infoFeed(self, hostname, projects, timestamp, info):
         """
         Called when a textual information message is received.
 
         @param   hostname (str)      The hostname of the scanner.
+        @param   projects (set)      Projectnames of the scanner. Singleton None when projectless.
         @param   timestamp (float)   The timestamp of the info, in UNIX time.
         @param   info (str)          The info that was received.
         """
         pass
 
-    def dataFeedCell(self, hostname, timestamp, sensorMac, mac, deviceclass,
+    def dataFeedCell(self, hostname, projects, timestamp, sensorMac, mac, deviceclass,
             move):
         """
         Called when new cell data is received.
 
         @param   hostname (str)      The hostname of the scanner that detected the device.
+        @param   projects (set)      Projectnames of the scanner. Singleton None when projectless.
         @param   timestamp (float)   The timestamp at which the device was first or last detected, depending on the
                                        move. In UNIX time.
         @param   sensorMac (str)    The MAC-address of the Bluetooth sensor that discovered the device. Representation
@@ -178,11 +186,12 @@ class Plugin(object):
         """
         pass
 
-    def dataFeedRssi(self, hostname, timestamp, sensorMac, mac, rssi):
+    def dataFeedRssi(self, hostname, projects, timestamp, sensorMac, mac, rssi):
         """
         Called when new RSSI data is received.
 
         @param   hostname (str)      The hostname of the scanner that detected the device.
+        @param   projects (set)      Projectnames of the scanner. Singleton None when projectless.
         @param   timestamp (float)   The timestamp at which the device was detected. In UNIX time.
         @param   sensorMac (str)     The MAC-address of the Bluetooth sensor that discovered the device. Representation
                                        without colons, f.ex. 001122334455

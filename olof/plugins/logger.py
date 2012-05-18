@@ -19,7 +19,7 @@ class Logger(object):
     Base logger superclass. Serves as common superclass for both Scanner and ScanSetup classes.
     Not intended to be instanciated directly.
     """
-    def __init__(self, plugin, hostname):
+    def __init__(self, plugin, hostname, projectname):
         """
         Initialisation. Sets the base logging directory and creates the full path if it doesn't exist yet.
 
@@ -29,7 +29,7 @@ class Logger(object):
         self.plugin = plugin
         self.hostname = hostname
         self.logBase = 'olof/plugins/logger'
-        self.project = self.plugin.getProject(self.hostname)
+        self.project = projectname if projectname != None else 'No-project'
         self.logDir = '/'.join([self.logBase, self.project, self.hostname])
         self.logs = {}
 
@@ -57,11 +57,11 @@ class Scanner(Logger):
     Class that represents a logger for a specific scanner, logging only scanner-wide data, such as informational
     messages and connection data.
     """
-    def __init__(self, plugin, hostname):
+    def __init__(self, plugin, hostname, projectname):
         """
         Initialisation.
         """
-        Logger.__init__(self, plugin, hostname)
+        Logger.__init__(self, plugin, hostname, projectname)
 
         self.logFiles = ['messages', 'connections']
         self.logs = dict(zip(self.logFiles, [open('/'.join([
@@ -111,13 +111,13 @@ class ScanSetup(Logger):
     Class that represents a logger for a scanner-setup, i.e. a combination of a scanner and a Bluetooth sensor.
     This logger logs all Bluetooth data, such as cell-based and RSSI data.
     """
-    def __init__(self, plugin, hostname, sensorMac):
+    def __init__(self, plugin, hostname, projectname, sensorMac):
         """
         Initialisation.
 
         @param   sensorMac (str)   The MAC-address of the Bluetooth sensor.
         """
-        Logger.__init__(self, plugin, hostname)
+        Logger.__init__(self, plugin, hostname, projectname)
         self.sensor = sensorMac
 
         self.logFiles = ['scan', 'rssi']
@@ -170,18 +170,7 @@ class Plugin(olof.core.Plugin):
         for ss in self.scanSetups.values():
             ss.unload()
 
-    def getProject(self, hostname):
-        """
-        Get the name of the project associated with the given hostname.
-
-        @param    hostname (str)   The hostname to check.
-        @return   (str)            The name of the project the scanner with the given hostname belongs to.
-                                     'No-project' when the scanner is not attached to a project.
-        """
-        project = self.server.dataprovider.getProjectName(hostname)
-        return project if project != None else 'No-project'
-
-    def getScanSetup(self, hostname, sensorMac):
+    def getScanSetup(self, hostname, projectname, sensorMac):
         """
         Get the ScanSetup for the given hostname and sensor. Create a new one when none available.
 
@@ -189,63 +178,66 @@ class Plugin(olof.core.Plugin):
         @param    sensorMac (str)   The MAC-address of the Bluetooth sensor.
         @return   (ScanSetup)       The corresponding ScanSetup.
         """
-        project = self.getProject(hostname)
-        if not (project, hostname, sensorMac) in self.scanSetups:
-            ss = ScanSetup(self, hostname, sensorMac)
-            self.scanSetups[(project, hostname, sensorMac)] = ss
+        if not (projectname, hostname, sensorMac) in self.scanSetups:
+            ss = ScanSetup(self, hostname, projectname, sensorMac)
+            self.scanSetups[(projectname, hostname, sensorMac)] = ss
         else:
-            ss = self.scanSetups[(project, hostname, sensorMac)]
+            ss = self.scanSetups[(projectname, hostname, sensorMac)]
         return ss
 
-    def getScanner(self, hostname):
+    def getScanner(self, hostname, projectname):
         """
         Get the Scanner for the given hostname. Create a new one when none available.
 
         @param    hostname (str)   The hostname of the scanner.
         @return   (Scanner)        The corresponding Scanner.
         """
-        project = self.getProject(hostname)
-        if not (project, hostname, None) in self.scanSetups:
-            sc = Scanner(self, hostname)
-            self.scanSetups[(project, hostname, None)] = sc
+        if not (projectname, hostname, None) in self.scanSetups:
+            sc = Scanner(self, hostname, projectname)
+            self.scanSetups[(projectname, hostname, None)] = sc
         else:
-            sc = self.scanSetups[(project, hostname, None)]
+            sc = self.scanSetups[(projectname, hostname, None)]
         return sc
 
-    def connectionMade(self, hostname, ip, port):
+    def connectionMade(self, hostname, projects, ip, port):
         """
         Pass the information to the corresponding Scanner to be saved to the connection log.
         """
-        sc = self.getScanner(hostname)
-        sc.logConnection(time.time(), ip, port, 'made')
+        for project in projects:
+            sc = self.getScanner(hostname, project)
+            sc.logConnection(time.time(), ip, port, 'made')
 
-    def connectionLost(self, hostname, ip, port):
+    def connectionLost(self, hostname, projects, ip, port):
         """
         Pass the information to the corresponding Scanner to be saved to the connection log.
         """
-        sc = self.getScanner(hostname)
-        try:
-            sc.logConnection(time.time(), ip, port, 'lost')
-        except ValueError:
-            pass
+        for project in projects:
+            sc = self.getScanner(hostname, project)
+            try:
+                sc.logConnection(time.time(), ip, port, 'lost')
+            except ValueError:
+                pass
 
-    def infoFeed(self, hostname, timestamp, info):
+    def infoFeed(self, hostname, projects, timestamp, info):
         """
         Pass the information to the corresponding Scanner to be saved to the info log.
         """
-        sc = self.getScanner(hostname)
-        sc.logInfo(timestamp, info)
+        for project in projects:
+            sc = self.getScanner(hostname, project)
+            sc.logInfo(timestamp, info)
 
-    def dataFeedCell(self, hostname, timestamp, sensorMac, mac, deviceclass, move):
+    def dataFeedCell(self, hostname, projects, timestamp, sensorMac, mac, deviceclass, move):
         """
         Pass the information to the corresponding ScanSetup to be saved to the cell-data log.
         """
-        ss = self.getScanSetup(hostname, sensorMac)
-        ss.logCell(timestamp, mac, deviceclass, move)
+        for project in projects:
+            ss = self.getScanSetup(hostname, project, sensorMac)
+            ss.logCell(timestamp, mac, deviceclass, move)
 
-    def dataFeedRssi(self, hostname, timestamp, sensorMac, mac, rssi):
+    def dataFeedRssi(self, hostname, projects, timestamp, sensorMac, mac, rssi):
         """
         Pass the information to the corresponding ScanSetup to be saved to the RSSI-data log.
         """
-        ss = self.getScanSetup(hostname, sensorMac)
-        ss.logRssi(timestamp, mac, rssi)
+        for project in projects:
+            ss = self.getScanSetup(hostname, project, sensorMac)
+            ss.logRssi(timestamp, mac, rssi)

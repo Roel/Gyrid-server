@@ -100,37 +100,43 @@ class DataProvider(object):
         self.new_projects = value if value != None else self.dataconfig.getValue('projects')
         self.projects = copy.deepcopy(self.new_projects)
 
-    def getProjectName(self, hostname):
-        """
-        Return the projectname for a given hostname.
-
-        @param   hostname (str)   The hostname to check.
-        @return  (str)            The name of the project the scanner with the given hostname belongs to. None when the
-                                    scanner is not attached to a project.
-        """
-        if hostname in self.locations:
-            return self.locations[hostname].project.name
-        else:
-            return None
-
-    def isActive(self, hostname, plugin, timestamp=None):
+    def isActive(self, hostname, plugin, projectname=None, timestamp=None):
         """
         Check if a plugin is active for a hostname at a given timestamp.
 
-        @param   hostname (str)    The hostname to check.
-        @param   plugin (str)      The name of the plugin to check.
-        @param   timestamp (int)   The timestamp to check. Use the current time when None.
-        @return  (bool)            True when the plugin is active, else False.
+        @param   hostname (str)      The hostname to check.
+        @param   plugin (str)        The name of the plugin to check.
+        @param   projectname (str)   The name of the project to check.
+        @param   timestamp (int)     The timestamp to check. Use the current time when None.
+        @return  (bool)              True when the plugin is active, else False.
         """
         if timestamp == None:
             timestamp = int(time.time())
 
         if plugin in olof.datatypes.ENABLED_PLUGINS:
             return True
-        elif (hostname in self.locations) and (self.locations[hostname].isActive(plugin, timestamp)):
+        elif (projectname != None) and (hostname in self.locations) and \
+            (self.locations[hostname].isActive(self.projects[projectname], plugin, timestamp)):
             return True
         else:
             return False
+
+    def getActivePlugins(self, hostname, timestamp=None):
+        """
+        Get the active plugins for the given hostname at the given timestamp.
+
+        @param    hostname (str)    The hostname to check.
+        @param    timestamp (int)   The UNIX timestamp to check.
+        @return   (dict)            A dictionary mapping plugins to projects.
+        """
+        if hostname in self.locations:
+            return self.locations[hostname].getActivePlugins(timestamp=timestamp)
+        else:
+            activePlugins = {}
+            for plugin in self.server.pluginmgr.getPlugins():
+                if self.isActive(hostname, plugin, timestamp=timestamp):
+                    activePlugins[plugin] = set([None])
+            return activePlugins
 
     def parseLocations(self, locations):
         """
@@ -145,15 +151,14 @@ class DataProvider(object):
             else:
                 # New scanner
                 scannerobj = locations[scanner]
-                for p in self.server.pluginmgr.getPlugins():
-                    if scannerobj.isActive(p.filename):
-                        p.locationUpdate(scannerobj.id, 'scanner', scannerobj)
+                activePlugins = scannerobj.getActivePlugins()
+                for plugin in activePlugins:
+                    plugin.locationUpdate(scannerobj.id, activePlugins[plugin], 'scanner', scannerobj)
 
                 # Push sensor updates
                 for sensor in scannerobj.sensors.values():
-                    for p in self.server.pluginmgr.getPlugins():
-                        if scannerobj.isActive(p.filename):
-                            p.locationUpdate(scannerobj.id, 'sensor', sensor)
+                    for plugin in activePlugins:
+                        plugin.locationUpdate(scannerobj.id, activePlugins[plugin], 'sensor', sensor)
 
         for scanner in self.locations:
             if scanner not in locations:

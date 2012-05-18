@@ -39,7 +39,7 @@ class Location(object):
         self.lat = lat
         self.lon = lon
 
-        self.project = None
+        self.projects = set()
         self.sensors = {}
 
     def addSensor(self, sensor):
@@ -71,24 +71,54 @@ class Location(object):
             for i in sensors:
                 self.addSensor(i)
 
-    def isActive(self, plugin, timestamp=None):
+    def isActive(self, plugin, project=None, timestamp=None):
         """
         Check if the given plugin is active for this location at the given timestamp.
 
-        @param   plugin (str)       The name of the plugin.
-        @param   timestamp (float)  The timestamp to check in UNIX time.
-        @return  (bool)             True if the plugin is active at the given time, else False.
+        @param   plugin (str)        The name of the plugin.
+        @param   project (Project)   The project to check.
+        @param   timestamp (float)   The timestamp to check in UNIX time.
+        @return  (bool)              True if the plugin is active at the given time, else False.
         """
         if timestamp == None:
             timestamp = int(time.time())
         if plugin in ENABLED_PLUGINS:
             return True
-        elif self.project == None:
-            return False
-        elif self.project.isActive(timestamp) and (plugin not in self.project.disabled_plugins):
+        elif project != None and project.isActive(timestamp) and (plugin not in project.disabled_plugins):
             return True
         else:
             return False
+
+    def getActivePlugins(self, location=None, timestamp=None):
+        """
+        Get a set of active plugins for the location at the given timestamp.
+
+        @param    location (Location)   The location to check. Use this location when None.
+        @param    timestamp (int)       The UNIX timestamp to check. Use current time when None.
+        @return   set(tuple)            A set of tuples mapping active projects to plugins.
+                                          Project can be None for plugins that are active without project.
+        """
+        ap = {}
+        if location == None:
+            location = self
+        if len(location.projects) == 0:
+            for p in server.pluginmgr.getPlugins():
+                if p.filename in ENABLED_PLUGINS:
+                    if not p in ap:
+                        ap[p] = set()
+                    ap[p].add(None)
+        else:
+            for pr in location.projects:
+                for p in server.pluginmgr.getPlugins():
+                    if p.filename in ENABLED_PLUGINS:
+                        if not p in ap:
+                            ap[p] = set()
+                        ap[p].add(pr.name)
+                    elif location.isActive(p.filename, pr, timestamp):
+                        if not p in ap:
+                            ap[p] = set()
+                        ap[p].add(pr.name)
+        return ap
 
     def compare(self, location):
         """
@@ -97,20 +127,21 @@ class Location(object):
 
         @param   location (Location)   The Location object to compare.
         """
-        if False in [self.__dict__[i] == location.__dict__[i] for i in [
-            'name', 'description', 'lat', 'lon']]:
+        c = [self.__dict__[i] == location.__dict__[i] for i in ['name', 'description', 'lat', 'lon']]
+        c.append(set([p.name for p in self.projects]) == set([p.name for p in location.projects]))
+
+        if False in c:
             # Something changed in the scanner details
 
             # Push scanner update
-            for p in server.pluginmgr.getPlugins():
-                if location.isActive(p.filename):
-                    p.locationUpdate(location.id, 'scanner', location)
+            activePlugins = self.getActivePlugins(location)
+            for plugin in activePlugins:
+                plugin.locationUpdate(location.id, activePlugins[plugin], 'scanner', location)
 
             # Push sensor updates
             for sensor in location.sensors.values():
-                for p in server.pluginmgr.getPlugins():
-                    if location.isActive(p.filename):
-                        p.locationUpdate(location.id, 'sensor', sensor)
+                for plugin in activePlugins:
+                    plugin.locationUpdate(location.id, activePlugins[plugin], 'sensor', sensor)
 
         else:
             # Scanner details identical, compare sensors
@@ -132,15 +163,14 @@ class Location(object):
 
             if update:
                 # Push scanner update
-                for p in server.pluginmgr.getPlugins():
-                    if location.isActive(p.filename):
-                        p.locationUpdate(location.id, 'scanner', location)
+                activePlugins = self.getActivePlugins(location)
+                for plugin in activePlugins:
+                    plugin.locationUpdate(location.id, activePlugins[plugin], 'scanner', location)
 
                 # Push sensor updates
                 for sensor in location.sensors.values():
-                    for p in server.pluginmgr.getPlugins():
-                        if location.isActive(p.filename):
-                            p.locationUpdate(location.id, 'sensor', sensor)
+                    for plugin in activePlugins:
+                        plugin.locationUpdate(location.id, activePlugins[plugin], 'sensor', sensor)
 
 class Sensor(object):
     """
@@ -221,4 +251,4 @@ class Project(object):
         @param   location (Location)   The Location object to add.
         """
         self.locations[location.id] = location
-        location.project = self
+        location.projects.add(self)

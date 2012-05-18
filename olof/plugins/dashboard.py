@@ -232,11 +232,11 @@ class ContentResource(resource.Resource):
 
         html += '<div class="navigation_block">'
         for location in sorted(project.locations.keys()):
-            html += self.plugin.match(project.locations[location]).renderNavigation()
+            html += self.plugin.match(project.locations[location]).renderNavigation(project.name)
         html += '</div>'
 
         for location in sorted(project.locations.keys()):
-            html += self.plugin.match(project.locations[location]).render()
+            html += self.plugin.match(project.locations[location]).render(project.name)
 
         return html
 
@@ -290,7 +290,7 @@ class ContentResource(resource.Resource):
             del(self.plugin.scanners[i])
 
         # Projectless scanners
-        projectless_scanners = sorted([s for s in self.plugin.scanners if self.plugin.scanners[s].project == None])
+        projectless_scanners = sorted([s for s in self.plugin.scanners if len(self.plugin.scanners[s].projects) < 1])
 
         if len(projectless_scanners) > 0:
             html += '<div class="h2-outline" id="No-project"><h2 onclick="goTo(\'#server_block\')">No project</h2>'
@@ -495,9 +495,9 @@ class Plugin(olof.core.Plugin):
 
         s = self.getScanner(location.id)
         if s != None:
-            if False in [compare(s.__dict__[i], location.__dict__[i]) for i in ['project', 'lat', 'lon']]:
+            if False in [compare(s.__dict__[i], location.__dict__[i]) for i in ['lat', 'lon']]:
                 s.sensors = {}
-            s.project = location.project
+            s.projects = location.projects
             s.lon = location.lon
             s.lat = location.lat
             s.location = location.name
@@ -519,9 +519,9 @@ class Plugin(olof.core.Plugin):
                     found_location = True
                     break
             if not found_location:
-                if s.project != None:
+                if len(s.projects) > 0:
                     s.sensors = {}
-                    s.project = None
+                    s.projects = set()
                     s.sensor_count = None
 
     def checkResources(self):
@@ -612,7 +612,7 @@ class Plugin(olof.core.Plugin):
             sens = s.sensors[mac]
         return sens
 
-    def uptime(self, hostname, hostUptime, gyridUptime):
+    def uptime(self, hostname, projects, hostUptime, gyridUptime):
         """
         Save the received uptime information in the corresponding Scanner instance.
         """
@@ -621,7 +621,7 @@ class Plugin(olof.core.Plugin):
         s.gyrid_uptime = int(float(gyridUptime))
         s.gyrid_connected = True
 
-    def connectionMade(self, hostname, ip, port):
+    def connectionMade(self, hostname, projects, ip, port):
         """
         Save the connection information in the corresponding Scanner instance.
         """
@@ -634,7 +634,7 @@ class Plugin(olof.core.Plugin):
         s.gyrid_connected = True
         s.lastConnected = int(time.time())
 
-    def connectionLost(self, hostname, ip, port):
+    def connectionLost(self, hostname, projects, ip, port):
         """
         Save the connection information in the corresponding Scanner instance.
         """
@@ -646,7 +646,7 @@ class Plugin(olof.core.Plugin):
         for sens in s.sensors.values():
             sens.connected = False
 
-    def sysStateFeed(self, hostname, module, info):
+    def sysStateFeed(self, hostname, projects, module, info):
         """
         Save the Gyrid connection information in the corresponding Scanner instance.
         """
@@ -658,7 +658,7 @@ class Plugin(olof.core.Plugin):
                 s.gyrid_connected = False
                 s.gyrid_disconnect_time = int(time.time())
 
-    def stateFeed(self, hostname, timestamp, sensorMac, info):
+    def stateFeed(self, hostname, projects, timestamp, sensorMac, info):
         """
         Save the Bluetooth sensor informatio in the corresponding Sensor instance.
         """
@@ -673,7 +673,7 @@ class Plugin(olof.core.Plugin):
             sens.connected = False
             sens.disconnect_time = int(float(timestamp))
 
-    def dataFeedRssi(self, hostname, timestamp, sensorMac, mac, rssi):
+    def dataFeedRssi(self, hostname, projects, timestamp, sensorMac, mac, rssi):
         """
         Save detection information in the corresponding Sensor instance.
         """

@@ -90,9 +90,10 @@ class GyridServerProtocol(LineReceiver):
             except:
                 return
             else:
-                for p in self.factory.server.pluginmgr.getPlugins():
-                    if dp.isActive(self.hostname, p.filename):
-                        p.connectionLost(**args)
+                ap = dp.getActivePlugins(self.hostname)
+                for plugin in ap:
+                    args['projects'] = ap[plugin]
+                    plugin.connectionLost(**args)
 
     def checksum(self, data):
         """
@@ -132,9 +133,10 @@ class GyridServerProtocol(LineReceiver):
                 except:
                     return
                 else:
-                    for p in self.factory.server.pluginmgr.getPlugins():
-                        if dp.isActive(self.hostname, p.filename):
-                            p.connectionMade(**args)
+                    ap = dp.getActivePlugins(self.hostname)
+                    for plugin in ap:
+                        args['projects'] = ap[plugin]
+                        plugin.connectionMade(**args)
 
                 for l in self.buffer:
                     if not 'hostname' in l:
@@ -149,9 +151,10 @@ class GyridServerProtocol(LineReceiver):
                     except:
                         return
                     else:
-                        for p in self.factory.server.pluginmgr.getPlugins():
-                            if dp.isActive(self.hostname, p.filename):
-                                p.uptime(**args)
+                        ap = dp.getActivePlugins(self.hostname)
+                        for plugin in ap:
+                            args['projects'] = ap[plugin]
+                            plugin.uptime(**args)
                 else:
                     self.buffer.append(line)
             elif ll[1] == 'gyrid':
@@ -163,9 +166,10 @@ class GyridServerProtocol(LineReceiver):
                     except:
                         return
                     else:
-                        for p in self.factory.server.pluginmgr.getPlugins():
-                            if dp.isActive(self.hostname, p.filename):
-                                p.sysStateFeed(**args)
+                        ap = dp.getActivePlugins(self.hostname)
+                        for plugin in ap:
+                            args['projects'] = ap[plugin]
+                            plugin.sysStateFeed(**args)
                 else:
                     self.buffer.append(line)
             elif len(ll) == 2 and ll[1] == 'keepalive':
@@ -187,9 +191,10 @@ class GyridServerProtocol(LineReceiver):
                     except:
                         return
                     else:
-                        for p in self.factory.server.pluginmgr.getPlugins():
-                            if dp.isActive(self.hostname, p.filename, args['timestamp']):
-                                p.stateFeed(**args)
+                        ap = dp.getActivePlugins(self.hostname, timestamp=args['timestamp'])
+                        for plugin in ap:
+                            args['projects'] = ap[plugin]
+                            plugin.stateFeed(**args)
                 elif len(ll) == 5:
                     try:
                         mac = str(ll[2])
@@ -208,9 +213,10 @@ class GyridServerProtocol(LineReceiver):
                         except:
                             return
                         else:
-                            for p in self.factory.server.pluginmgr.getPlugins():
-                                if dp.isActive(self.hostname, p.filename, args['timestamp']):
-                                    p.dataFeedCell(**args)
+                            ap = dp.getActivePlugins(self.hostname, timestamp=args['timestamp'])
+                            for plugin in ap:
+                                args['projects'] = ap[plugin]
+                                plugin.dataFeedCell(**args)
                 elif len(ll) == 4:
                     try:
                         args = {'hostname': str(self.hostname),
@@ -221,9 +227,10 @@ class GyridServerProtocol(LineReceiver):
                     except:
                         return
                     else:
-                        for p in self.factory.server.pluginmgr.getPlugins():
-                            if dp.isActive(self.hostname, p.filename, args['timestamp']):
-                                p.dataFeedRssi(**args)
+                        ap = dp.getActivePlugins(self.hostname, timestamp=args['timestamp'])
+                        for plugin in ap:
+                            args['projects'] = ap[plugin]
+                            plugin.dataFeedRssi(**args)
                 elif len(ll) == 3 and ll[0] == 'INFO':
                     try:
                         args = {'hostname': str(self.hostname),
@@ -232,9 +239,10 @@ class GyridServerProtocol(LineReceiver):
                     except:
                         return
                     else:
-                        for p in self.factory.server.pluginmgr.getPlugins():
-                            if dp.isActive(self.hostname, p.filename, args['timestamp']):
-                                p.infoFeed(**args)
+                        ap = dp.getActivePlugins(self.hostname, timestamp=args['timestamp'])
+                        for plugin in ap:
+                            args['projects'] = ap[plugin]
+                            plugin.infoFeed(**args)
 
 
 class GyridServerFactory(Factory):

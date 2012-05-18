@@ -21,14 +21,18 @@ class Plugin(olof.core.Plugin):
         """
         olof.core.Plugin.__init__(self, server, filename)
 
-    def connectionMade(self, hostname, ip, port):
+    def connectionMade(self, hostname, projects, ip, port):
         """
         Print connection details to terminal.
         """
         self.logger.logInfo("Connection made with %s (%s:%s)" % (hostname, ip, port))
 
-    def connectionLost(self, hostname, ip, port):
+    def connectionLost(self, hostname, projects, ip, port):
         """
         Print connection details to terminal.
         """
         self.logger.logInfo("Connection lost with %s (%s:%s)" % (hostname, ip, port))
+
+    def locationUpdate(self, hostname, projects, module, obj):
+        for pr in projects:
+            print "locationUpdate for %s (project %s), %s" % (hostname, str(pr), module)
