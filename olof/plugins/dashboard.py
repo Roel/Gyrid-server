@@ -90,9 +90,11 @@ class ContentResource(resource.Resource):
         html += '<div style="clear: both;"></div>'
         html += '<div class="block_content">'
 
+        plugins = [p for p in self.plugin.server.pluginmgr.getPlugins() if p.name != None]
+
         # Resources
-        if (len(self.plugin.load) > 0 and len([i for i in self.plugin.load[1:] if float(i) >= (
-            self.plugin.cpuCount*0.8)]) > 0) or int(self.plugin.memfree_mb) <= 256 or self.plugin.diskfree_mb <= 1000:
+        if len(plugins) < 1 or ((len(self.plugin.load) > 0 and len([i for i in self.plugin.load[1:] if float(i) >= (
+            self.plugin.cpuCount*0.8)]) > 0) or int(self.plugin.memfree_mb) <= 256 or self.plugin.diskfree_mb <= 2048):
             html += '<div class="block_data">'
             html += '<img alt="" src="/dashboard/static/icons/system-monitor.png">Resources'
             html += '<span class="block_data_attr"><b>load</b> ' + \
@@ -104,27 +106,26 @@ class ContentResource(resource.Resource):
             html += '</div>'
 
         # Plugins
-        for p in self.plugin.server.pluginmgr.getPlugins():
-            if p.name != None:
-                html += '<div class="block_data">'
-                st = p.getStatus()
-                if 'status' in st[0] and st[0]['status'] == 'error':
-                    html += '<img alt="" src="/dashboard/static/icons/puzzle-red.png">%s' % p.name
-                elif 'status' in st[0] and st[0]['status'] == 'disabled':
-                    html += '<img alt="" src="/dashboard/static/icons/puzzle-grey.png">%s' % p.name
-                else:
-                    html += '<img alt="" src="/dashboard/static/icons/puzzle.png">%s' % p.name
-                for i in st:
-                    if len(i) == 1 and 'id' in i:
-                        html += '<span class="block_data_attr">%s</span>' % i['id']
-                    elif len(i) > 1 and 'time' in i:
-                        html += '<span class="block_data_attr"><b>%s</b> %s</span>' % (i['id'], getRelativeTime(
-                            i['time'], wrapper=htmlSpanWrapper))
-                    elif len(i) > 1 and 'str' in i:
-                        html += '<span class="block_data_attr"><b>%s</b> %s</span>' % (i['id'], i['str'])
-                    elif len(i) > 1 and 'int' in i:
-                        html += '<span class="block_data_attr"><b>%s</b> %s</span>' % (i['id'], formatNumber(i['int']))
-                html += '</div>'
+        for p in plugins:
+            html += '<div class="block_data">'
+            st = p.getStatus()
+            if 'status' in st[0] and st[0]['status'] == 'error':
+                html += '<img alt="" src="/dashboard/static/icons/puzzle-red.png">%s' % p.name
+            elif 'status' in st[0] and st[0]['status'] == 'disabled':
+                html += '<img alt="" src="/dashboard/static/icons/puzzle-grey.png">%s' % p.name
+            else:
+                html += '<img alt="" src="/dashboard/static/icons/puzzle.png">%s' % p.name
+            for i in st:
+                if len(i) == 1 and 'id' in i:
+                    html += '<span class="block_data_attr">%s</span>' % i['id']
+                elif len(i) > 1 and 'time' in i:
+                    html += '<span class="block_data_attr"><b>%s</b> %s</span>' % (i['id'], getRelativeTime(
+                        i['time'], wrapper=htmlSpanWrapper))
+                elif len(i) > 1 and 'str' in i:
+                    html += '<span class="block_data_attr"><b>%s</b> %s</span>' % (i['id'], i['str'])
+                elif len(i) > 1 and 'int' in i:
+                    html += '<span class="block_data_attr"><b>%s</b> %s</span>' % (i['id'], formatNumber(i['int']))
+            html += '</div>'
 
         html += '</div></div>'
         return html
