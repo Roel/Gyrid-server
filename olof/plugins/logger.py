@@ -12,7 +12,9 @@ Plugin that handles on-disk logging of received scanner data.
 import os
 import time
 
+import olof.configuration
 import olof.core
+import olof.tools.validation
 
 class Logger(object):
     """
@@ -28,7 +30,7 @@ class Logger(object):
         """
         self.plugin = plugin
         self.hostname = hostname
-        self.logBase = 'olof/plugins/logger'
+        self.logBase = self.plugin.config.getValue('log_directory')
         self.project = projectname if projectname != None else 'No-project'
         self.logDir = '/'.join([self.logBase, self.project, self.hostname])
         self.logs = {}
@@ -160,6 +162,29 @@ class Plugin(olof.core.Plugin):
         """
         olof.core.Plugin.__init__(self, server, filename)
 
+        self.scanSetups = {}
+
+    def defineConfiguration(self):
+        """
+        Define the configuration options for this plugin.
+        """
+        def validatePath(value):
+            v = olof.tools.validation.parseString(value)
+            return v.rstrip().rstrip('/')
+
+        o = olof.configuration.Option('log_directory')
+        o.setDescription('Path of the directory where the data will be stored. This can be absolute or relative.')
+        o.addValue(olof.configuration.OptionValue('olof/plugins/logger', default=True))
+        o.setValidation(validatePath)
+        o.addCallback(self.clearScanSetups)
+        return [o]
+
+    def clearScanSetups(self, value=None):
+        """
+        Close and clear all saved scanSetups, they will be recreated when necessary.
+        """
+        for ss in self.scanSetups.values():
+            ss.unload()
         self.scanSetups = {}
 
     def unload(self, shutdown=False):

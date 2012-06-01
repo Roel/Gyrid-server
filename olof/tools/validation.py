@@ -43,6 +43,24 @@ def parseFloat(value):
     except:
         raise ValidationError()
 
+def parseString(value):
+    """
+    Parse the given value as a string.
+    """
+    try:
+        return str(value)
+    except:
+        raise ValidationError()
+
+def isString(value):
+    """
+    Test if the given value is of type str.
+    """
+    if type(value) is str:
+        return value
+    else:
+        raise ValidationError()
+
 def isEmail(value):
     """
     Test if the given value is a valid e-mailaddress.
