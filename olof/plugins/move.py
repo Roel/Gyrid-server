@@ -246,35 +246,48 @@ class Plugin(olof.core.Plugin):
         olof.core.Plugin.__init__(self, server, filename, "Move")
         self.buffer = []
         self.last_session_id = None
+        self.conn = None
 
         measureCount = {'last_upload': -1,
                         'uploads': 0,
                         'uploaded': 0,
                         'cached': 0}
 
-        measureCount = self.storage.loadObject('measureCount', measureCount)
-        measurements = self.storage.loadObject('measurements', {})
-        locations = self.storage.loadObject('locations', {})
+        self.measureCount = self.storage.loadObject('measureCount', measureCount)
+        self.measurements = self.storage.loadObject('measurements', {})
+        self.locations = self.storage.loadObject('locations', {})
 
+        self.setupConnection()
+
+    def setupConnection(self, value=None):
+        """
+        Setup the Move API REST connection.
+        """
         url = self.config.getValue('url')
         user = self.config.getValue('username')
         password = self.config.getValue('password')
 
-        self.conn = Connection(self, url, user, password, measurements, measureCount, locations)
+        if None not in [url, user, password]:
+            self.conn = Connection(self, url, user, password, self.measurements, self.measureCount, self.locations)
+        else:
+            self.conn = None
 
     def defineConfiguration(self):
         options = []
 
         o = olof.configuration.Option('url')
         o.setDescription('Base URL of the MOVE REST API.')
+        o.addCallback(self.setupConnection)
         options.append(o)
 
         o = olof.configuration.Option('username')
         o.setDescription('Username to use for logging in.')
+        o.addCallback(self.setupConnection)
         options.append(o)
 
         o = olof.configuration.Option('password')
         o.setDescription('Password to use for logging in.')
+        o.addCallback(self.setupConnection)
         options.append(o)
 
         o = olof.configuration.Option('upload_enabled')
@@ -290,15 +303,21 @@ class Plugin(olof.core.Plugin):
         Unload. Save cache to disk.
         """
         olof.core.Plugin.unload(self)
-        self.storage.storeObject(self.conn.measureCount, 'measureCount')
-        self.storage.storeObject(self.conn.measurements, 'measurements')
-        self.storage.storeObject(self.conn.locations, 'locations')
+        if self.conn != None:
+            self.storage.storeObject(self.conn.measureCount, 'measureCount')
+            self.storage.storeObject(self.conn.measurements, 'measurements')
+            self.storage.storeObject(self.conn.locations, 'locations')
 
     def getStatus(self):
         """
         Return the current status of the Move plugin and cache. For use in the status plugin.
         """
         r = []
+
+        if self.conn == None:
+            r.append({'status': 'error'})
+            r.append({'id': 'error', 'str': 'API details missing'})
+            return r
 
         if self.config.getValue('upload_enabled') == False:
             r.append({'status': 'disabled'})
@@ -324,6 +343,9 @@ class Plugin(olof.core.Plugin):
         """
         Handle location updates.
         """
+        if self.conn == None:
+            return
+
         if module == 'scanner':
             for sensor in obj.sensors.values():
                 if sensor.start != None:
@@ -347,5 +369,6 @@ class Plugin(olof.core.Plugin):
         """
         Add measurements when RSSI data is received.
         """
-        deviceclass = self.server.getDeviceclass(mac)
-        self.conn.addMeasurement(sensorMac, timestamp, mac, deviceclass, rssi)
+        if self.conn != None:
+            deviceclass = self.server.getDeviceclass(mac)
+            self.conn.addMeasurement(sensorMac, timestamp, mac, deviceclass, rssi)
