@@ -364,20 +364,20 @@ class Plugin(olof.core.Plugin):
         if module == 'scanner':
             for sensor in obj.sensors.values():
                 if sensor.start != None:
-                    desc = ' - '.join([i for i in [obj.id, obj.description] if i != None])
+                    desc = ' - '.join([i for i in [obj.name, obj.description] if i != None])
                     self.conn.addLocation(sensor.mac, sensor.start, (sensor.lon, sensor.lat), desc)
                 if sensor.end != None:
-                    desc = ' - '.join([i for i in [obj.id, obj.description] if i != None])
+                    desc = ' - '.join([i for i in [obj.name, obj.description] if i != None])
                     self.conn.addLocation(sensor.mac, sensor.end, None, desc)
 
         elif module == 'sensor' and obj.mac != None:
             if (obj.lat == None or obj.lon == None) and obj.end != None:
                 timestamp = obj.end
-                desc = ' - '.join([i for i in [obj.location.id, obj.location.description] if i != None])
+                desc = ' - '.join([i for i in [obj.location.name, obj.location.description] if i != None])
                 self.conn.addLocation(obj.mac, timestamp, (obj.lon, obj.lat), desc)
             elif (obj.lat != None and obj.lon != None) and obj.start != None:
                 timestamp = obj.start
-                desc = ' - '.join([i for i in [obj.location.id, obj.location.description] if i != None])
+                desc = ' - '.join([i for i in [obj.location.name, obj.location.description] if i != None])
                 self.conn.addLocation(obj.mac, timestamp, (obj.lon, obj.lat), desc)
 
     def dataFeedRssi(self, hostname, projects, timestamp, sensorMac, mac, rssi):
