@@ -160,7 +160,7 @@ class Connection(RESTConnection):
 
         l = '\n'.join(l_scanner)
         if len(l) > 0:
-            self.logger.logInfo("move: Posting location: %s" % l)
+            self.plugin.logger.logInfo("move: Posting location: %s" % l)
             self.requestPost('scanner/location', process, l,
                 {'Content-Type': 'text/plain'})
 
