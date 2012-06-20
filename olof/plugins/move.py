@@ -61,6 +61,20 @@ class Connection(RESTConnection):
         self.task_postL = task.LoopingCall(self.postLocations)
         reactor.callLater(40, self.task_postL.start, 60, now=False)
 
+    def unload(self, shutdown=False):
+        """
+        Unload the connection, stopping looping calls.
+        """
+        try:
+            self.task_postM.stop()
+        except AssertionError:
+            pass
+
+        try:
+            self.task_postL.stop()
+        except AssertionError:
+            pass
+
     def getScanners(self):
         """
         Get the list of scanners from the Move database and update local scanner data.
@@ -304,6 +318,7 @@ class Plugin(olof.core.Plugin):
         """
         olof.core.Plugin.unload(self)
         if self.conn != None:
+            self.conn.unload()
             self.storage.storeObject(self.conn.measureCount, 'measureCount')
             self.storage.storeObject(self.conn.measurements, 'measurements')
             self.storage.storeObject(self.conn.locations, 'locations')
