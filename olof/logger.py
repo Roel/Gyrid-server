@@ -42,10 +42,13 @@ class Logger(object):
         filesize exceeds 512 kB. Four backups are stored.
         """
         logger = logging.getLogger(self.location)
-        handler = logging.handlers.RotatingFileHandler(self.location, maxBytes=524288, backupCount=4)
-        handler.setFormatter(logging.Formatter("%(message)s"))
-        logger.addHandler(handler)
         logger.setLevel(logging.INFO)
+
+        if len(logger.handlers) > 1:
+            handler = logging.handlers.RotatingFileHandler(self.location, maxBytes=524288, backupCount=4)
+            handler.setFormatter(logging.Formatter("%(message)s"))
+            logger.addHandler(handler)
+
         return logger
 
     def __procMsg(self, message):
