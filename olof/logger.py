@@ -44,7 +44,7 @@ class Logger(object):
         logger = logging.getLogger(self.location)
         logger.setLevel(logging.INFO)
 
-        if len(logger.handlers) > 1:
+        if len(logger.handlers) < 1:
             handler = logging.handlers.RotatingFileHandler(self.location, maxBytes=524288, backupCount=4)
             handler.setFormatter(logging.Formatter("%(message)s"))
             logger.addHandler(handler)
