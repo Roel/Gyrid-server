@@ -288,6 +288,7 @@ class ContentResource(resource.Resource):
         # Clean old scanners
         to_delete = [s for s in self.plugin.scanners if self.plugin.scanners[s].isOld()]
         for i in to_delete:
+            self.plugin.scanners[i].unload()
             del(self.plugin.scanners[i])
 
         # Projectless scanners
