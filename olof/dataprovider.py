@@ -134,7 +134,7 @@ class DataProvider(object):
         else:
             activePlugins = {}
             for plugin in self.server.pluginmgr.getPlugins():
-                if self.isActive(hostname, plugin, timestamp=timestamp):
+                if self.isActive(hostname, plugin.filename, timestamp=timestamp):
                     activePlugins[plugin] = set([None])
             return activePlugins
 
