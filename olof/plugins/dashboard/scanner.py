@@ -143,12 +143,14 @@ class Scanner(object):
         """
         Get the age of the scanner. Old scanners are removed automatically.
 
-        A scanner is defined old if it has no location information attached and its last connection to the
-        server was more than 7 days ago.
+        A scanner is defined old if it has no location or project information attached and its last connection
+        to the server was more than 7 days ago.
 
         @return   (bool)   True if this scanner is old, else False.
         """
-        if False in [i == None for i in [self.location, self.location_description, self.lat, self.lon]]:
+        if len(self.projects) > 0:
+            return False
+        elif False in [i == None for i in [self.location, self.location_description, self.lat, self.lon]]:
             return False
         elif self.lastConnected == None:
             return True

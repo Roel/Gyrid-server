@@ -277,6 +277,12 @@ class ContentResource(resource.Resource):
         projects = self.plugin.server.dataprovider.projects
         self.plugin.matchAll()
 
+        # Clean old scanners
+        to_delete = [s for s in self.plugin.scanners if self.plugin.scanners[s].isOld()]
+        for i in to_delete:
+            self.plugin.scanners[i].unload()
+            del(self.plugin.scanners[i])
+
         # Active projects
         for p_name in sorted([p.name for p in projects.values() if p.isActive()]):
             html += self.renderProject(projects[p_name])
@@ -284,12 +290,6 @@ class ContentResource(resource.Resource):
         # Inactive projects
         for p_name in sorted([p.name for p in projects.values() if not p.isActive()]):
             html += self.renderProject(projects[p_name])
-
-        # Clean old scanners
-        to_delete = [s for s in self.plugin.scanners if self.plugin.scanners[s].isOld()]
-        for i in to_delete:
-            self.plugin.scanners[i].unload()
-            del(self.plugin.scanners[i])
 
         # Projectless scanners
         projectless_scanners = sorted([s for s in self.plugin.scanners if len(self.plugin.scanners[s].projects) < 1])
