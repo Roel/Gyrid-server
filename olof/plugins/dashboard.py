@@ -93,7 +93,7 @@ class ContentResource(resource.Resource):
         if self.plugin.config.getValue('connection_lag_processing') == False:
             html += '<div class="block_data">'
             html += '<img alt="" src="/dashboard/static/icons/warning.png">Warning'
-            html += '<span class="block_data_attr">Connection lag calculation disabled.</span>'
+            html += '<span class="block_data_attr">connection lag calculation disabled</span>'
             html += '</div>'
 
         plugins = [p for p in self.plugin.server.pluginmgr.getPlugins() if p.name != None]
