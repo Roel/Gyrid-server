@@ -49,7 +49,7 @@ class Connection(RESTConnection):
         self.measurements = measurements
         if len(measureCount) == 0:
             self.measureCount = {'uploads': 0, 'cached': 0, 'uploaded': 0,
-                'last_upload': -1}
+                'last_upload': -1, 'failed_uploads': 0}
         else:
             self.measureCount = measureCount
 
@@ -215,6 +215,7 @@ class Connection(RESTConnection):
                         self.plugin.logger.logError("Upload for scanner %s: FAIL" % scanner[0])
             else:
                 self.plugin.logger.logError("Upload failed: %s" % str(r))
+                self.measureCount['failed_uploads'] += 1
 
         if self.requestRunning or not self.plugin.config.getValue('upload_enabled'):
             return
@@ -265,7 +266,8 @@ class Plugin(olof.core.Plugin):
         measureCount = {'last_upload': -1,
                         'uploads': 0,
                         'uploaded': 0,
-                        'cached': 0}
+                        'cached': 0,
+                        'failed_uploads': 0}
 
         self.measureCount = self.storage.loadObject('measureCount', measureCount)
         self.measurements = self.storage.loadObject('measurements', {})
@@ -328,6 +330,8 @@ class Plugin(olof.core.Plugin):
         Return the current status of the Move plugin and cache. For use in the status plugin.
         """
         r = []
+        now = time.time()
+        m = self.conn.measureCount
 
         if self.conn == None:
             r.append({'status': 'error'})
@@ -337,20 +341,28 @@ class Plugin(olof.core.Plugin):
         if self.config.getValue('upload_enabled') == False:
             r.append({'status': 'disabled'})
             r.append({'id': 'uploading disabled'})
-        elif self.conn.measureCount['last_upload'] < 0:
+        elif m['last_upload'] < 0:
             r.append({'status': 'error'})
             r.append({'id': 'no upload'})
+        elif (now - m['last_upload']) > 60*2:
+            r.append({'status': 'error'})
         else:
             r.append({'status': 'ok'})
 
-        if self.conn.measureCount['last_upload'] > 0:
-            r.append({'id': 'last upload', 'time': self.conn.measureCount['last_upload']})
+        if m['last_upload'] > 0:
+            r.append({'id': 'last upload', 'time': m['last_upload']})
 
-        if self.conn.measureCount['uploaded'] > 0:
-            r.append({'id': 'uploaded lines', 'int': self.conn.measureCount['uploaded']})
+        tU = m['uploads'] + m['failed_uploads']
+        if tU > 0:
+            r.append({'id': 'success ratio',
+                      'str': '%0.2f %%' % (((m['uploads'] * 1.0) / tU) * 100)})
 
-        if self.conn.measureCount['cached'] > 0:
-            r.append({'id': 'cached lines', 'int': self.conn.measureCount['cached']})
+        if m['uploads'] > 0:
+            r.append({'id': 'avg upload size',
+                      'int': (m['uploaded'] / m['uploads'])})
+
+        if m['cached'] > 0:
+            r.append({'id': 'cached lines', 'int': m['cached']})
 
         return r
 
