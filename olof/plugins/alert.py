@@ -203,7 +203,8 @@ class Alert(object):
         Class representing a type of alert.
         """
         ServerStartup, ScannerConnect, ScannerDisconnect, SensorDisconnect, \
-        SensorConnect, GyridDisconnect, GyridConnect = range(7)
+        SensorConnect, GyridDisconnect, GyridConnect, SensorFailed, \
+        SensorRestored = range(9)
 
         Message = {ServerStartup: "Server has been started.",
                    ScannerConnect: "Scanner connected.",
@@ -211,7 +212,9 @@ class Alert(object):
                    GyridConnect: "Gyrid daemon connected.",
                    GyridDisconnect: "Gyrid daemon disconnected.",
                    SensorConnect: "Sensor %(module)s connected.",
-                   SensorDisconnect: "Sensor %(module)s disconnected."}
+                   SensorDisconnect: "Sensor %(module)s disconnected.",
+                   SensorFailed: "No recent inquiry for sensor %(module)s.",
+                   SensorRestored: "Received recent inquiry for sensor %(module)s."}
 
     class Level:
         """
@@ -314,6 +317,32 @@ class Plugin(olof.core.Plugin):
             info=1, warning=None, alert=None, fire=None))
 
         self.connections = {}
+        self.recentInquiries = {}
+
+        self.checkRecentInquiriesCall = task.LoopingCall(self.checkRecentInquiries)
+        self.checkRecentInquiriesCall.start(30, now=False)
+
+    def unload(self, shutdown=False):
+        """
+        Unload the plugin.
+        """
+        olof.core.Plugin.unload(self, shutdown)
+        self.checkRecentInquiriesCall.stop()
+
+    def checkRecentInquiries(self):
+        """
+        Check if recent inquiries are made on all sensors. Add alerts when necessary.
+        """
+        now = int(time.time())
+        to_delete = []
+        for mac in self.recentInquiries:
+            i = self.recentInquiries[mac]
+            if (now - i[0]) > 60:
+                self.mailer.addAlert(Alert(i[1], i[2], Alert.Type.SensorFailed, mac))
+                to_delete.append(mac)
+
+        for i in to_delete:
+            del(self.recentInquiries[i])
 
     def defineConfiguration(self):
         """
@@ -419,7 +448,7 @@ class Plugin(olof.core.Plugin):
 
         if hostname in self.connections and len(self.connections[hostname]) == 0:
             a = self.mailer.getAlerts(hostname, [Alert.Type.GyridDisconnect,
-                Alert.Type.SensorDisconnect])
+                Alert.Type.SensorDisconnect, Alert.Type.SensorFailed])
             self.mailer.removeAlerts(a)
 
             a = self.mailer.getAlerts(hostname, [Alert.Type.ScannerDisconnect])
@@ -442,6 +471,14 @@ class Plugin(olof.core.Plugin):
         elif info == 'stopped_scanning':
             self.mailer.addAlert(Alert(hostname, projects, Alert.Type.SensorDisconnect,
                 sensorMac))
+            del(self.recentInquiries[sensorMac])
+        elif info == 'new_inquiry':
+            if sensorMac in self.recentInquiries:
+                a = self.mailer.getAlerts(hostname, [Alert.Type.SensorFailed, Alert.Type.GyridDisconnect], sensorMac)
+                self.mailer.removeAlerts(a)
+                self.mailer.addAlert(Alert(hostname, projects, Alert.Type.SensorRestored,
+                    sensorMac, info=1, warning=None, alert=None, fire=None))
+            self.recentInquiries[sensorMac] = [int(time.time()), hostname, projects]
 
     def sysStateFeed(self, hostname, projects, module, info):
         """
