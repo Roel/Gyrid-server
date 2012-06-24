@@ -354,11 +354,11 @@ class Plugin(olof.core.Plugin):
 
         tU = m['uploads'] + m['failed_uploads']
         if tU > 0:
-            r.append({'id': 'success ratio',
+            r.append({'id': 'hitrate',
                       'str': '%0.2f %%' % (((m['uploads'] * 1.0) / tU) * 100)})
 
         if m['uploads'] > 0:
-            r.append({'id': 'avg upload size',
+            r.append({'id': '<span title="Average upload size">upload size</span>',
                       'int': (m['uploaded'] / m['uploads'])})
 
         if m['cached'] > 0:
