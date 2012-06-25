@@ -44,6 +44,7 @@ class Connection(RESTConnection):
         self.server = self.plugin.server
         self.scanners = {}
         self.getScanners()
+        self.lastError = None
 
         self.requestRunning = False
         self.measurements = measurements
@@ -82,6 +83,11 @@ class Connection(RESTConnection):
         @return   (str)   Result of the query.
         """
         def process(r):
+            if type(r) is urllib2.HTTPError:
+                self.lastError = str(r)
+                return
+            else:
+                self.lastError = None
             if r != None:
                 for s in r:
                     ls = s.strip().split(',')
@@ -97,7 +103,13 @@ class Connection(RESTConnection):
         @param   mac (str)           Bluetooth MAC-address of the scanner.
         @param   description (str)   Description of the scanner.
         """
-        self.requestPost('scanner', None, '%s,%s' % (mac, description),
+        def process(r):
+            if type(r) is urllib2.HTTPError:
+                self.lastError = str(r)
+            else:
+                self.lastError = None
+
+        self.requestPost('scanner', process, '%s,%s' % (mac, description),
             {'Content-Type': 'text/plain'})
 
     def addLocation(self, sensor, timestamp, coordinates, description):
@@ -128,6 +140,11 @@ class Connection(RESTConnection):
         Upload the pending location updates to the Move database.
         """
         def process(r):
+            if type(r) is urllib2.HTTPError:
+                self.lastError = str(r)
+                return
+            else:
+                self.lastError = None
             if r != None and not 'error' in str(r).lower():
                 for scanner in to_delete:
                     for l in self.locations[scanner]:
@@ -197,6 +214,10 @@ class Connection(RESTConnection):
         def process(r):
             self.plugin.logger.logInfo("Request done")
             self.requestRunning = False
+            if type(r) is urllib2.HTTPError:
+                self.lastError = str(r)
+            else:
+                self.lastError = None
             alertPlugin = self.plugin.server.pluginmgr.getPlugin('alert')
             if r != None and type(r) is list and len(r) == len(to_delete):
                 self.measureCount['uploads'] += 1
@@ -361,30 +382,38 @@ class Plugin(olof.core.Plugin):
             r.append({'id': 'uploading disabled'})
         elif m['last_upload'] < 0:
             r.append({'status': 'error'})
-            r.append({'id': 'no upload'})
         elif (now - m['last_upload']) > 60*2:
+            r.append({'status': 'error'})
+        elif self.conn.lastError != None:
             r.append({'status': 'error'})
         else:
             r.append({'status': 'ok'})
 
+        if self.conn.lastError != None:
+            r.append({'id': 'error', 'str': self.conn.lastError.lower()})
+
         if m['last_upload'] > 0:
             r.append({'id': 'last upload', 'time': m['last_upload']})
-
-        if m['cached'] > 0:
-            r.append({'id': 'cached', 'int': m['cached']})
+        elif m['last_upload'] < 0 and self.conn.lastError == None:
+            r.append({'id': 'no upload'})
 
         tU = m['uploads'] + m['failed_uploads']
         if tU > 0:
             r.append({'id': 'hitrate',
                       'str': '%0.2f %%' % (((m['uploads'] * 1.0) / tU) * 100)})
 
-        if m['uploads'] > 0:
-            r.append({'id': '<span title="Average upload size; total number of uploads">average upload</span>',
-                      'int': (m['uploaded'] / m['uploads'])})
+        if m['cached'] > 0:
+            r.append({'id': 'cached', 'int': m['cached']})
 
-        if len(m['recent_uploads']) > 0:
-            r.append({'id': '<span title="Average upload size; 100 most recent uploads">recent average upload</span>',
-                      'int': (sum(m['recent_uploads']) / len(m['recent_uploads']))})
+        if self.conn.lastError != None:
+            if m['uploads'] > 0:
+                r.append({'id': '<span title="Average upload size; total number of uploads">average upload</span>',
+                          'int': (m['uploaded'] / m['uploads'])})
+
+            if len(m['recent_uploads']) > 0:
+                r.append(
+                    {'id': '<span title="Average upload size; 100 most recent uploads">recent average upload</span>',
+                     'int': (sum(m['recent_uploads']) / len(m['recent_uploads']))})
 
         return r
 
