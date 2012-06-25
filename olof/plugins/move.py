@@ -49,7 +49,7 @@ class Connection(RESTConnection):
         self.measurements = measurements
         if len(measureCount) == 0:
             self.measureCount = {'uploads': 0, 'cached': 0, 'uploaded': 0,
-                'last_upload': -1, 'failed_uploads': 0}
+                'last_upload': -1, 'failed_uploads': 0, 'recent_uploads': []}
         else:
             self.measureCount = measureCount
 
@@ -200,6 +200,7 @@ class Connection(RESTConnection):
             if r != None and type(r) is list and len(r) == len(to_delete):
                 self.measureCount['uploads'] += 1
                 self.measureCount['last_upload'] = int(time.time())
+                uploadSize = 0
                 for i in range(len(r)):
                     scanner = to_delete.pop(0)
                     move_lines = int(r.pop(0).strip().split(',')[1])
@@ -209,10 +210,14 @@ class Connection(RESTConnection):
                         self.plugin.logger.logInfo("Upload for scanner %s: OK" % scanner[0])
                         self.measureCount['uploaded'] += uploaded_lines
                         self.measureCount['cached'] -= uploaded_lines
+                        uploadSize += uploaded_lines
                         for l in self.measurements_uploaded[scanner[0]]:
                             self.measurements[scanner[0]].remove(l)
                     else:
                         self.plugin.logger.logError("Upload for scanner %s: FAIL" % scanner[0])
+                if len(self.measureCount['recent_uploads'] > 99):
+                    self.measureCount['recent_uploads'].pop(0)
+                self.measureCount['recent_uploads'].append(uploadSize)
             else:
                 self.plugin.logger.logError("Upload failed: %s" % str(r))
                 self.measureCount['failed_uploads'] += 1
@@ -267,7 +272,8 @@ class Plugin(olof.core.Plugin):
                         'uploads': 0,
                         'uploaded': 0,
                         'cached': 0,
-                        'failed_uploads': 0}
+                        'failed_uploads': 0,
+                        'recent_uploads': []}
 
         self.measureCount = self.storage.loadObject('measureCount', measureCount)
         self.measurements = self.storage.loadObject('measurements', {})
@@ -352,17 +358,21 @@ class Plugin(olof.core.Plugin):
         if m['last_upload'] > 0:
             r.append({'id': 'last upload', 'time': m['last_upload']})
 
+        if m['cached'] > 0:
+            r.append({'id': 'cached', 'int': m['cached']})
+
         tU = m['uploads'] + m['failed_uploads']
         if tU > 0:
             r.append({'id': 'hitrate',
                       'str': '%0.2f %%' % (((m['uploads'] * 1.0) / tU) * 100)})
 
         if m['uploads'] > 0:
-            r.append({'id': '<span title="Average upload size">upload size</span>',
+            r.append({'id': '<span title="Average upload size; total number of uploads">average upload</span>',
                       'int': (m['uploaded'] / m['uploads'])})
 
-        if m['cached'] > 0:
-            r.append({'id': 'cached lines', 'int': m['cached']})
+        if len(m['recent_uploads']) > 0:
+            r.append({'id': '<span title="Average upload size; 100 most recent uploads">recent average upload</span>',
+                      'int': (sum(m['recent_uploads']) / len(m['recent_uploads']))})
 
         return r
 
