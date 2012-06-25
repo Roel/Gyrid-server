@@ -405,7 +405,7 @@ class Plugin(olof.core.Plugin):
         if m['cached'] > 0:
             r.append({'id': 'cached', 'int': m['cached']})
 
-        if self.conn.lastError != None:
+        if self.conn.lastError == None:
             if m['uploads'] > 0:
                 r.append({'id': '<span title="Average upload size; total number of uploads">average upload</span>',
                           'int': (m['uploaded'] / m['uploads'])})
