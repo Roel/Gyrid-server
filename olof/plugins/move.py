@@ -215,7 +215,7 @@ class Connection(RESTConnection):
                             self.measurements[scanner[0]].remove(l)
                     else:
                         self.plugin.logger.logError("Upload for scanner %s: FAIL" % scanner[0])
-                if len(self.measureCount['recent_uploads'] > 99):
+                if len(self.measureCount['recent_uploads']) > 99:
                     self.measureCount['recent_uploads'].pop(0)
                 self.measureCount['recent_uploads'].append(uploadSize)
             else:
