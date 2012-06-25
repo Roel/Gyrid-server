@@ -478,8 +478,9 @@ class Plugin(olof.core.Plugin):
             if sensorMac in self.recentInquiries:
                 a = self.mailer.getAlerts(hostname, [Alert.Type.SensorFailed, Alert.Type.GyridDisconnect], sensorMac)
                 self.mailer.removeAlerts(a)
-                self.mailer.addAlert(Alert(hostname, projects, Alert.Type.SensorRestored,
-                    sensorMac, info=1, warning=None, alert=None, fire=None))
+                if len(self.mailer.getAlerts(hostname, [Alert.Type.SensorFailed])) > 0:
+                    self.mailer.addAlert(Alert(hostname, projects, Alert.Type.SensorRestored,
+                        sensorMac, info=1, warning=None, alert=None, fire=None))
             self.recentInquiries[sensorMac] = [int(time.time()), hostname, projects]
 
     def sysStateFeed(self, hostname, projects, module, info):
