@@ -197,6 +197,7 @@ class Connection(RESTConnection):
         def process(r):
             self.plugin.logger.logInfo("Request done")
             self.requestRunning = False
+            alertPlugin = self.plugin.server.pluginmgr.getPlugin('alert')
             if r != None and type(r) is list and len(r) == len(to_delete):
                 self.measureCount['uploads'] += 1
                 self.measureCount['last_upload'] = int(time.time())
@@ -218,9 +219,20 @@ class Connection(RESTConnection):
                 if len(self.measureCount['recent_uploads']) > 99:
                     self.measureCount['recent_uploads'].pop(0)
                 self.measureCount['recent_uploads'].append(uploadSize)
+                if alertPlugin != None:
+                    a = alertPlugin.mailer.getAlerts('Server', [olof.plugins.alert.Alert.Type.MoveUploadFailed])
+                    alertPlugin.mailer.removeAlerts(a)
+                    alertPlugin.mailer.addAlert(olof.plugins.alert.Alert('Server', [],
+                        olof.plugins.alert.Alert.Type.MoveUploadRestored, info=1, warning=None, alert=None,
+                        fire=None))
             else:
                 self.plugin.logger.logError("Upload failed: %s" % str(r))
                 self.measureCount['failed_uploads'] += 1
+                if alertPlugin != None:
+                    a = alertPlugin.mailer.getAlerts('Server', [olof.plugins.alert.Alert.Type.MoveUploadFailed])
+                    if len(a) < 1:
+                        alertPlugin.mailer.addAlert(olof.plugins.alert.Alert('Server', [],
+                            olof.plugins.alert.Alert.Type.MoveUploadFailed))
 
         if self.requestRunning or not self.plugin.config.getValue('upload_enabled'):
             return

@@ -204,7 +204,7 @@ class Alert(object):
         """
         ServerStartup, ScannerConnect, ScannerDisconnect, SensorDisconnect, \
         SensorConnect, GyridDisconnect, GyridConnect, SensorFailed, \
-        SensorRestored = range(9)
+        SensorRestored, MoveUploadFailed, MoveUploadRestored = range(11)
 
         Message = {ServerStartup: "Server has been started.",
                    ScannerConnect: "Scanner connected.",
@@ -214,7 +214,9 @@ class Alert(object):
                    SensorConnect: "Sensor %(module)s connected.",
                    SensorDisconnect: "Sensor %(module)s disconnected.",
                    SensorFailed: "No recent inquiry for sensor %(module)s.",
-                   SensorRestored: "Received recent inquiry for sensor %(module)s."}
+                   SensorRestored: "Received recent inquiry for sensor %(module)s.",
+                   MoveUploadFailed: "Move upload failed.",
+                   MoveUploadRestored: "Move upload restored."}
 
     class Level:
         """
