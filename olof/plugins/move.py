@@ -201,11 +201,11 @@ class Connection(RESTConnection):
         tm = "%0.3f" % timestamp
         decSec = tm[tm.find('.')+1:]
         decSec += "0" * (3-len(decSec))
-        self.measurements[sensor].add(','.join([
-            time.strftime('%Y%m%d-%H%M%S.%%s-%Z', time.localtime(
-            timestamp)) % decSec, mac, str(deviceclass),
-            str(rssi)]))
-        self.measureCount['cached'] += 1
+        s = ','.join([time.strftime('%Y%m%d-%H%M%S.%%s-%Z', time.localtime(timestamp)) % decSec, mac,
+            str(deviceclass), str(rssi)])
+        if s not in self.measurements[sensor]:
+            self.measurements[sensor].add(s)
+            self.measureCount['cached'] += 1
 
     def postMeasurements(self):
         """
@@ -311,6 +311,7 @@ class Plugin(olof.core.Plugin):
         self.measureCount = self.storage.loadObject('measureCount', measureCount)
         self.measurements = self.storage.loadObject('measurements', {})
         self.locations = self.storage.loadObject('locations', {})
+        self.measureCount['cached'] = sum(len(self.measurements[i]) for i in self.measurements)
 
         self.setupConnection()
 
