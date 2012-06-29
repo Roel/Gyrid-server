@@ -66,8 +66,10 @@ class Mailer(object):
         if not origin in self.__alertMap:
             return []
         else:
-            return [a[1] for a in self.__alertMap[
-                origin] if a[0] in atype and a[1].module == module]
+            if module != None:
+                return [a[1] for a in self.__alertMap[origin] if a[0] in atype and a[1].module == module]
+            else:
+                return [a[1] for a in self.__alertMap[origin] if a[0] in atype]
 
     def removeAlerts(self, alerts):
         """
@@ -337,14 +339,15 @@ class Plugin(olof.core.Plugin):
         """
         now = int(time.time())
         to_delete = []
-        for mac in self.recentInquiries:
-            i = self.recentInquiries[mac]
-            if (now - i[0]) > 60:
-                self.mailer.addAlert(Alert(i[1], i[2], Alert.Type.SensorFailed, mac))
-                to_delete.append(mac)
+        for scanner in self.recentInquiries:
+            for mac in self.recentInquiries[scanner]:
+                i = self.recentInquiries[scanner][mac]
+                if (now - i[0]) > 60:
+                    self.mailer.addAlert(Alert(scanner, i[1], Alert.Type.SensorFailed, mac))
+                    to_delete.append(mac)
 
         for i in to_delete:
-            del(self.recentInquiries[i])
+            del(self.recentInquiries[scanner][mac])
 
     def defineConfiguration(self):
         """
@@ -453,6 +456,8 @@ class Plugin(olof.core.Plugin):
                 Alert.Type.SensorDisconnect, Alert.Type.SensorFailed])
             self.mailer.removeAlerts(a)
 
+            self.recentInquiries[hostname] = {}
+
             a = self.mailer.getAlerts(hostname, [Alert.Type.ScannerDisconnect])
             if len(a) == 0:
                 self.mailer.addAlert(Alert(hostname, projects, Alert.Type.ScannerDisconnect))
@@ -473,15 +478,17 @@ class Plugin(olof.core.Plugin):
         elif info == 'stopped_scanning':
             self.mailer.addAlert(Alert(hostname, projects, Alert.Type.SensorDisconnect,
                 sensorMac))
-            del(self.recentInquiries[sensorMac])
+            del(self.recentInquiries[hostname][sensorMac])
         elif info == 'new_inquiry':
-            if sensorMac in self.recentInquiries:
+            if hostname in self.recentInquiries and sensorMac in self.recentInquiries[hostname]:
                 a = self.mailer.getAlerts(hostname, [Alert.Type.SensorFailed, Alert.Type.GyridDisconnect], sensorMac)
                 if len(self.mailer.getAlerts(hostname, [Alert.Type.SensorFailed])) > 0:
                     self.mailer.addAlert(Alert(hostname, projects, Alert.Type.SensorRestored,
                         sensorMac, info=1, warning=None, alert=None, fire=None))
                 self.mailer.removeAlerts(a)
-            self.recentInquiries[sensorMac] = [int(time.time()), hostname, projects]
+            if hostname not in self.recentInquiries:
+                self.recentInquiries[hostname] = {}
+            self.recentInquiries[hostname][sensorMac] = [int(time.time()), projects]
 
     def sysStateFeed(self, hostname, projects, module, info):
         """
