@@ -49,8 +49,8 @@ class Connection(RESTConnection):
         self.requestRunning = False
         self.measurements = measurements
         if len(measureCount) == 0:
-            self.measureCount = {'uploads': 0, 'cached': 0, 'uploaded': 0,
-                'last_upload': -1, 'failed_uploads': 0, 'recent_uploads': []}
+            self.measureCount = {'uploads': 0, 'uploaded': 0, 'last_upload': -1, 'failed_uploads': 0,
+                'recent_uploads': []}
         else:
             self.measureCount = measureCount
 
@@ -201,11 +201,8 @@ class Connection(RESTConnection):
         tm = "%0.3f" % timestamp
         decSec = tm[tm.find('.')+1:]
         decSec += "0" * (3-len(decSec))
-        s = ','.join([time.strftime('%Y%m%d-%H%M%S.%%s-%Z', time.localtime(timestamp)) % decSec, mac,
-            str(deviceclass), str(rssi)])
-        if s not in self.measurements[sensor]:
-            self.measurements[sensor].add(s)
-            self.measureCount['cached'] += 1
+        self.measurements[sensor].add(','.join([time.strftime('%Y%m%d-%H%M%S.%%s-%Z',
+            time.localtime(timestamp)) % decSec, mac, str(deviceclass), str(rssi)]))
 
     def postMeasurements(self):
         """
@@ -230,8 +227,6 @@ class Connection(RESTConnection):
 
                     if move_lines == uploaded_lines:
                         self.plugin.logger.logInfo("Upload for scanner %s: OK" % scanner[0])
-                        self.measureCount['uploaded'] += uploaded_lines
-                        self.measureCount['cached'] -= uploaded_lines
                         uploadSize += uploaded_lines
                         for l in self.measurements_uploaded[scanner[0]]:
                             self.measurements[scanner[0]].remove(l)
@@ -240,6 +235,7 @@ class Connection(RESTConnection):
                 if len(self.measureCount['recent_uploads']) > 99:
                     self.measureCount['recent_uploads'].pop(0)
                 self.measureCount['recent_uploads'].append(uploadSize)
+                self.measureCount['uploaded'] += uploadSize
                 if alertPlugin != None:
                     a = alertPlugin.mailer.getAlerts('Server', [olof.plugins.alert.Alert.Type.MoveUploadFailed])
                     alertPlugin.mailer.removeAlerts(a)
@@ -304,14 +300,12 @@ class Plugin(olof.core.Plugin):
         measureCount = {'last_upload': -1,
                         'uploads': 0,
                         'uploaded': 0,
-                        'cached': 0,
                         'failed_uploads': 0,
                         'recent_uploads': []}
 
         self.measureCount = self.storage.loadObject('measureCount', measureCount)
         self.measurements = self.storage.loadObject('measurements', {})
         self.locations = self.storage.loadObject('locations', {})
-        self.measureCount['cached'] = sum(len(self.measurements[i]) for i in self.measurements)
 
         self.setupConnection()
 
@@ -403,8 +397,9 @@ class Plugin(olof.core.Plugin):
             r.append({'id': 'hitrate',
                       'str': '%0.2f %%' % (((m['uploads'] * 1.0) / tU) * 100)})
 
-        if m['cached'] > 0:
-            r.append({'id': 'cached', 'int': m['cached']})
+        cache = sum(len(self.measurements[i]) for i in self.measurements)
+        if cache > 0:
+            r.append({'id': 'cached', 'int': cache})
 
         if self.conn.lastError == None:
             if m['uploads'] > 0:
