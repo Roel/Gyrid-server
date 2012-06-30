@@ -331,7 +331,10 @@ class Plugin(olof.core.Plugin):
         Unload the plugin.
         """
         olof.core.Plugin.unload(self, shutdown)
-        self.checkRecentInquiriesCall.stop()
+        try:
+            self.checkRecentInquiriesCall.stop()
+        except AssertionError:
+            pass
 
     def checkRecentInquiries(self):
         """
