@@ -249,7 +249,7 @@ class Connection(RESTConnection):
                     a = alertPlugin.mailer.getAlerts('Server', [olof.plugins.alert.Alert.Type.MoveUploadFailed])
                     if len(a) < 1:
                         alertPlugin.mailer.addAlert(olof.plugins.alert.Alert('Server', [],
-                            olof.plugins.alert.Alert.Type.MoveUploadFailed))
+                            olof.plugins.alert.Alert.Type.MoveUploadFailed, message=str(r)))
 
         if self.requestRunning or not self.plugin.config.getValue('upload_enabled'):
             return
