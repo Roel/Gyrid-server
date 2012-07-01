@@ -85,6 +85,7 @@ class Connection(RESTConnection):
         def process(r):
             if type(r) is urllib2.HTTPError:
                 self.lastError = str(r)
+                self.plugin.logger.logError("GET/scanner request failed: %s" % str(r))
                 return
             else:
                 self.lastError = None
@@ -106,6 +107,7 @@ class Connection(RESTConnection):
         def process(r):
             if type(r) is urllib2.HTTPError:
                 self.lastError = str(r)
+                self.plugin.logger.logError("POST/scanner request failed: %s" % str(r))
             else:
                 self.lastError = None
 
