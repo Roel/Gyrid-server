@@ -167,7 +167,7 @@ class Mailer(object):
             level = alert.getStatusLevel(t)
             if level is not None and not alert.isSent(level):
                 for r in recipients:
-                    if alert.origin == 'Server':
+                    if alert.origin in (['Server'] + [p.filename for p in self.plugin.server.pluginmgr.getPlugins()]):
                         projects = [alert.origin]
                     else:
                         projects = [i for i in alert.projects if i != None]

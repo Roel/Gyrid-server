@@ -239,18 +239,20 @@ class Connection(RESTConnection):
                 self.measureCount['recent_uploads'].append(uploadSize)
                 self.measureCount['uploaded'] += uploadSize
                 if alertPlugin != None:
-                    a = alertPlugin.mailer.getAlerts('Server', [olof.plugins.alert.Alert.Type.MoveUploadFailed])
+                    a = alertPlugin.mailer.getAlerts(self.plugin.filename,
+                        [olof.plugins.alert.Alert.Type.MoveUploadFailed])
                     alertPlugin.mailer.removeAlerts(a)
-                    alertPlugin.mailer.addAlert(olof.plugins.alert.Alert('Server', [],
+                    alertPlugin.mailer.addAlert(olof.plugins.alert.Alert(self.plugin.filename, [],
                         olof.plugins.alert.Alert.Type.MoveUploadRestored, info=1, warning=None, alert=None,
                         fire=None))
             else:
                 self.plugin.logger.logError("Upload failed: %s" % str(r))
                 self.measureCount['failed_uploads'] += 1
                 if alertPlugin != None:
-                    a = alertPlugin.mailer.getAlerts('Server', [olof.plugins.alert.Alert.Type.MoveUploadFailed])
+                    a = alertPlugin.mailer.getAlerts(self.plugin.filename,
+                        [olof.plugins.alert.Alert.Type.MoveUploadFailed])
                     if len(a) < 1:
-                        alertPlugin.mailer.addAlert(olof.plugins.alert.Alert('Server', [],
+                        alertPlugin.mailer.addAlert(olof.plugins.alert.Alert(self.plugin.filename, [],
                             olof.plugins.alert.Alert.Type.MoveUploadFailed, message=str(r)))
 
         if self.requestRunning or not self.plugin.config.getValue('upload_enabled'):
