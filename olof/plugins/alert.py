@@ -283,7 +283,7 @@ class Alert(object):
         msg += '\r\n\r\n'
         if self.message:
             msg += self.message
-        msg += '--\r\nThis event occurred at %s.' % \
+        msg += '\r\n\r\n--\r\nThis event occurred at %s.' % \
             time.strftime("%Y%m%d-%H%M%S-%Z", time.localtime(self.etime))
         return msg
 
