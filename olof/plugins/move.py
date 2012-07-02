@@ -19,6 +19,8 @@ import urllib2
 import olof.configuration
 import olof.core
 import olof.storagemanager
+
+from olof.tools.datetimetools import getRelativeTime
 from olof.tools.webprotocols import RESTConnection
 
 class Connection(RESTConnection):
@@ -402,8 +404,17 @@ class Plugin(olof.core.Plugin):
                       'str': '%0.2f %%' % (((m['uploads'] * 1.0) / tU) * 100)})
 
         cache = sum(len(self.measurements[i]) for i in self.measurements)
+        firstData = time.localtime()
+        for s in self.measurements.values():
+            for l in s:
+                t = time.strptime(l[:15] + l[19:l.find(',')], "%Y%m%d-%H%M%S-%Z")
+                firstData = min(t, firstData)
+
         if cache > 0:
-            r.append({'id': 'cached', 'int': cache})
+            r.append({'id': '<span title="Data since: %s – %s">cached</span>' % (
+                                time.strftime("%a %Y-%m-%d %H:%M:%S", firstData),
+                                getRelativeTime(int(time.strftime("%s", firstData)))),
+                      'int': cache})
 
         if self.conn.lastError == None:
             if m['uploads'] > 0:
