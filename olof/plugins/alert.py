@@ -250,7 +250,7 @@ class Alert(object):
         self.type = type
         self.module = module
         self.etime = etime if etime != None else int(time.time())
-        self.message = message
+        self.message = message.strip()
         self.action = {Alert.Level.Info: [info, False],
                        Alert.Level.Warning: [warning, False],
                        Alert.Level.Alert: [alert, False],
@@ -283,7 +283,8 @@ class Alert(object):
         msg += '\r\n\r\n'
         if self.message:
             msg += self.message
-        msg += '\r\n\r\n--\r\nThis event occurred at %s.' % \
+            msg += '\r\n\r\n'
+        msg += '--\r\nThis event occurred at %s.' % \
             time.strftime("%Y%m%d-%H%M%S-%Z", time.localtime(self.etime))
         return msg
 
