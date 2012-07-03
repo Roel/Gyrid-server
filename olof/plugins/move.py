@@ -106,7 +106,8 @@ class Connection(RESTConnection):
                 for s in r:
                     ls = s.strip().split(',')
                     self.scanners[ls[0]] = True
-                callback()
+                if callback != None:
+                    callback()
             return r
 
         self.requestGet('scanner', process)
