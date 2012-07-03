@@ -417,7 +417,8 @@ class Plugin(olof.core.Plugin):
 
         tU = m['uploads'] + m['failed_uploads']
         if tU > 0:
-            r.append({'id': 'hitrate',
+            r.append({'id': '<span title="%i out of %i uploads failed">hitrate</span>' % (
+                                m['failed_uploads'], tU),
                       'str': '%0.2f %%' % (((m['uploads'] * 1.0) / tU) * 100)})
 
         cache = sum(len(self.measurements[i]) for i in self.measurements)
