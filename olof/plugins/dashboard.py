@@ -469,7 +469,8 @@ class Plugin(olof.core.Plugin):
         options.append(o)
 
         o = olof.configuration.Option('connection_lag_processing')
-        o.setDescription('Calculate connection lag based on recently received detections. This can be CPU intensive.')
+        o.setDescription('Calculate connection lag based on recently received detections. ' + \
+            'This can be CPU and memory intensive.')
         o.addValue(olof.configuration.OptionValue(True, default=True))
         o.addValue(olof.configuration.OptionValue(False))
         o.addCallback(self.updateConnectionLagConfig)
