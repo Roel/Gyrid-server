@@ -92,6 +92,13 @@ class Connection(RESTConnection):
                 self.plugin.logger.logError("GET/scanner request failed: %s" % str(r))
                 if callback != None:
                     self.measureCount['failed_uploads'] += 1
+                    alertPlugin = self.plugin.server.pluginmgr.getPlugin('alert')
+                    if alertPlugin != None:
+                        a = alertPlugin.mailer.getAlerts(self.plugin.filename,
+                            [olof.plugins.alert.Alert.Type.MoveUploadFailed])
+                        if len(a) < 1:
+                            alertPlugin.mailer.addAlert(olof.plugins.alert.Alert(self.plugin.filename, [],
+                                olof.plugins.alert.Alert.Type.MoveUploadFailed, message=str(r)))
                 return
             else:
                 self.lastError = None
