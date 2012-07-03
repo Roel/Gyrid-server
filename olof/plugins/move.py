@@ -27,7 +27,7 @@ class Connection(RESTConnection):
     """
     Class that implements the REST connection with the Move database.
     """
-    def __init__(self, plugin, url, user, password, measurements={}, measureCount={}, locations={}):
+    def __init__(self, plugin, url, user, password, scanners={}, measurements={}, measureCount={}, locations={}):
         """
         Initialisation.
 
@@ -37,6 +37,7 @@ class Connection(RESTConnection):
         @param   url (str)             Base URL of the Move REST interface.
         @param   user (str)            Username to log in on the server.
         @param   password (str)        Password to log in on the server.
+        @param   scanners (dict)       Cached scanners. Optional.
         @param   measurements (dict)   Cached measurements. Optional.
         @param   measureCount (dict)   Cache statistics. Optional.
         @param   locations (dict)      Cached location data. Optional.
@@ -44,7 +45,7 @@ class Connection(RESTConnection):
         RESTConnection.__init__(self, url, 180, user, password, urllib2.HTTPDigestAuthHandler)
         self.plugin = plugin
         self.server = self.plugin.server
-        self.scanners = {}
+        self.scanners = scanners
         self.getScanners()
         self.lastError = None
 
@@ -312,6 +313,7 @@ class Plugin(olof.core.Plugin):
         self.measureCount = self.storage.loadObject('measureCount', measureCount)
         self.measurements = self.storage.loadObject('measurements', {})
         self.locations = self.storage.loadObject('locations', {})
+        self.scanners = self.storage.loadObject('scanners', {})
 
         self.setupConnection()
 
@@ -322,9 +324,11 @@ class Plugin(olof.core.Plugin):
         url = self.config.getValue('url')
         user = self.config.getValue('username')
         password = self.config.getValue('password')
+        scanners = dict(zip(self.scanners.keys(), [False] * len(self.scanners)))
 
         if None not in [url, user, password]:
-            self.conn = Connection(self, url, user, password, self.measurements, self.measureCount, self.locations)
+            self.conn = Connection(self, url, user, password, scanners, self.measurements, self.measureCount,
+                self.locations)
         else:
             self.conn = None
 
@@ -364,6 +368,7 @@ class Plugin(olof.core.Plugin):
             self.storage.storeObject(self.conn.measureCount, 'measureCount')
             self.storage.storeObject(self.conn.measurements, 'measurements')
             self.storage.storeObject(self.conn.locations, 'locations')
+            self.storage.storeObject(self.conn.scanners, 'scanners')
 
     def getStatus(self):
         """
