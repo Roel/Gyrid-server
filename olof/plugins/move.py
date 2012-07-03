@@ -226,7 +226,6 @@ class Connection(RESTConnection):
         """
         def upload():
             m = ""
-            to_delete = []
             m_scanner = []
             self.measurements_uploaded = {}
             self.plugin.logger.logInfo("Posting measurements")
@@ -298,6 +297,7 @@ class Connection(RESTConnection):
         if self.requestRunning or not self.plugin.config.getValue('upload_enabled'):
             return
 
+        to_delete = []
         self.getScanners(upload)
 
 class Plugin(olof.core.Plugin):
