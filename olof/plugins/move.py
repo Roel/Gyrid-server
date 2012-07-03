@@ -79,11 +79,12 @@ class Connection(RESTConnection):
         except AssertionError:
             pass
 
-    def getScanners(self):
+    def getScanners(self, callback=None):
         """
         Get the list of scanners from the Move database and update local scanner data.
 
-        @return   (str)   Result of the query.
+        @param    callback   Function to call on succesfull request.
+        @return   (str)      Result of the query.
         """
         def process(r):
             if type(r) is urllib2.HTTPError:
@@ -96,6 +97,7 @@ class Connection(RESTConnection):
                 for s in r:
                     ls = s.strip().split(',')
                     self.scanners[ls[0]] = True
+            callback()
             return r
 
         self.requestGet('scanner', process)
@@ -213,6 +215,32 @@ class Connection(RESTConnection):
         """
         Upload pending measurements to the Move database.
         """
+        def upload():
+            m = ""
+            to_delete = []
+            m_scanner = []
+            self.measurements_uploaded = {}
+            self.plugin.logger.logInfo("Posting measurements")
+            linecount = 0
+            for scanner in [s for s in self.scanners.keys() if (self.scanners[s] == True \
+                and s in self.measurements)]:
+                self.measurements_uploaded[scanner] = copy.deepcopy(self.measurements[scanner])
+
+                if len(self.measurements_uploaded[scanner]) > 0:
+                    self.plugin.logger.logInfo("Adding %i measurements for scanner %s" % (len(
+                        self.measurements_uploaded[scanner]), scanner))
+                    linecount += len(self.measurements_uploaded[scanner])
+                    m_scanner.append("==%s" % scanner)
+                    m_scanner.append("\n".join(self.measurements_uploaded[scanner]))
+                    to_delete.append((scanner, len(self.measurements_uploaded[scanner])))
+
+            m = '\n'.join(m_scanner)
+            if len(m) > 0:
+                self.requestRunning = True
+                self.plugin.logger.logInfo("Sending request with %i lines" % linecount)
+                self.requestPost('measurement', process, m,
+                    {'Content-Type': 'text/plain'})
+
         def process(r):
             self.plugin.logger.logInfo("Request done")
             self.requestRunning = False
@@ -261,33 +289,7 @@ class Connection(RESTConnection):
         if self.requestRunning or not self.plugin.config.getValue('upload_enabled'):
             return
 
-        m = ""
-        if False in self.scanners.values():
-            self.getScanners()
-
-        to_delete = []
-        m_scanner = []
-        self.measurements_uploaded = {}
-        self.plugin.logger.logInfo("Posting measurements")
-        linecount = 0
-        for scanner in [s for s in self.scanners.keys() if (self.scanners[s] == True \
-            and s in self.measurements)]:
-            self.measurements_uploaded[scanner] = copy.deepcopy(self.measurements[scanner])
-
-            if len(self.measurements_uploaded[scanner]) > 0:
-                self.plugin.logger.logInfo("Adding %i measurements for scanner %s" % (len(
-                    self.measurements_uploaded[scanner]), scanner))
-                linecount += len(self.measurements_uploaded[scanner])
-                m_scanner.append("==%s" % scanner)
-                m_scanner.append("\n".join(self.measurements_uploaded[scanner]))
-                to_delete.append((scanner, len(self.measurements_uploaded[scanner])))
-
-        m = '\n'.join(m_scanner)
-        if len(m) > 0:
-            self.requestRunning = True
-            self.plugin.logger.logInfo("Sending request with %i lines" % linecount)
-            self.requestPost('measurement', process, m,
-                {'Content-Type': 'text/plain'})
+        self.getScanners(upload)
 
 class Plugin(olof.core.Plugin):
     """
