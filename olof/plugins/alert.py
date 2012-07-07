@@ -226,7 +226,8 @@ class Alert(object):
         """
         Info, Warning, Alert, Fire = range(4)
 
-        String = {Info: 'Info', Warning: 'Warning', Alert: 'Alert', Fire: 'Fire'}
+        String = {Info: 'Info', Warning: 'Level 1 warning: minor', Alert: 'Level 2 warning: major',
+            Fire: 'Level 3 warning: serious'}
 
     def __init__(self, origin, projects, type, module=None, etime=None, autoexpire=True, message=None,
                  info=1, warning=5, alert=20, fire=45):
