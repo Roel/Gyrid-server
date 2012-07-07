@@ -176,9 +176,11 @@ class Mailer(object):
                             for a in r[1]:
                                 if level >= r[1][a]:
                                     if a not in recipients_sent:
-                                        mails.append([a,
-                                            alert.origin,
-                                            alert.getMessageBody(level)])
+                                        subj = alert.origin
+                                        if alert.origin in [
+                                            p.filename for p in self.plugin.server.pluginmgr.getPlugins()]:
+                                            subj = 'Plugin: %s' % alert.origin
+                                        mails.append([a, subj, alert.getMessageBody(level)])
                                         recipients_sent.append(a)
                 alert.markSent(level)
 
@@ -281,7 +283,7 @@ class Alert(object):
         @return   (str)                 The corresponding message body.
         """
         msg = Alert.Level.String[level]
-        msg += ' - %s -\r\n\r\n' % getRelativeTime(self.etime)
+        msg += ' - %s: \r\n\r\n' % getRelativeTime(self.etime)
         msg += Alert.Type.Message[self.type] % {'origin': self.origin,
                                                 'module': self.module}
         msg += '\r\n\r\n'
