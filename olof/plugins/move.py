@@ -402,7 +402,7 @@ class Plugin(olof.core.Plugin):
             r.append({'id': 'uploading disabled'})
         elif m['last_upload'] < 0:
             r.append({'status': 'error'})
-        elif (now - m['last_upload']) > 60*2:
+        elif (now - m['last_upload']) > 60*5:
             r.append({'status': 'error'})
         elif self.conn.lastError != None:
             r.append({'status': 'error'})
