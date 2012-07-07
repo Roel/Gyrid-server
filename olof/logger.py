@@ -64,6 +64,17 @@ class Logger(object):
         message = message.strip() if message != None else ""
         return time.strftime('%Y%m%d-%H%M%S-%Z'), message
 
+    def debug(self, message):
+        """
+        Write the given message to standard output as debug message.
+
+        @param   message (str)   The message to log.
+        """
+        t, m = self.__procMsg(message)
+        if self.server.debug_mode:
+            f = ' (%s)' % self.filename if self.filename != 'server' else ''
+            sys.stdout.write("%s Gyrid Server%s: %s.\n" % (t, f, m))
+
     def logInfo(self, message):
         """
         Log the given message as information. When running in debug mode, print to stdout too.

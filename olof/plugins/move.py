@@ -144,12 +144,12 @@ class Connection(RESTConnection):
 
         if not sensor in self.locations:
             self.locations[sensor] = [[(timestamp, coordinates, description), False]]
-            self.plugin.logger.logInfo("move: Adding location for %s at %s: %s (%s)" % (sensor, timestamp, description,
+            self.plugin.logger.debug("move: Adding location for %s at %s: %s (%s)" % (sensor, timestamp, description,
                 coordinates))
         else:
             if not (timestamp, coordinates, description) in [i[0] for i in self.locations[sensor]]:
                 self.locations[sensor].append([(timestamp, coordinates, description), False])
-                self.plugin.logger.logInfo("move: Adding location for %s at %s: %s (%s)" % (sensor, timestamp,
+                self.plugin.logger.debug("move: Adding location for %s at %s: %s (%s)" % (sensor, timestamp,
                     description, coordinates))
 
     def postLocations(self):
@@ -194,7 +194,7 @@ class Connection(RESTConnection):
 
         l = '\n'.join(l_scanner)
         if len(l) > 0:
-            self.plugin.logger.logInfo("move: Posting location: %s" % l)
+            self.plugin.logger.debug("move: Posting location: %s" % l)
             self.requestPost('scanner/location', process, l,
                 {'Content-Type': 'text/plain'})
 
@@ -229,14 +229,14 @@ class Connection(RESTConnection):
             m = ""
             m_scanner = []
             self.measurements_uploaded = {}
-            self.plugin.logger.logInfo("Posting measurements")
+            self.plugin.logger.debug("Posting measurements")
             linecount = 0
             for scanner in [s for s in self.scanners.keys() if (self.scanners[s] == True \
                 and s in self.measurements)]:
                 self.measurements_uploaded[scanner] = copy.deepcopy(self.measurements[scanner])
 
                 if len(self.measurements_uploaded[scanner]) > 0:
-                    self.plugin.logger.logInfo("Adding %i measurements for scanner %s" % (len(
+                    self.plugin.logger.debug("Adding %i measurements for scanner %s" % (len(
                         self.measurements_uploaded[scanner]), scanner))
                     linecount += len(self.measurements_uploaded[scanner])
                     m_scanner.append("==%s" % scanner)
@@ -246,12 +246,12 @@ class Connection(RESTConnection):
             m = '\n'.join(m_scanner)
             if len(m) > 0:
                 self.requestRunning = True
-                self.plugin.logger.logInfo("Sending request with %i lines" % linecount)
+                self.plugin.logger.debug("Sending request with %i lines" % linecount)
                 self.requestPost('measurement', process, m,
                     {'Content-Type': 'text/plain'})
 
         def process(r):
-            self.plugin.logger.logInfo("Request done")
+            self.plugin.logger.debug("Request done")
             self.requestRunning = False
             if type(r) is urllib2.HTTPError:
                 self.lastError = str(r)
@@ -268,7 +268,7 @@ class Connection(RESTConnection):
                     uploaded_lines = scanner[1]
 
                     if move_lines == uploaded_lines:
-                        self.plugin.logger.logInfo("Upload for scanner %s: OK" % scanner[0])
+                        self.plugin.logger.debug("Upload for scanner %s: OK" % scanner[0])
                         uploadSize += uploaded_lines
                         for l in self.measurements_uploaded[scanner[0]]:
                             self.measurements[scanner[0]].remove(l)
