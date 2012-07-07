@@ -352,6 +352,8 @@ class Plugin(olof.core.Plugin):
 
         for i in to_delete:
             del(self.recentInquiries[scanner][mac])
+            if len(self.recentInquiries[scanner]) < 1:
+                del(self.recentInquiries[scanner])
 
     def defineConfiguration(self):
         """
