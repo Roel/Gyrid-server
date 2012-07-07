@@ -56,6 +56,7 @@ class Connection(RESTConnection):
                 'recent_uploads': []}
         else:
             self.measureCount = measureCount
+            self.measureCount['recent_uploads'] = self.measureCount['recent_uploads'][-self.plugin.maxRecent:]
 
         self.locations = locations
 
@@ -274,7 +275,7 @@ class Connection(RESTConnection):
                             self.measurements[scanner[0]].remove(l)
                     else:
                         self.plugin.logger.logError("Upload for scanner %s: FAIL" % scanner[0])
-                if len(self.measureCount['recent_uploads']) > 59:
+                if len(self.measureCount['recent_uploads']) > (self.plugin.maxRecent - 1):
                     self.measureCount['recent_uploads'].pop(0)
                 self.measureCount['recent_uploads'].append(uploadSize)
                 self.measureCount['uploaded'] += uploadSize
@@ -315,6 +316,7 @@ class Plugin(olof.core.Plugin):
         self.buffer = []
         self.last_session_id = None
         self.conn = None
+        self.maxRecent = 60
 
         measureCount = {'last_upload': -1,
                         'uploads': 0,
@@ -441,7 +443,8 @@ class Plugin(olof.core.Plugin):
 
             if len(m['recent_uploads']) > 0:
                 r.append(
-                    {'id': '<span title="Average upload size; 60 most recent uploads">recent average upload</span>',
+                    {'id': '<span title="Average upload size; %i most recent uploads">recent average upload</span>' % \
+                                self.maxRecent,
                      'int': (sum(m['recent_uploads']) / len(m['recent_uploads']))})
 
         return r
