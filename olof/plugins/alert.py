@@ -184,8 +184,8 @@ class Mailer(object):
 
                 al = sorted(alert.action.keys())
                 nextLevels = al[al.index(level)+1:]
-                if len([a for a in nextLevels if alert.action[a][0] == None]) == \
-                    len(nextLevels):
+                if (len([a for a in nextLevels if alert.action[a][0] == None]) == \
+                    len(nextLevels)) and alert.autoexpire:
                     to_delete.append(alert)
 
         self.removeAlerts(to_delete)
@@ -228,7 +228,7 @@ class Alert(object):
 
         String = {Info: 'Info', Warning: 'Warning', Alert: 'Alert', Fire: 'Fire'}
 
-    def __init__(self, origin, projects, type, module=None, etime=None, message=None,
+    def __init__(self, origin, projects, type, module=None, etime=None, autoexpire=True, message=None,
                  info=1, warning=5, alert=20, fire=45):
         """
         Initialisation.
@@ -238,6 +238,8 @@ class Alert(object):
         @param   type (Alert.Type)   The type this alert.
         @param   module (str)        The module of this alert (i.e. the MAC-address of the sensor), when applicable.
         @param   etime (int)         The time the event causing the alert occured, in UNIX time. Current time when None.
+        @param   autoexpire (bool)   If the alert automatically expires and is deleted if all messages are sent.
+                                       Defaults to True.
         @param   message (str)       The message to send with this alert. Optional. A default message is always added
                                        based on the alert's type.
         @param   info (int)          Time in minutes to wait before sending the 'info' level message. Defaults to 1.
@@ -250,6 +252,7 @@ class Alert(object):
         self.type = type
         self.module = module
         self.etime = etime if etime != None else int(time.time())
+        self.autoexpire = autoexpire
         self.message = message
         self.action = {Alert.Level.Info: [info, False],
                        Alert.Level.Warning: [warning, False],
