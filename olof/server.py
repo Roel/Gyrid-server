@@ -178,9 +178,7 @@ class GyridServerProtocol(LineReceiver):
                 l = task.LoopingCall(self.keepalive)
                 l.start(self.factory.timeout, now=False)
                 self.sendLine('MSG,cache,push')
-        else:
-            self.sendLine('ACK,%s' % self.checksum(line))
-
+        elif ll[0] == 'STATE':
             if self.hostname != None:
                 if len(ll) == 4 and ll[0] == 'STATE':
                     try:
@@ -195,7 +193,11 @@ class GyridServerProtocol(LineReceiver):
                         for plugin in ap:
                             args['projects'] = ap[plugin]
                             plugin.stateFeed(**args)
-                elif len(ll) == 5:
+        else:
+            self.sendLine('ACK,%s' % self.checksum(line))
+
+            if self.hostname != None:
+                if len(ll) == 5:
                     try:
                         mac = str(ll[2])
                         dc = int(ll[3])
