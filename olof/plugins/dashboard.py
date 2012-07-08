@@ -718,4 +718,4 @@ class Plugin(olof.core.Plugin):
         if self.config.getValue('connection_lag_processing'):
             scann = self.getScanner(hostname)
             t = time.time()
-            scann.lagData.append([t, float(timestamp), mac])
+            scann.addLagData(t, float(timestamp), mac)
