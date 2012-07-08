@@ -153,6 +153,8 @@ class RESTConnection(object):
                 resp = urllib2.urlopen(req, timeout=self.timeout)
             return resp.readlines()
         except urllib2.HTTPError as e:
-            return e
+            return IOError(str(e))
+        except urllib2.URLError as e:
+            return IOError(str(e.reason)[str(e.reason).find(']')+2:])
         except:
             return None
