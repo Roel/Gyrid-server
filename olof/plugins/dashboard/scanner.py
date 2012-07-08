@@ -227,21 +227,24 @@ class Scanner(object):
         """
         t = time.time()
         lag = {1: [0, 0, set()], 5: [0, 0, set()], 15: [0, 0, set()]}
+        lagKeys = dict((i, i*60) for i in lag)
+        maxSecs = sorted(lagKeys)[-1]*60
+        remove = self.lagData.remove
         for i in self.lagData:
-            if (t - i[0]) > (sorted(lag.keys())[-1]*60):
+            if (t - i[0]) > maxSecs:
                 try:
-                    self.lagData.remove(i)
+                    remove(i)
                 except:
                     pass
                 continue
 
-            for j in lag.keys():
-                if (t - i[0]) <= j*60:
+            for j in lagKeys:
+                if (t - i[0]) <= lagKeys[j]:
                     lag[j][0] += abs(i[0] - i[1])
                     lag[j][1] += 1
                     lag[j][2].add(i[2])
 
-        for j in lag.keys():
+        for j in lagKeys:
             lag[j][2] = len(lag[j][2])
 
         self.lag = lag
