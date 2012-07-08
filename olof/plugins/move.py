@@ -158,7 +158,7 @@ class Connection(RESTConnection):
         Upload the pending location updates to the Move database.
         """
         def process(r):
-            if type(r) is urllib2.IOError:
+            if type(r) is IOError:
                 self.lastError = str(r)
                 return
             else:
@@ -254,7 +254,7 @@ class Connection(RESTConnection):
         def process(r):
             self.plugin.logger.debug("Request done")
             self.requestRunning = False
-            if type(r) is urllib2.IOError:
+            if type(r) is IOError:
                 self.lastError = str(r)
             else:
                 self.lastError = None
