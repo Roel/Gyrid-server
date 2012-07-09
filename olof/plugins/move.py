@@ -235,6 +235,7 @@ class Connection(RESTConnection):
                 and s in self.measurements)]:
                 if linecount < 200000:
                     mc = copy.deepcopy(self.measurements[scanner])
+                    measurements_uploaded[scanner] = set()
                     for l in mc:
                         if linecount < 200000:
                             measurements_uploaded[scanner].add(l)
