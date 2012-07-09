@@ -229,20 +229,19 @@ class Connection(RESTConnection):
         def upload():
             m = ""
             m_scanner = []
-            self.measurements_uploaded = {}
             self.plugin.logger.debug("Posting measurements")
             linecount = 0
             for scanner in [s for s in self.scanners.keys() if (self.scanners[s] == True \
                 and s in self.measurements)]:
-                self.measurements_uploaded[scanner] = copy.deepcopy(self.measurements[scanner])
+                measurements_uploaded[scanner] = copy.deepcopy(self.measurements[scanner])
 
-                if len(self.measurements_uploaded[scanner]) > 0:
+                if len(measurements_uploaded[scanner]) > 0:
                     self.plugin.logger.debug("Adding %i measurements for scanner %s" % (len(
-                        self.measurements_uploaded[scanner]), scanner))
-                    linecount += len(self.measurements_uploaded[scanner])
+                        measurements_uploaded[scanner]), scanner))
+                    linecount += len(measurements_uploaded[scanner])
                     m_scanner.append("==%s" % scanner)
-                    m_scanner.append("\n".join(self.measurements_uploaded[scanner]))
-                    to_delete.append((scanner, len(self.measurements_uploaded[scanner])))
+                    m_scanner.append("\n".join(measurements_uploaded[scanner]))
+                    to_delete.append((scanner, len(measurements_uploaded[scanner])))
 
             m = '\n'.join(m_scanner)
             if len(m) > 0:
@@ -271,7 +270,7 @@ class Connection(RESTConnection):
                     if move_lines == uploaded_lines:
                         self.plugin.logger.debug("Upload for scanner %s: OK" % scanner[0])
                         uploadSize += uploaded_lines
-                        for l in self.measurements_uploaded[scanner[0]]:
+                        for l in measurements_uploaded[scanner[0]]:
                             self.measurements[scanner[0]].remove(l)
                     else:
                         self.plugin.logger.logError("Upload for scanner %s: FAIL" % scanner[0])
@@ -300,6 +299,7 @@ class Connection(RESTConnection):
             return
 
         to_delete = []
+        measurements_uploaded = {}
         self.getScanners(upload)
 
 class Plugin(olof.core.Plugin):
