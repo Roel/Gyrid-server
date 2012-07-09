@@ -233,15 +233,19 @@ class Connection(RESTConnection):
             linecount = 0
             for scanner in [s for s in self.scanners.keys() if (self.scanners[s] == True \
                 and s in self.measurements)]:
-                measurements_uploaded[scanner] = copy.deepcopy(self.measurements[scanner])
+                if linecount < 200000:
+                    mc = copy.deepcopy(self.measurements[scanner])
+                    for l in mc:
+                        if linecount < 200000:
+                            measurements_uploaded[scanner].add(l)
+                            linecount += 1
 
-                if len(measurements_uploaded[scanner]) > 0:
-                    self.plugin.logger.debug("Adding %i measurements for scanner %s" % (len(
-                        measurements_uploaded[scanner]), scanner))
-                    linecount += len(measurements_uploaded[scanner])
-                    m_scanner.append("==%s" % scanner)
-                    m_scanner.append("\n".join(measurements_uploaded[scanner]))
-                    to_delete.append((scanner, len(measurements_uploaded[scanner])))
+                    if len(measurements_uploaded[scanner]) > 0:
+                        self.plugin.logger.debug("Adding %i measurements for scanner %s" % (len(
+                            measurements_uploaded[scanner]), scanner))
+                        m_scanner.append("==%s" % scanner)
+                        m_scanner.append("\n".join(measurements_uploaded[scanner]))
+                        to_delete.append((scanner, len(measurements_uploaded[scanner])))
 
             m = '\n'.join(m_scanner)
             if len(m) > 0:
