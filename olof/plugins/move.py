@@ -436,7 +436,7 @@ class Plugin(olof.core.Plugin):
                                 getRelativeTime(int(time.strftime("%s", firstData)))),
                       'int': cache})
 
-        if self.conn.lastError == None:
+        if self.conn.lastError == None and self.config.getValue('upload_enabled') == True:
             if m['uploads'] > 0:
                 r.append({'id': '<span title="Average upload size; total number of uploads">average upload</span>',
                           'int': (m['uploaded'] / m['uploads'])})
