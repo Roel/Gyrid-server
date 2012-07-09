@@ -389,13 +389,14 @@ class Plugin(olof.core.Plugin):
         Return the current status of the Move plugin and cache. For use in the status plugin.
         """
         r = []
-        now = time.time()
-        m = self.conn.measureCount
 
         if self.conn == None:
             r.append({'status': 'error'})
             r.append({'id': 'error', 'str': 'API details missing'})
             return r
+
+        m = self.conn.measureCount
+        now = time.time()
 
         if self.config.getValue('upload_enabled') == False:
             r.append({'status': 'disabled'})
