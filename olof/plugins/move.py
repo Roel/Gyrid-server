@@ -233,11 +233,11 @@ class Connection(RESTConnection):
             linecount = 0
             for scanner in [s for s in self.scanners.keys() if (self.scanners[s] == True \
                 and s in self.measurements)]:
-                if linecount < 200000:
+                if linecount < max_request_size:
                     mc = copy.deepcopy(self.measurements[scanner])
                     measurements_uploaded[scanner] = set()
                     for l in mc:
-                        if linecount < 200000:
+                        if linecount < max_request_size:
                             measurements_uploaded[scanner].add(l)
                             linecount += 1
 
@@ -305,6 +305,7 @@ class Connection(RESTConnection):
 
         to_delete = []
         measurements_uploaded = {}
+        max_request_size = self.plugin.config.getValue('max_request_size')
         self.getScanners(upload)
 
 class Plugin(olof.core.Plugin):
@@ -367,6 +368,11 @@ class Plugin(olof.core.Plugin):
         o = olof.configuration.Option('password')
         o.setDescription('Password to use for logging in.')
         o.addCallback(self.setupConnection)
+        options.append(o)
+
+        o = olof.configuration.Option('max_request_size')
+        o.setDescription('The maximum number of detections that can be uploaded in one request.')
+        o.addValue(olof.configuration.OptionValue(200000, default=True))
         options.append(o)
 
         o = olof.configuration.Option('upload_enabled')
