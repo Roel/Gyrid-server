@@ -425,17 +425,24 @@ class Plugin(olof.core.Plugin):
                       'str': '%0.2f %%' % (((m['uploads'] * 1.0) / tU) * 100)})
 
         cache = sum(len(self.measurements[i]) for i in self.measurements)
-        firstData = time.localtime()
-        for s in self.measurements.values():
-            for l in s:
-                t = time.strptime(l[:15] + l[19:l.find(',')], "%Y%m%d-%H%M%S-%Z")
-                firstData = min(t, firstData)
+
+        firstData = None
+        if cache <= 200000: # Too CPU intensive for big cache.
+            firstData = time.localtime()
+            for s in self.measurements.values():
+                for l in s:
+                    t = time.strptime(l[:15] + l[19:l.find(',')], "%Y%m%d-%H%M%S-%Z")
+                    firstData = min(t, firstData)
 
         if cache > 0:
-            r.append({'id': '<span title="Data since: %s – %s">cached</span>' % (
-                                time.strftime("%a %Y-%m-%d %H:%M:%S", firstData),
-                                getRelativeTime(int(time.strftime("%s", firstData)))),
-                      'int': cache})
+            if firstData != None:
+                r.append({'id': '<span title="Data since: %s – %s">cached</span>' % (
+                                    time.strftime("%a %Y-%m-%d %H:%M:%S", firstData),
+                                    getRelativeTime(int(time.strftime("%s", firstData)))),
+                          'int': cache})
+            else:
+                r.append({'id': 'cached', 'int': cache})
+
 
         if self.conn.lastError == None and self.config.getValue('upload_enabled') == True:
             if m['uploads'] > 0:
