@@ -155,6 +155,10 @@ class RESTConnection(object):
         except urllib2.HTTPError as e:
             return IOError(str(e))
         except urllib2.URLError as e:
-            return IOError(str(e.reason)[str(e.reason).find(']')+2:])
+            s = str(e.reason).strip()
+            if ']' in s:
+                return IOError(s[s.find(']')+2:])
+            else:
+                return IOError(s)
         except:
             return None
