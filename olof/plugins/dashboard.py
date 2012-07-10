@@ -152,6 +152,7 @@ class ContentResource(resource.Resource):
                 html += '<img alt="" src="/dashboard/static/icons/radar-grey.png">'
                 html += '<a href="#" onclick="goTo(\'#%s\')">%s</a>' % (p.name.replace(' ','-'), p.name)
                 html += '<span class="block_data_attr">inactive</span>'
+            html +='<span class="block_data_attr"><b>scanners</b> %s</span>' % formatNumber(len(p.locations))
             if p.start:
                 html += '<span class="block_data_attr"><b>start</b> %s</span>' % getRelativeTime(p.start,
                     wrapper=htmlSpanWrapper)
