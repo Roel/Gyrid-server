@@ -66,8 +66,10 @@ class Mailer(object):
         if not origin in self.__alertMap:
             return []
         else:
-            return [a[1] for a in self.__alertMap[
-                origin] if a[0] in atype and a[1].module == module]
+            if module != None:
+                return [a[1] for a in self.__alertMap[origin] if a[0] in atype and a[1].module == module]
+            else:
+                return [a[1] for a in self.__alertMap[origin] if a[0] in atype]
 
     def removeAlerts(self, alerts):
         """
@@ -165,7 +167,7 @@ class Mailer(object):
             level = alert.getStatusLevel(t)
             if level is not None and not alert.isSent(level):
                 for r in recipients:
-                    if alert.origin == 'Server':
+                    if alert.origin in (['Server'] + [p.filename for p in self.plugin.server.pluginmgr.getPlugins()]):
                         projects = [alert.origin]
                     else:
                         projects = [i for i in alert.projects if i != None]
@@ -174,16 +176,18 @@ class Mailer(object):
                             for a in r[1]:
                                 if level >= r[1][a]:
                                     if a not in recipients_sent:
-                                        mails.append([a,
-                                            alert.origin,
-                                            alert.getMessageBody(level)])
+                                        subj = alert.origin
+                                        if alert.origin in [
+                                            p.filename for p in self.plugin.server.pluginmgr.getPlugins()]:
+                                            subj = 'Plugin: %s' % alert.origin
+                                        mails.append([a, subj, alert.getMessageBody(level)])
                                         recipients_sent.append(a)
                 alert.markSent(level)
 
                 al = sorted(alert.action.keys())
                 nextLevels = al[al.index(level)+1:]
-                if len([a for a in nextLevels if alert.action[a][0] == None]) == \
-                    len(nextLevels):
+                if (len([a for a in nextLevels if alert.action[a][0] == None]) == \
+                    len(nextLevels)) and alert.autoexpire:
                     to_delete.append(alert)
 
         self.removeAlerts(to_delete)
@@ -203,7 +207,8 @@ class Alert(object):
         Class representing a type of alert.
         """
         ServerStartup, ScannerConnect, ScannerDisconnect, SensorDisconnect, \
-        SensorConnect, GyridDisconnect, GyridConnect = range(7)
+        SensorConnect, GyridDisconnect, GyridConnect, SensorFailed, \
+        SensorRestored, MoveUploadFailed, MoveUploadRestored = range(11)
 
         Message = {ServerStartup: "Server has been started.",
                    ScannerConnect: "Scanner connected.",
@@ -211,7 +216,11 @@ class Alert(object):
                    GyridConnect: "Gyrid daemon connected.",
                    GyridDisconnect: "Gyrid daemon disconnected.",
                    SensorConnect: "Sensor %(module)s connected.",
-                   SensorDisconnect: "Sensor %(module)s disconnected."}
+                   SensorDisconnect: "Sensor %(module)s disconnected.",
+                   SensorFailed: "No recent inquiry for sensor %(module)s.",
+                   SensorRestored: "Received recent inquiry for sensor %(module)s.",
+                   MoveUploadFailed: "Move upload failed.",
+                   MoveUploadRestored: "Move upload restored."}
 
     class Level:
         """
@@ -219,9 +228,10 @@ class Alert(object):
         """
         Info, Warning, Alert, Fire = range(4)
 
-        String = {Info: 'Info', Warning: 'Warning', Alert: 'Alert', Fire: 'Fire'}
+        String = {Info: 'Info', Warning: 'Level 1 warning: minor', Alert: 'Level 2 warning: major',
+            Fire: 'Level 3 warning: serious'}
 
-    def __init__(self, origin, projects, type, module=None, etime=None, message=None,
+    def __init__(self, origin, projects, type, module=None, etime=None, autoexpire=True, message=None,
                  info=1, warning=5, alert=20, fire=45):
         """
         Initialisation.
@@ -231,6 +241,8 @@ class Alert(object):
         @param   type (Alert.Type)   The type this alert.
         @param   module (str)        The module of this alert (i.e. the MAC-address of the sensor), when applicable.
         @param   etime (int)         The time the event causing the alert occured, in UNIX time. Current time when None.
+        @param   autoexpire (bool)   If the alert automatically expires and is deleted if all messages are sent.
+                                       Defaults to True.
         @param   message (str)       The message to send with this alert. Optional. A default message is always added
                                        based on the alert's type.
         @param   info (int)          Time in minutes to wait before sending the 'info' level message. Defaults to 1.
@@ -243,6 +255,7 @@ class Alert(object):
         self.type = type
         self.module = module
         self.etime = etime if etime != None else int(time.time())
+        self.autoexpire = autoexpire
         self.message = message
         self.action = {Alert.Level.Info: [info, False],
                        Alert.Level.Warning: [warning, False],
@@ -270,12 +283,13 @@ class Alert(object):
         @return   (str)                 The corresponding message body.
         """
         msg = Alert.Level.String[level]
-        msg += ' - %s -\r\n\r\n' % getRelativeTime(self.etime)
+        msg += ' - %s: \r\n\r\n' % getRelativeTime(self.etime)
         msg += Alert.Type.Message[self.type] % {'origin': self.origin,
                                                 'module': self.module}
         msg += '\r\n\r\n'
         if self.message:
-            msg += self.message
+            msg += self.message.strip()
+            msg += '\r\n\r\n'
         msg += '--\r\nThis event occurred at %s.' % \
             time.strftime("%Y%m%d-%H%M%S-%Z", time.localtime(self.etime))
         return msg
@@ -314,6 +328,38 @@ class Plugin(olof.core.Plugin):
             info=1, warning=None, alert=None, fire=None))
 
         self.connections = {}
+        self.recentInquiries = {}
+
+        self.checkRecentInquiriesCall = task.LoopingCall(self.checkRecentInquiries)
+        self.checkRecentInquiriesCall.start(30, now=False)
+
+    def unload(self, shutdown=False):
+        """
+        Unload the plugin.
+        """
+        olof.core.Plugin.unload(self, shutdown)
+        try:
+            self.checkRecentInquiriesCall.stop()
+        except AssertionError:
+            pass
+
+    def checkRecentInquiries(self):
+        """
+        Check if recent inquiries are made on all sensors. Add alerts when necessary.
+        """
+        now = int(time.time())
+        to_delete = []
+        for scanner in self.recentInquiries:
+            for mac in self.recentInquiries[scanner]:
+                i = self.recentInquiries[scanner][mac]
+                if (now - i[0]) > 60:
+                    self.mailer.addAlert(Alert(scanner, i[1], Alert.Type.SensorFailed, mac))
+                    to_delete.append(mac)
+
+        for i in to_delete:
+            del(self.recentInquiries[scanner][mac])
+            if len(self.recentInquiries[scanner]) < 1:
+                del(self.recentInquiries[scanner])
 
     def defineConfiguration(self):
         """
@@ -419,8 +465,10 @@ class Plugin(olof.core.Plugin):
 
         if hostname in self.connections and len(self.connections[hostname]) == 0:
             a = self.mailer.getAlerts(hostname, [Alert.Type.GyridDisconnect,
-                Alert.Type.SensorDisconnect])
+                Alert.Type.SensorDisconnect, Alert.Type.SensorFailed])
             self.mailer.removeAlerts(a)
+
+            self.recentInquiries[hostname] = {}
 
             a = self.mailer.getAlerts(hostname, [Alert.Type.ScannerDisconnect])
             if len(a) == 0:
@@ -442,6 +490,18 @@ class Plugin(olof.core.Plugin):
         elif info == 'stopped_scanning':
             self.mailer.addAlert(Alert(hostname, projects, Alert.Type.SensorDisconnect,
                 sensorMac))
+            del(self.recentInquiries[hostname][sensorMac])
+        elif info == 'new_inquiry':
+            if hostname in self.recentInquiries and sensorMac in self.recentInquiries[hostname]:
+                a = self.mailer.getAlerts(hostname, [Alert.Type.SensorFailed], sensorMac)
+                if len(a) > 0:
+                    self.mailer.addAlert(Alert(hostname, projects, Alert.Type.SensorRestored,
+                        sensorMac, info=1, warning=None, alert=None, fire=None))
+                self.mailer.removeAlerts(a)
+                self.mailer.removeAlerts(self.mailer.getAlerts(hostname, [Alert.Type.GyridDisconnect]))
+            if hostname not in self.recentInquiries:
+                self.recentInquiries[hostname] = {}
+            self.recentInquiries[hostname][sensorMac] = [int(time.time()), projects]
 
     def sysStateFeed(self, hostname, projects, module, info):
         """

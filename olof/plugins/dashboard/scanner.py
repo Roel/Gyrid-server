@@ -63,7 +63,9 @@ class Scanner(object):
         self.host_uptime = None
         self.sensors = {}
         self.sensor_count = None
-        self.lagData = []
+        self.lagData = set()
+        self.lagDataCache = set()
+        self.checkLagRunning = False
         self.ip_provider = {}
         self.msisdn = None
         self.mv_balance = {}
@@ -221,30 +223,44 @@ class Scanner(object):
                 except AssertionError:
                     pass
 
+    def addLagData(self, rxTime, txTime, mac):
+        if self.checkLagRunning:
+            self.lagDataCache.add((rxTime, txTime, mac))
+        else:
+            self.lagData.add((rxTime, txTime, mac))
+
     def checkLag(self):
         """
         Check the connection lag data. Removes old data and updates the process lag data.
         """
+        self.checkLagRunning = True
         t = time.time()
+        toDelete = set()
         lag = {1: [0, 0, set()], 5: [0, 0, set()], 15: [0, 0, set()]}
+        lagKeys = dict((i, i*60) for i in lag)
+        maxSecs = sorted(lagKeys)[-1]*60
+        remove = toDelete.add
+
         for i in self.lagData:
-            if (t - i[0]) > (sorted(lag.keys())[-1]*60):
-                try:
-                    self.lagData.remove(i)
-                except:
-                    pass
-                continue
+            if (t - i[0]) > maxSecs:
+                remove(i)
+            else:
+                for j in lagKeys:
+                    if (t - i[0]) <= lagKeys[j]:
+                        lag[j][0] += abs(i[0] - i[1])
+                        lag[j][1] += 1
+                        lag[j][2].add(i[2])
 
-            for j in lag.keys():
-                if (t - i[0]) <= j*60:
-                    lag[j][0] += abs(i[0] - i[1])
-                    lag[j][1] += 1
-                    lag[j][2].add(i[2])
-
-        for j in lag.keys():
+        for j in lagKeys:
             lag[j][2] = len(lag[j][2])
 
+        for l in toDelete:
+            self.lagData.remove(l)
+
         self.lag = lag
+        self.checkLagRunning = False
+        self.lagData.union(self.lagDataCache)
+        self.lagDataCache.clear()
 
     def checkMVBalanceCall(self, action):
         """

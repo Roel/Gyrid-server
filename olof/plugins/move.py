@@ -19,13 +19,15 @@ import urllib2
 import olof.configuration
 import olof.core
 import olof.storagemanager
+
+from olof.tools.datetimetools import getRelativeTime
 from olof.tools.webprotocols import RESTConnection
 
 class Connection(RESTConnection):
     """
     Class that implements the REST connection with the Move database.
     """
-    def __init__(self, plugin, url, user, password, measurements={}, measureCount={}, locations={}):
+    def __init__(self, plugin, url, user, password, scanners={}, measurements={}, measureCount={}, locations={}):
         """
         Initialisation.
 
@@ -35,6 +37,7 @@ class Connection(RESTConnection):
         @param   url (str)             Base URL of the Move REST interface.
         @param   user (str)            Username to log in on the server.
         @param   password (str)        Password to log in on the server.
+        @param   scanners (dict)       Cached scanners. Optional.
         @param   measurements (dict)   Cached measurements. Optional.
         @param   measureCount (dict)   Cache statistics. Optional.
         @param   locations (dict)      Cached location data. Optional.
@@ -42,16 +45,18 @@ class Connection(RESTConnection):
         RESTConnection.__init__(self, url, 180, user, password, urllib2.HTTPDigestAuthHandler)
         self.plugin = plugin
         self.server = self.plugin.server
-        self.scanners = {}
+        self.scanners = scanners
         self.getScanners()
+        self.lastError = None
 
         self.requestRunning = False
         self.measurements = measurements
         if len(measureCount) == 0:
-            self.measureCount = {'uploads': 0, 'cached': 0, 'uploaded': 0,
-                'last_upload': -1}
+            self.measureCount = {'uploads': 0, 'uploaded': 0, 'last_upload': -1, 'failed_uploads': 0,
+                'recent_uploads': []}
         else:
             self.measureCount = measureCount
+            self.measureCount['recent_uploads'] = self.measureCount['recent_uploads'][-self.plugin.maxRecent:]
 
         self.locations = locations
 
@@ -75,17 +80,35 @@ class Connection(RESTConnection):
         except AssertionError:
             pass
 
-    def getScanners(self):
+    def getScanners(self, callback=None):
         """
         Get the list of scanners from the Move database and update local scanner data.
 
-        @return   (str)   Result of the query.
+        @param    callback   Function to call on succesfull request.
+        @return   (str)      Result of the query.
         """
         def process(r):
+            if type(r) is IOError:
+                self.lastError = str(r)
+                self.plugin.logger.logError("GET/scanner request failed: %s" % str(r))
+                if callback != None:
+                    self.measureCount['failed_uploads'] += 1
+                    alertPlugin = self.plugin.server.pluginmgr.getPlugin('alert')
+                    if alertPlugin != None:
+                        a = alertPlugin.mailer.getAlerts(self.plugin.filename,
+                            [olof.plugins.alert.Alert.Type.MoveUploadFailed])
+                        if len(a) < 1:
+                            alertPlugin.mailer.addAlert(olof.plugins.alert.Alert(self.plugin.filename, [],
+                                olof.plugins.alert.Alert.Type.MoveUploadFailed, autoexpire=False, message=str(r)))
+                return
+            else:
+                self.lastError = None
             if r != None:
                 for s in r:
                     ls = s.strip().split(',')
                     self.scanners[ls[0]] = True
+                if callback != None:
+                    callback()
             return r
 
         self.requestGet('scanner', process)
@@ -97,7 +120,14 @@ class Connection(RESTConnection):
         @param   mac (str)           Bluetooth MAC-address of the scanner.
         @param   description (str)   Description of the scanner.
         """
-        self.requestPost('scanner', None, '%s,%s' % (mac, description),
+        def process(r):
+            if type(r) is IOError:
+                self.lastError = str(r)
+                self.plugin.logger.logError("POST/scanner request failed: %s" % str(r))
+            else:
+                self.lastError = None
+
+        self.requestPost('scanner', process, '%s,%s' % (mac, description),
             {'Content-Type': 'text/plain'})
 
     def addLocation(self, sensor, timestamp, coordinates, description):
@@ -115,12 +145,12 @@ class Connection(RESTConnection):
 
         if not sensor in self.locations:
             self.locations[sensor] = [[(timestamp, coordinates, description), False]]
-            self.plugin.logger.logInfo("move: Adding location for %s at %s: %s (%s)" % (sensor, timestamp, description,
+            self.plugin.logger.debug("move: Adding location for %s at %s: %s (%s)" % (sensor, timestamp, description,
                 coordinates))
         else:
             if not (timestamp, coordinates, description) in [i[0] for i in self.locations[sensor]]:
                 self.locations[sensor].append([(timestamp, coordinates, description), False])
-                self.plugin.logger.logInfo("move: Adding location for %s at %s: %s (%s)" % (sensor, timestamp,
+                self.plugin.logger.debug("move: Adding location for %s at %s: %s (%s)" % (sensor, timestamp,
                     description, coordinates))
 
     def postLocations(self):
@@ -128,6 +158,11 @@ class Connection(RESTConnection):
         Upload the pending location updates to the Move database.
         """
         def process(r):
+            if type(r) is IOError:
+                self.lastError = str(r)
+                return
+            else:
+                self.lastError = None
             if r != None and not 'error' in str(r).lower():
                 for scanner in to_delete:
                     for l in self.locations[scanner]:
@@ -160,7 +195,7 @@ class Connection(RESTConnection):
 
         l = '\n'.join(l_scanner)
         if len(l) > 0:
-            self.plugin.logger.logInfo("move: Posting location: %s" % l)
+            self.plugin.logger.debug("move: Posting location: %s" % l)
             self.requestPost('scanner/location', process, l,
                 {'Content-Type': 'text/plain'})
 
@@ -184,68 +219,94 @@ class Connection(RESTConnection):
         tm = "%0.3f" % timestamp
         decSec = tm[tm.find('.')+1:]
         decSec += "0" * (3-len(decSec))
-        self.measurements[sensor].add(','.join([
-            time.strftime('%Y%m%d-%H%M%S.%%s-%Z', time.localtime(
-            timestamp)) % decSec, mac, str(deviceclass),
-            str(rssi)]))
-        self.measureCount['cached'] += 1
+        self.measurements[sensor].add(','.join([time.strftime('%Y%m%d-%H%M%S.%%s-%Z',
+            time.localtime(timestamp)) % decSec, mac, str(deviceclass), str(rssi)]))
 
     def postMeasurements(self):
         """
         Upload pending measurements to the Move database.
         """
+        def upload():
+            m = ""
+            m_scanner = []
+            self.plugin.logger.debug("Posting measurements")
+            linecount = 0
+            for scanner in [s for s in self.scanners.keys() if (self.scanners[s] == True \
+                and s in self.measurements)]:
+                if linecount < max_request_size:
+                    mc = copy.deepcopy(self.measurements[scanner])
+                    measurements_uploaded[scanner] = set()
+                    for l in mc:
+                        if linecount < max_request_size:
+                            measurements_uploaded[scanner].add(l)
+                            linecount += 1
+
+                    if len(measurements_uploaded[scanner]) > 0:
+                        self.plugin.logger.debug("Adding %i measurements for scanner %s" % (len(
+                            measurements_uploaded[scanner]), scanner))
+                        m_scanner.append("==%s" % scanner)
+                        m_scanner.append("\n".join(measurements_uploaded[scanner]))
+                        to_delete.append((scanner, len(measurements_uploaded[scanner])))
+
+            m = '\n'.join(m_scanner)
+            if len(m) > 0:
+                self.requestRunning = True
+                self.plugin.logger.debug("Sending request with %i lines" % linecount)
+                self.requestPost('measurement', process, m,
+                    {'Content-Type': 'text/plain'})
+
         def process(r):
-            self.plugin.logger.logInfo("Request done")
+            self.plugin.logger.debug("Request done")
             self.requestRunning = False
+            if type(r) is IOError:
+                self.lastError = str(r)
+            else:
+                self.lastError = None
+            alertPlugin = self.plugin.server.pluginmgr.getPlugin('alert')
             if r != None and type(r) is list and len(r) == len(to_delete):
                 self.measureCount['uploads'] += 1
                 self.measureCount['last_upload'] = int(time.time())
+                uploadSize = 0
                 for i in range(len(r)):
                     scanner = to_delete.pop(0)
                     move_lines = int(r.pop(0).strip().split(',')[1])
                     uploaded_lines = scanner[1]
 
                     if move_lines == uploaded_lines:
-                        self.plugin.logger.logInfo("Upload for scanner %s: OK" % scanner[0])
-                        self.measureCount['uploaded'] += uploaded_lines
-                        self.measureCount['cached'] -= uploaded_lines
-                        for l in self.measurements_uploaded[scanner[0]]:
+                        self.plugin.logger.debug("Upload for scanner %s: OK" % scanner[0])
+                        uploadSize += uploaded_lines
+                        for l in measurements_uploaded[scanner[0]]:
                             self.measurements[scanner[0]].remove(l)
                     else:
                         self.plugin.logger.logError("Upload for scanner %s: FAIL" % scanner[0])
+                if len(self.measureCount['recent_uploads']) > (self.plugin.maxRecent - 1):
+                    self.measureCount['recent_uploads'].pop(0)
+                self.measureCount['recent_uploads'].append(uploadSize)
+                self.measureCount['uploaded'] += uploadSize
+                if alertPlugin != None:
+                    a = alertPlugin.mailer.getAlerts(self.plugin.filename,
+                        [olof.plugins.alert.Alert.Type.MoveUploadFailed])
+                    alertPlugin.mailer.removeAlerts(a)
+                    alertPlugin.mailer.addAlert(olof.plugins.alert.Alert(self.plugin.filename, [],
+                        olof.plugins.alert.Alert.Type.MoveUploadRestored, info=1, warning=None, alert=None,
+                        fire=None))
             else:
                 self.plugin.logger.logError("Upload failed: %s" % str(r))
+                self.measureCount['failed_uploads'] += 1
+                if alertPlugin != None:
+                    a = alertPlugin.mailer.getAlerts(self.plugin.filename,
+                        [olof.plugins.alert.Alert.Type.MoveUploadFailed])
+                    if len(a) < 1:
+                        alertPlugin.mailer.addAlert(olof.plugins.alert.Alert(self.plugin.filename, [],
+                            olof.plugins.alert.Alert.Type.MoveUploadFailed, autoexpire=False, message=str(r)))
 
         if self.requestRunning or not self.plugin.config.getValue('upload_enabled'):
             return
 
-        m = ""
-        if False in self.scanners.values():
-            self.getScanners()
-
         to_delete = []
-        m_scanner = []
-        self.measurements_uploaded = {}
-        self.plugin.logger.logInfo("Posting measurements")
-        linecount = 0
-        for scanner in [s for s in self.scanners.keys() if (self.scanners[s] == True \
-            and s in self.measurements)]:
-            self.measurements_uploaded[scanner] = copy.deepcopy(self.measurements[scanner])
-
-            if len(self.measurements_uploaded[scanner]) > 0:
-                self.plugin.logger.logInfo("Adding %i measurements for scanner %s" % (len(
-                    self.measurements_uploaded[scanner]), scanner))
-                linecount += len(self.measurements_uploaded[scanner])
-                m_scanner.append("==%s" % scanner)
-                m_scanner.append("\n".join(self.measurements_uploaded[scanner]))
-                to_delete.append((scanner, len(self.measurements_uploaded[scanner])))
-
-        m = '\n'.join(m_scanner)
-        if len(m) > 0:
-            self.requestRunning = True
-            self.plugin.logger.logInfo("Sending request with %i lines" % linecount)
-            self.requestPost('measurement', process, m,
-                {'Content-Type': 'text/plain'})
+        measurements_uploaded = {}
+        max_request_size = self.plugin.config.getValue('max_request_size')
+        self.getScanners(upload)
 
 class Plugin(olof.core.Plugin):
     """
@@ -261,15 +322,18 @@ class Plugin(olof.core.Plugin):
         self.buffer = []
         self.last_session_id = None
         self.conn = None
+        self.maxRecent = 60
 
         measureCount = {'last_upload': -1,
                         'uploads': 0,
                         'uploaded': 0,
-                        'cached': 0}
+                        'failed_uploads': 0,
+                        'recent_uploads': []}
 
         self.measureCount = self.storage.loadObject('measureCount', measureCount)
         self.measurements = self.storage.loadObject('measurements', {})
         self.locations = self.storage.loadObject('locations', {})
+        self.scanners = self.storage.loadObject('scanners', {})
 
         self.setupConnection()
 
@@ -280,9 +344,11 @@ class Plugin(olof.core.Plugin):
         url = self.config.getValue('url')
         user = self.config.getValue('username')
         password = self.config.getValue('password')
+        scanners = dict(zip(self.scanners.keys(), [False] * len(self.scanners)))
 
         if None not in [url, user, password]:
-            self.conn = Connection(self, url, user, password, self.measurements, self.measureCount, self.locations)
+            self.conn = Connection(self, url, user, password, scanners, self.measurements, self.measureCount,
+                self.locations)
         else:
             self.conn = None
 
@@ -304,6 +370,11 @@ class Plugin(olof.core.Plugin):
         o.addCallback(self.setupConnection)
         options.append(o)
 
+        o = olof.configuration.Option('max_request_size')
+        o.setDescription('The maximum number of detections that can be uploaded in one request.')
+        o.addValue(olof.configuration.OptionValue(200000, default=True))
+        options.append(o)
+
         o = olof.configuration.Option('upload_enabled')
         o.setDescription('Whether uploading to the MOVE database is enabled.')
         o.addValue(olof.configuration.OptionValue(True, default=True))
@@ -322,6 +393,7 @@ class Plugin(olof.core.Plugin):
             self.storage.storeObject(self.conn.measureCount, 'measureCount')
             self.storage.storeObject(self.conn.measurements, 'measurements')
             self.storage.storeObject(self.conn.locations, 'locations')
+            self.storage.storeObject(self.conn.scanners, 'scanners')
 
     def getStatus(self):
         """
@@ -334,23 +406,65 @@ class Plugin(olof.core.Plugin):
             r.append({'id': 'error', 'str': 'API details missing'})
             return r
 
+        m = self.conn.measureCount
+        now = time.time()
+
         if self.config.getValue('upload_enabled') == False:
             r.append({'status': 'disabled'})
             r.append({'id': 'uploading disabled'})
-        elif self.conn.measureCount['last_upload'] < 0:
+        elif m['last_upload'] < 0:
             r.append({'status': 'error'})
-            r.append({'id': 'no upload'})
+        elif (now - m['last_upload']) > 60*5:
+            r.append({'status': 'error'})
+        elif self.conn.lastError != None:
+            r.append({'status': 'error'})
         else:
             r.append({'status': 'ok'})
 
-        if self.conn.measureCount['last_upload'] > 0:
-            r.append({'id': 'last upload', 'time': self.conn.measureCount['last_upload']})
+        if self.conn.lastError != None:
+            r.append({'id': 'error', 'str': self.conn.lastError.lower()})
 
-        if self.conn.measureCount['uploaded'] > 0:
-            r.append({'id': 'uploaded lines', 'int': self.conn.measureCount['uploaded']})
+        if m['last_upload'] > 0:
+            r.append({'id': 'last upload', 'time': m['last_upload']})
+        elif m['last_upload'] < 0 and self.conn.lastError == None:
+            r.append({'id': 'no upload'})
 
-        if self.conn.measureCount['cached'] > 0:
-            r.append({'id': 'cached lines', 'int': self.conn.measureCount['cached']})
+        tU = m['uploads'] + m['failed_uploads']
+        if tU > 0:
+            r.append({'id': '<span title="%i out of %i uploads failed">hitrate</span>' % (
+                                m['failed_uploads'], tU),
+                      'str': '%0.2f %%' % (((m['uploads'] * 1.0) / tU) * 100)})
+
+        cache = sum(len(self.measurements[i]) for i in self.measurements)
+
+        firstData = None
+        if cache <= 200000: # Too CPU intensive for big cache.
+            firstData = time.localtime()
+            for s in self.measurements.values():
+                for l in s:
+                    t = time.strptime(l[:15] + l[19:l.find(',')], "%Y%m%d-%H%M%S-%Z")
+                    firstData = min(t, firstData)
+
+        if cache > 0:
+            if firstData != None:
+                r.append({'id': '<span title="Data since: %s – %s">cached</span>' % (
+                                    time.strftime("%a %Y-%m-%d %H:%M:%S", firstData),
+                                    getRelativeTime(int(time.strftime("%s", firstData)))),
+                          'int': cache})
+            else:
+                r.append({'id': 'cached', 'int': cache})
+
+
+        if self.conn.lastError == None and self.config.getValue('upload_enabled') == True:
+            if m['uploads'] > 0:
+                r.append({'id': '<span title="Average upload size; total number of uploads">average upload</span>',
+                          'int': (m['uploaded'] / m['uploads'])})
+
+            if len(m['recent_uploads']) > 0:
+                r.append(
+                    {'id': '<span title="Average upload size; %i most recent uploads">recent average upload</span>' % \
+                                self.maxRecent,
+                     'int': (sum(m['recent_uploads']) / len(m['recent_uploads']))})
 
         return r
 

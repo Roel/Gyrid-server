@@ -90,6 +90,12 @@ class ContentResource(resource.Resource):
         html += '<div style="clear: both;"></div>'
         html += '<div class="block_content">'
 
+        if self.plugin.config.getValue('connection_lag_processing') == False:
+            html += '<div class="block_data">'
+            html += '<img alt="" src="/dashboard/static/icons/warning.png">Warning'
+            html += '<span class="block_data_attr">connection lag calculation disabled</span>'
+            html += '</div>'
+
         plugins = [p for p in self.plugin.server.pluginmgr.getPlugins() if p.name != None]
 
         # Resources
@@ -405,6 +411,7 @@ class Plugin(olof.core.Plugin):
             self.git_date = None
 
         self.parseMVNumbers()
+        self.updateConnectionLagConfig()
 
         t = task.LoopingCall(self.checkResources)
         t.start(10)
@@ -461,6 +468,14 @@ class Plugin(olof.core.Plugin):
         o.addValue(olof.configuration.OptionValue({}, default=True))
         options.append(o)
 
+        o = olof.configuration.Option('connection_lag_processing')
+        o.setDescription('Calculate connection lag based on recently received detections. ' + \
+            'This can be CPU and memory intensive.')
+        o.addValue(olof.configuration.OptionValue(True, default=True))
+        o.addValue(olof.configuration.OptionValue(False))
+        o.addCallback(self.updateConnectionLagConfig)
+        options.append(o)
+
         return options
 
     def updateMVConnectionConfig(self, value=None):
@@ -469,6 +484,22 @@ class Plugin(olof.core.Plugin):
         """
         for s in self.scanners.values():
             s.initMVConnection()
+
+    def updateConnectionLagConfig(self, value=None):
+        """
+        Update the connection lag calculation based on the configuration value.
+        """
+        if value == None:
+            value = self.config.getValue('connection_lag_processing')
+
+        if value == True:
+            for s in self.scanners.values():
+                s.checkLagCall('start')
+        elif value == False:
+            for s in self.scanners.values():
+                s.checkLagCall('stop')
+                s.lagData = set()
+                s.checkLag()
 
     def startListening(self):
         """
@@ -570,7 +601,7 @@ class Plugin(olof.core.Plugin):
         """
         Unload this plugin. Stop listening, stop looping calls and save scanner data to disk.
         """
-        olof.core.Plugin.unload(self)
+        olof.core.Plugin.unload(self, shutdown)
         if 'listeningPort' in self.__dict__:
             self.listeningPort.stopListening()
 
@@ -684,6 +715,7 @@ class Plugin(olof.core.Plugin):
         if sens.last_data == None or timestamp > sens.last_data:
             sens.last_data = timestamp
 
-        scann = self.getScanner(hostname)
-        t = time.time()
-        scann.lagData.append([t, float(timestamp), mac])
+        if self.config.getValue('connection_lag_processing'):
+            scann = self.getScanner(hostname)
+            t = time.time()
+            scann.addLagData(t, float(timestamp), mac)
