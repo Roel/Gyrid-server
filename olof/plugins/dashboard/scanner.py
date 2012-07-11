@@ -238,7 +238,7 @@ class Scanner(object):
         toDelete = set()
         lag = {1: [0, 0, set()], 5: [0, 0, set()], 15: [0, 0, set()]}
         lagKeys = dict((i, i*60) for i in lag)
-        maxSecs = sorted(lagKeys)[-1]*60
+        maxSecs = lagKeys[max(lagKeys)]
         remove = toDelete.add
 
         for i in self.lagData:
