@@ -414,8 +414,8 @@ class Plugin(olof.core.Plugin):
         self.parseMVNumbers()
         self.updateConnectionLagConfig()
 
-        t = task.LoopingCall(self.checkResources)
-        t.start(10)
+        self.checkResourcesCall = task.LoopingCall(self.checkResources)
+        self.checkResourcesCall.start(10)
 
         reactor.callLater(2, self.startListening)
 
@@ -603,6 +603,8 @@ class Plugin(olof.core.Plugin):
         Unload this plugin. Stop listening, stop looping calls and save scanner data to disk.
         """
         olof.core.Plugin.unload(self, shutdown)
+        self.checkResourcesCall.stop()
+
         if 'listeningPort' in self.__dict__:
             self.listeningPort.stopListening()
 
