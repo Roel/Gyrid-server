@@ -39,8 +39,14 @@ class Mailer(object):
         self.alerts = []
         self.__alertMap = {}
 
-        t = task.LoopingCall(self.sendAlerts)
-        t.start(60)
+        self.sendAlertsCall = task.LoopingCall(self.sendAlerts)
+        self.sendAlertsCall.start(60)
+
+    def unload(self, shutdown=False):
+        """
+        Unload the mailer.
+        """
+        self.sendAlertsCall.stop()
 
     def addAlert(self, alert):
         """
@@ -338,6 +344,7 @@ class Plugin(olof.core.Plugin):
         Unload the plugin.
         """
         olof.core.Plugin.unload(self, shutdown)
+        self.mailer.unload(shutdown)
         try:
             self.checkRecentInquiriesCall.stop()
         except AssertionError:
