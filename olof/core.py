@@ -36,6 +36,9 @@ class Plugin(object):
         self.filename = filename
         self.name = name
 
+        # Override this to False to disable dynamic unloading and reloading of the plugin.
+        self.dynamicLoading = True
+
         self.logger = olof.logger.Logger(self.server, self.filename)
         self.storage = olof.storagemanager.StorageManager(self, self.filename)
 
