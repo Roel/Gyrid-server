@@ -373,8 +373,9 @@ class Plugin(olof.core.Plugin):
         @param   server (Olof)   Reference to the main Olof server instance.
         """
         olof.core.Plugin.__init__(self, server, filename)
-        self.root = RootResource()
+        self.dynamicLoading = False
 
+        self.root = RootResource()
         status_resource = self.root
         self.root.putChild("dashboard", status_resource)
 

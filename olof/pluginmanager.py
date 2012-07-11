@@ -43,8 +43,8 @@ class PluginManager(object):
         Process an INotify Write event, reloading plugins when applicable.
         """
         if not event.name.startswith('.') and event.name.endswith('.py') and not event.name == '__init__.py':
-            self.unloadPlugin(event.name.rstrip('.py'))
-            self.loadPlugin(event.pathname)
+            if self.unloadPlugin(event.name.rstrip('.py')):
+                self.loadPlugin(event.pathname)
 
     def __processINotifyDelete(self, event):
         """
@@ -100,20 +100,26 @@ class PluginManager(object):
         @param   shutdown (bool)   True if the server is shutting down, else False.
         """
         for p in self.plugins.values():
-            p.unload(shutdown)
-            del(p)
+            if shutdown or p.dynamicLoading:
+                self.server.logger.logInfo('Unloaded plugin: %s' % p.filename)
+                p.unload(shutdown)
+                del(p)
 
     def unloadPlugin(self, name):
         """
         Unload the plugin with the given name.
 
-        @param   name (str)   Name of the plugin to unload. This is the filename, without the trailing '.py'.
+        @param    name (str)   Name of the plugin to unload. This is the filename, without the trailing '.py'.
+        @return   (bool)       Whether the plugin was unloaded.
         """
         p = self.getPlugin(name)
-        if p != None:
+        if p != None and p.dynamicLoading:
             self.server.logger.logInfo('Unloaded plugin: %s' % p.filename)
             p.unload()
             del(self.plugins[name])
+            del(sys.modules[p.__module__])
+            return True
+        return False
 
     def getPlugin(self, name):
         """
