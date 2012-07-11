@@ -90,7 +90,8 @@ class ContentResource(resource.Resource):
         html += '<div style="clear: both;"></div>'
         html += '<div class="block_content">'
 
-        if self.plugin.config.getValue('connection_lag_processing') == False:
+        if self.plugin.connectionLagProcessing == False or \
+            self.plugin.config.getValue('connection_lag_processing') == False:
             html += '<div class="block_data">'
             html += '<img alt="" src="/dashboard/static/icons/warning.png">Warning'
             html += '<span class="block_data_attr">connection lag calculation disabled</span>'
@@ -401,6 +402,8 @@ class Plugin(olof.core.Plugin):
         except:
             self.cpuCount = 1
 
+        self.connectionLagProcessing = True
+
         try:
             import git
             repo = git.Repo('.')
@@ -490,8 +493,7 @@ class Plugin(olof.core.Plugin):
         """
         Update the connection lag calculation based on the configuration value.
         """
-        if value == None:
-            value = self.config.getValue('connection_lag_processing')
+        value = self.connectionLagProcessing and self.config.getValue('connection_lag_processing')
 
         if value == True:
             for s in self.scanners.values():
@@ -581,6 +583,14 @@ class Plugin(olof.core.Plugin):
 
         s = os.statvfs('.')
         self.diskfree_mb = (s.f_bavail * s.f_bsize)/1024/1024
+
+        if self.connectionLagProcessing == True:
+            clp = not (float(self.load[2]) > (self.cpuCount*1.75)) or (self.memfree_mb < 60)
+        else:
+            clp = not (float(self.load[2]) > (self.cpuCount*1)) or (self.memfree_mb < 100)
+        if clp != self.connectionLagProcessing:
+            self.connectionLagProcessing = clp
+            self.updateConnectionLagConfig(clp)
 
     def parseMVNumbers(self, msisdnMap=None):
         """
@@ -718,7 +728,7 @@ class Plugin(olof.core.Plugin):
         if sens.last_data == None or timestamp > sens.last_data:
             sens.last_data = timestamp
 
-        if self.config.getValue('connection_lag_processing'):
+        if self.connectionLagProcessing and self.config.getValue('connection_lag_processing'):
             scann = self.getScanner(hostname)
             t = time.time()
             scann.addLagData(t, float(timestamp), mac)
