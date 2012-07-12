@@ -407,6 +407,7 @@ class Plugin(olof.core.Plugin):
             return r
 
         m = self.conn.measureCount
+        cache = sum(len(self.measurements[i]) for i in self.measurements)
         now = time.time()
 
         if self.config.getValue('upload_enabled') == False:
@@ -414,7 +415,7 @@ class Plugin(olof.core.Plugin):
             r.append({'id': 'uploading disabled'})
         elif m['last_upload'] < 0:
             r.append({'status': 'error'})
-        elif (now - m['last_upload']) > 60*5:
+        elif cache > 0 and (now - m['last_upload']) > 60*5:
             r.append({'status': 'error'})
         elif self.conn.lastError != None:
             r.append({'status': 'error'})
@@ -434,8 +435,6 @@ class Plugin(olof.core.Plugin):
             r.append({'id': '<span title="%i out of %i uploads failed">hitrate</span>' % (
                                 m['failed_uploads'], tU),
                       'str': '%0.2f %%' % (((m['uploads'] * 1.0) / tU) * 100)})
-
-        cache = sum(len(self.measurements[i]) for i in self.measurements)
 
         firstData = None
         if cache <= (self.config.getValue('max_request_size') / 4): # Too CPU intensive for big cache.
