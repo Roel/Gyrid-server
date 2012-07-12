@@ -192,7 +192,7 @@ class Plugin(olof.core.Plugin):
         """
         Unload. Save locations and scansetups to disk.
         """
-        olof.core.Plugin.unload(self)
+        olof.core.Plugin.unload(self, shutdown)
         self.storage.storeObject(self.locations, 'locations')
         self.storage.storeObject(self.scanSetups, 'scanSetups')
 
@@ -202,7 +202,7 @@ class Plugin(olof.core.Plugin):
         """
         cl = {}
         if self.cached_lines > 0:
-            cl = {'id': 'cached lines', 'int': self.cached_lines}
+            cl = {'id': 'cached', 'int': self.cached_lines}
 
         r = []
         if self.connected == False and self.conn_time == None:
