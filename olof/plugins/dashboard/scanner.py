@@ -63,10 +63,7 @@ class Scanner(object):
         self.host_uptime = None
         self.sensors = {}
         self.sensor_count = None
-        self.lagData = set()
-        self.lagDataCache = set()
-        self.checkLagRunning = False
-        self.clearLagData = False
+        self.lagData = []
         self.ip_provider = {}
         self.msisdn = None
         self.mv_balance = {}
@@ -224,60 +221,33 @@ class Scanner(object):
                 except AssertionError:
                     pass
 
-    def addLagData(self, rxTime, txTime, mac):
-        """
-        Add information to the lag data cache.
-
-        @param  rxTime (float)   The time the detection was received serverside.
-        @param  txTime (float)   The time the detection was sent clientside.
-        @param  mac (str)        The MAC-address of the detected device.
-        """
-        if self.checkLagRunning:
-            self.lagDataCache.add((rxTime, txTime, mac))
-        else:
-            self.lagData.add((rxTime, txTime, mac))
-
     def checkLag(self):
         """
         Check the connection lag data. Removes old data and updates the process lag data.
         """
-        if self.checkLagRunning:
-            return
-
-        self.checkLagRunning = True
         t = time.time()
-        toDelete = set()
         lag = {1: [0, 0, set()], 5: [0, 0, set()], 15: [0, 0, set()]}
         lagKeys = dict((i, i*60) for i in lag)
         maxSecs = lagKeys[max(lagKeys)]
-        remove = toDelete.add
-
+        remove = self.lagData.remove
         for i in self.lagData:
             if (t - i[0]) > maxSecs:
-                remove(i)
-            else:
-                for j in lagKeys:
-                    if (t - i[0]) <= lagKeys[j]:
-                        lag[j][0] += abs(i[0] - i[1])
-                        lag[j][1] += 1
-                        lag[j][2].add(i[2])
+                try:
+                    remove(i)
+                except:
+                    pass
+                continue
+
+            for j in lagKeys:
+                if (t - i[0]) <= lagKeys[j]:
+                    lag[j][0] += abs(i[0] - i[1])
+                    lag[j][1] += 1
+                    lag[j][2].add(i[2])
 
         for j in lagKeys:
             lag[j][2] = len(lag[j][2])
 
-        for l in toDelete:
-            self.lagData.remove(l)
-
         self.lag = lag
-        self.checkLagRunning = False
-        if self.clearLagData:
-            self.lagData.clear()
-            self.lagDataCache.clear()
-            self.clearLagData = False
-            self.checkLag()
-        else:
-            self.lagData.union(self.lagDataCache)
-            self.lagDataCache.clear()
 
     def checkMVBalanceCall(self, action):
         """

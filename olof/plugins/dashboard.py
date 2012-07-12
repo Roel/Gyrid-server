@@ -502,7 +502,7 @@ class Plugin(olof.core.Plugin):
         elif value == False:
             for s in self.scanners.values():
                 s.checkLagCall('stop')
-                s.clearLagData = True
+                s.lagData = []
                 s.checkLag()
 
     def startListening(self):
@@ -732,4 +732,4 @@ class Plugin(olof.core.Plugin):
         if self.connectionLagProcessing and self.config.getValue('connection_lag_processing'):
             scann = self.getScanner(hostname)
             t = time.time()
-            scann.addLagData(t, float(timestamp), mac)
+            scann.lagData.append([t, float(timestamp), mac])
