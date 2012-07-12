@@ -66,6 +66,7 @@ class Scanner(object):
         self.lagData = set()
         self.lagDataCache = set()
         self.checkLagRunning = False
+        self.clearLagData = False
         self.ip_provider = {}
         self.msisdn = None
         self.mv_balance = {}
@@ -224,6 +225,13 @@ class Scanner(object):
                     pass
 
     def addLagData(self, rxTime, txTime, mac):
+        """
+        Add information to the lag data cache.
+
+        @param  rxTime (float)   The time the detection was received serverside.
+        @param  txTime (float)   The time the detection was sent clientside.
+        @param  mac (str)        The MAC-address of the detected device.
+        """
         if self.checkLagRunning:
             self.lagDataCache.add((rxTime, txTime, mac))
         else:
@@ -233,6 +241,9 @@ class Scanner(object):
         """
         Check the connection lag data. Removes old data and updates the process lag data.
         """
+        if self.checkLagRunning:
+            return
+
         self.checkLagRunning = True
         t = time.time()
         toDelete = set()
@@ -259,8 +270,14 @@ class Scanner(object):
 
         self.lag = lag
         self.checkLagRunning = False
-        self.lagData.union(self.lagDataCache)
-        self.lagDataCache.clear()
+        if self.clearLagData:
+            self.lagData.clear()
+            self.lagDataCache.clear()
+            self.clearLagData = False
+            self.checkLag()
+        else:
+            self.lagData.union(self.lagDataCache)
+            self.lagDataCache.clear()
 
     def checkMVBalanceCall(self, action):
         """

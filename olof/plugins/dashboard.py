@@ -502,7 +502,7 @@ class Plugin(olof.core.Plugin):
         elif value == False:
             for s in self.scanners.values():
                 s.checkLagCall('stop')
-                s.lagData = set()
+                s.clearLagData = True
                 s.checkLag()
 
     def startListening(self):
