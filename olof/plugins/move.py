@@ -88,12 +88,12 @@ class Connection(RESTConnection):
         @return   (str)      Result of the query.
         """
         def process(r):
+            alertPlugin = self.plugin.server.pluginmgr.getPlugin('alert')
             if type(r) is IOError:
                 self.lastError = str(r)
                 self.plugin.logger.logError("GET/scanner request failed: %s" % str(r))
                 if callback != None:
                     self.measureCount['failed_uploads'] += 1
-                    alertPlugin = self.plugin.server.pluginmgr.getPlugin('alert')
                     if alertPlugin != None:
                         a = alertPlugin.mailer.getAlerts(self.plugin.filename,
                             [olof.plugins.alert.Alert.Type.MoveUploadFailed])
@@ -103,6 +103,13 @@ class Connection(RESTConnection):
                 return
             else:
                 self.lastError = None
+                if alertPlugin != None:
+                    a = alertPlugin.mailer.getAlerts(self.plugin.filename,
+                        [olof.plugins.alert.Alert.Type.MoveUploadFailed])
+                    alertPlugin.mailer.removeAlerts(a)
+                    alertPlugin.mailer.addAlert(olof.plugins.alert.Alert(self.plugin.filename, [],
+                        olof.plugins.alert.Alert.Type.MoveUploadRestored, info=1, warning=None, alert=None,
+                        fire=None))
             if r != None:
                 for s in r:
                     ls = s.strip().split(',')
