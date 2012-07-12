@@ -253,6 +253,8 @@ class Plugin(olof.core.Plugin):
             r = [{'status': 'ok'},
                 {'id': 'connected', 'time': self.conn_time}]
 
+        r.append({'id': 'host', 'str': self.host})
+
         if len(cl) > 0:
             r.append(cl)
         return r
