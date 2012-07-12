@@ -9,7 +9,9 @@
 Plugin that handles the connection with the Db4O database.
 """
 
-from twisted.internet import reactor
+from OpenSSL import SSL
+
+from twisted.internet import reactor, ssl
 from twisted.internet.protocol import ReconnectingClientFactory
 from twisted.protocols.basic import LineReceiver
 
@@ -132,6 +134,28 @@ class Db4OClientFactory(ReconnectingClientFactory):
         self.client = Db4OClient(self, self.plugin)
         return self.client
 
+class InetCtxFactory(ssl.ClientContextFactory):
+    """
+    The SSL context class of the inet client.
+    """
+    def __init__(self, plugin):
+        """
+        Initialisation.
+
+        @param   plugin (Plugin)   Reference to main Olof plugin instance.
+        """
+        self.plugin = plugin
+
+    def getContext(self):
+        """
+        Return the SSL client context.
+        """
+        self.method = SSL.SSLv23_METHOD
+        ctx = ssl.ClientContextFactory.getContext(self)
+        ctx.use_certificate_file(self.plugin.config.getValue('ssl_client_crt'))
+        ctx.use_privatekey_file(self.plugin.config.getValue('ssl_client_key'))
+        return ctx
+
 class Plugin(olof.core.Plugin):
     """
     Main Db4O plugin class.
@@ -164,7 +188,12 @@ class Plugin(olof.core.Plugin):
         self.scanSetups = self.storage.loadObject('scanSetups', [])
 
         self.db4o_factory = Db4OClientFactory(self)
-        reactor.connectTCP(self.host, self.port, self.db4o_factory)
+        if None not in [self.config.getValue('ssl_client_%s' % i) for i in ['crt', 'key']]:
+            self.logger.logInfo('Connecting to Db4o server at %s:%i, with SSL enabled' % (self.host, self.port))
+            reactor.connectSSL(self.host, self.port, self.db4o_factory, InetCtxFactory(self))
+        else:
+            self.logger.logInfo('Connecting to Db4o server at %s:%i' % (self.host, self.port))
+            reactor.connectTCP(self.host, self.port, self.db4o_factory)
 
     def defineConfiguration(self):
         options = []
@@ -178,6 +207,16 @@ class Plugin(olof.core.Plugin):
         o.setDescription('TCP port to use on the database server.')
         o.setValidation(olof.tools.validation.parseInt)
         o.addValue(olof.configuration.OptionValue(5001, default=True))
+        options.append(o)
+
+        o = olof.configuration.Option('ssl_client_crt')
+        o.setDescription('Path to the SSL client certificate. None to disable SSL.')
+        o.addValue(olof.configuration.OptionValue(None, default=True))
+        options.append(o)
+
+        o = olof.configuration.Option('ssl_client_key')
+        o.setDescription('Path to the SSL client key. None to disable SSL.')
+        o.addValue(olof.configuration.OptionValue(None, default=True))
         options.append(o)
 
         o = olof.configuration.Option('cache_file')
