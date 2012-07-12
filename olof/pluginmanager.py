@@ -43,17 +43,17 @@ class PluginManager(object):
         Process an INotify Write event, reloading plugins when applicable.
         """
         if not event.name.startswith('.') and event.name.endswith('.py') and not event.name == '__init__.py':
-            if self.unloadPlugin(event.name.rstrip('.py')):
-                self.loadPlugin(event.pathname)
+            self.unloadPlugin(event.name.rstrip('.py'), dynamic=True)
+            self.loadPlugin(event.pathname, dynamic=True)
 
     def __processINotifyDelete(self, event):
         """
         Process an INotify Delete event, unloading plugins when applicable.
         """
         if not event.name.startswith('.') and event.name.endswith('.py') and not event.name == '__init__.py':
-            self.unloadPlugin(event.name.rstrip('.py'))
+            self.unloadPlugin(event.name.rstrip('.py'), dynamic=True)
 
-    def loadPlugin(self, path):
+    def loadPlugin(self, path, dynamic=False):
         """
         Load a plugin.
 
@@ -65,15 +65,19 @@ class PluginManager(object):
             pluginModule = imp.load_source('dynamic-plugin-module-' + r[r.find('.')+1:], path)
             if 'ENABLED' in pluginModule.__dict__ and pluginModule.ENABLED == False:
                 return
+            elif dynamic and 'DYNAMIC_LOADING' in pluginModule.__dict__ and pluginModule.DYNAMIC_LOADING == False:
+                return
             else:
                 plugin = pluginModule.Plugin(self.server, name)
+                plugin.dynamicLoading = not ('DYNAMIC_LOADING' in pluginModule.__dict__ and \
+                    pluginModule.DYNAMIC_LOADING == False)
         except Exception as e:
             self.server.logger.logException(e, "Failed to load plugin %s" % name)
         else:
             self.server.logger.logInfo("Loaded plugin: %s" % name)
             self.plugins[name] = plugin
 
-    def loadAllPlugins(self):
+    def loadAllPlugins(self, dynamic=False):
         """
         Load all the plugins. Called automatically on initialisation.
         """
@@ -82,7 +86,7 @@ class PluginManager(object):
         for path in self.plugin_dirs:
             for filename in os.listdir(path):
                 if filename.endswith('.py') and not filename == '__init__.py':
-                    self.loadPlugin(os.path.join(home, path, filename))
+                    self.loadPlugin(os.path.join(home, path, filename), dynamic)
 
     def unload(self, shutdown=False):
         """
@@ -93,19 +97,19 @@ class PluginManager(object):
         self.inotifier.unload()
         self.unloadAllPlugins(shutdown)
 
-    def unloadAllPlugins(self, shutdown=False):
+    def unloadAllPlugins(self, shutdown=False, dynamic=False):
         """
         Unload all the plugins.
 
         @param   shutdown (bool)   True if the server is shutting down, else False.
         """
         for p in self.plugins.values():
-            if shutdown or p.dynamicLoading:
+            if not (dynamic and not p.dynamicLoading):
                 self.server.logger.logInfo('Unloaded plugin: %s' % p.filename)
                 p.unload(shutdown)
                 del(p)
 
-    def unloadPlugin(self, name):
+    def unloadPlugin(self, name, dynamic=False):
         """
         Unload the plugin with the given name.
 
@@ -113,13 +117,11 @@ class PluginManager(object):
         @return   (bool)       Whether the plugin was unloaded.
         """
         p = self.getPlugin(name)
-        if p != None and p.dynamicLoading:
+        if p != None and not (dynamic and not p.dynamicLoading):
             self.server.logger.logInfo('Unloaded plugin: %s' % p.filename)
             p.unload()
             del(self.plugins[name])
             del(sys.modules[p.__module__])
-            return True
-        return False
 
     def getPlugin(self, name):
         """

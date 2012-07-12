@@ -9,6 +9,8 @@
 Plugin that provides a status dashboard webpage.
 """
 
+DYNAMIC_LOADING = False
+
 from twisted.cred.checkers import FilePasswordDB
 from twisted.cred.portal import IRealm, Portal
 from twisted.internet import reactor, task, threads
@@ -373,7 +375,6 @@ class Plugin(olof.core.Plugin):
         @param   server (Olof)   Reference to the main Olof server instance.
         """
         olof.core.Plugin.__init__(self, server, filename)
-        self.dynamicLoading = False
 
         self.root = RootResource()
         status_resource = self.root

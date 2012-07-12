@@ -16,6 +16,10 @@ import olof.storagemanager
 # Add the module variable ENABLED to enable or disable a plugin. By default and when not specified, plugins are enabled.
 # ENABLED = False  ## Add to disable a plugin.
 
+# Add the module variable DYNAMIC_LOADING to disable dynamic unloading and reloading of the plugin.
+# By default and when not specified, dynamic loading is enabled.
+# DYNAMIC_LOADING = False  ## Add to disable dynamic loading.
+
 class Plugin(object):
     """
     This is the superclass interface for Olof plugins.
@@ -35,9 +39,6 @@ class Plugin(object):
         self.server = server
         self.filename = filename
         self.name = name
-
-        # Override this to False to disable dynamic unloading and reloading of the plugin.
-        self.dynamicLoading = True
 
         self.logger = olof.logger.Logger(self.server, self.filename)
         self.storage = olof.storagemanager.StorageManager(self, self.filename)
