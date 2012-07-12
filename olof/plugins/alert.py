@@ -357,10 +357,13 @@ class Plugin(olof.core.Plugin):
         now = int(time.time())
         to_delete = []
         for scanner in self.recentInquiries:
+            ap = self.server.dataprovider.getActivePlugins(scanner)
+            apn = dict([(p.filename, ap[p]) for p in ap])
             for mac in self.recentInquiries[scanner]:
                 i = self.recentInquiries[scanner][mac]
                 if (now - i[0]) > 60:
-                    self.mailer.addAlert(Alert(scanner, i[1], Alert.Type.SensorFailed, mac))
+                    if ('alert' in apn) and (len(apn['alert']) > 0):
+                        self.mailer.addAlert(Alert(scanner, i[1], Alert.Type.SensorFailed, mac))
                     to_delete.append(mac)
 
         for i in to_delete:
