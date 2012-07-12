@@ -387,7 +387,7 @@ class Plugin(olof.core.Plugin):
         """
         Unload. Save cache to disk.
         """
-        olof.core.Plugin.unload(self)
+        olof.core.Plugin.unload(self, shutdown)
         if self.conn != None:
             self.conn.unload()
             self.storage.storeObject(self.conn.measureCount, 'measureCount')
