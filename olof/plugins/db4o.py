@@ -188,7 +188,8 @@ class Plugin(olof.core.Plugin):
         self.scanSetups = self.storage.loadObject('scanSetups', [])
 
         self.db4o_factory = Db4OClientFactory(self)
-        if None not in [self.config.getValue('ssl_client_%s' % i) for i in ['crt', 'key']]:
+        self.ssl_enabled = None not in [self.config.getValue('ssl_client_%s' % i) for i in ['crt', 'key']]
+        if self.ssl_enabled:
             self.logger.logInfo('Connecting to Db4o server at %s:%i, with SSL enabled' % (self.host, self.port))
             reactor.connectSSL(self.host, self.port, self.db4o_factory, InetCtxFactory(self))
         else:
@@ -254,6 +255,7 @@ class Plugin(olof.core.Plugin):
                 {'id': 'connected', 'time': self.conn_time}]
 
         r.append({'id': 'host', 'str': self.host})
+        r.append({'id': 'ssl', 'str': 'enabled' if self.ssl_enabled else 'disabled'})
 
         if len(cl) > 0:
             r.append(cl)
