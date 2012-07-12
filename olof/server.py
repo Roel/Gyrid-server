@@ -329,11 +329,11 @@ class Olof(object):
         """
         Unload the dataprovider and the pluginmanager. Save the MAC-address:deviceclass dictionary to disk.
         """
-        self.logger.logInfo("Stopping Gyrid Server")
         self.dataprovider.unload()
         self.configmgr.unload()
         self.pluginmgr.unload(shutdown=True)
         self.storagemgr.storeObject(self.mac_dc, 'mac_dc')
+        self.logger.logInfo("Stopping Gyrid Server")
 
     def getDeviceclass(self, mac):
         """

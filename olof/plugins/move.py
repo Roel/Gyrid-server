@@ -387,7 +387,7 @@ class Plugin(olof.core.Plugin):
         """
         Unload. Save cache to disk.
         """
-        olof.core.Plugin.unload(self)
+        olof.core.Plugin.unload(self, shutdown)
         if self.conn != None:
             self.conn.unload()
             self.storage.storeObject(self.conn.measureCount, 'measureCount')
@@ -438,7 +438,7 @@ class Plugin(olof.core.Plugin):
         cache = sum(len(self.measurements[i]) for i in self.measurements)
 
         firstData = None
-        if cache <= 200000: # Too CPU intensive for big cache.
+        if cache <= (self.config.getValue('max_request_size') / 4): # Too CPU intensive for big cache.
             firstData = time.localtime()
             for s in self.measurements.values():
                 for l in s:
