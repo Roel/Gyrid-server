@@ -364,12 +364,12 @@ class Plugin(olof.core.Plugin):
                 if (now - i[0]) > 60:
                     if ('alert' in apn) and (len(apn['alert']) > 0):
                         self.mailer.addAlert(Alert(scanner, i[1], Alert.Type.SensorFailed, mac))
-                    to_delete.append(mac)
+                    to_delete.append((scanner, mac))
 
         for i in to_delete:
-            del(self.recentInquiries[scanner][mac])
-            if len(self.recentInquiries[scanner]) < 1:
-                del(self.recentInquiries[scanner])
+            del(self.recentInquiries[i[0]][i[1]])
+            if len(self.recentInquiries[i[0]]) < 1:
+                del(self.recentInquiries[i[0]])
 
     def defineConfiguration(self):
         """
