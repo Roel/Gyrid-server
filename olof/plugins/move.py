@@ -99,7 +99,8 @@ class Connection(RESTConnection):
                             [olof.plugins.alert.Alert.Type.MoveUploadFailed])
                         if len(a) < 1:
                             alertPlugin.mailer.addAlert(olof.plugins.alert.Alert(self.plugin.filename, [],
-                                olof.plugins.alert.Alert.Type.MoveUploadFailed, autoexpire=False, message=str(r)))
+                                olof.plugins.alert.Alert.Type.MoveUploadFailed, autoexpire=False, message=str(r),
+                                info=1, warning=5, alert=10, fire=20))
                 return
             else:
                 self.lastError = None
@@ -305,7 +306,8 @@ class Connection(RESTConnection):
                         [olof.plugins.alert.Alert.Type.MoveUploadFailed])
                     if len(a) < 1:
                         alertPlugin.mailer.addAlert(olof.plugins.alert.Alert(self.plugin.filename, [],
-                            olof.plugins.alert.Alert.Type.MoveUploadFailed, autoexpire=False, message=str(r)))
+                            olof.plugins.alert.Alert.Type.MoveUploadFailed, autoexpire=False, message=str(r),
+                            info=1, warning=5, alert=10, fire=20))
 
         if self.requestRunning or not self.plugin.config.getValue('upload_enabled'):
             return
