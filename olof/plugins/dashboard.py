@@ -497,14 +497,9 @@ class Plugin(olof.core.Plugin):
         """
         value = self.connectionLagProcessing and self.config.getValue('connection_lag_processing')
 
-        if value == True:
+        if value == False:
             for s in self.scanners.values():
-                s.checkLagCall('start')
-        elif value == False:
-            for s in self.scanners.values():
-                s.checkLagCall('stop')
                 s.lagData = []
-                s.checkLag()
 
     def startListening(self):
         """
