@@ -46,10 +46,10 @@ class Connection(RESTConnection):
         self.plugin = plugin
         self.server = self.plugin.server
         self.scanners = scanners
+        self.requestRunning = False
         self.getScanners()
         self.lastError = None
 
-        self.requestRunning = False
         self.measurements = measurements
         if len(measureCount) == 0:
             self.measureCount = {'uploads': 0, 'uploaded': 0, 'last_upload': -1, 'failed_uploads': 0,
@@ -88,6 +88,7 @@ class Connection(RESTConnection):
         @return   (str)      Result of the query.
         """
         def process(r):
+            self.requestRunning = False
             alertPlugin = self.plugin.server.pluginmgr.getPlugin('alert')
             if type(r) is IOError:
                 self.lastError = str(r)
@@ -119,6 +120,10 @@ class Connection(RESTConnection):
                     callback()
             return r
 
+        if self.requestRunning or not self.plugin.config.getValue('upload_enabled'):
+            return
+
+        self.requestRunning = True
         self.requestGet('scanner', process)
 
     def addScanner(self, mac, description):
@@ -129,12 +134,17 @@ class Connection(RESTConnection):
         @param   description (str)   Description of the scanner.
         """
         def process(r):
+            self.requestRunning = False
             if type(r) is IOError:
                 self.lastError = str(r)
                 self.plugin.logger.logError("POST/scanner request failed: %s" % str(r))
             else:
                 self.lastError = None
 
+        if self.requestRunning or not self.plugin.config.getValue('upload_enabled'):
+            return
+
+        self.requestRunning = True
         self.requestPost('scanner', process, '%s,%s' % (mac, description),
             {'Content-Type': 'text/plain'})
 
@@ -166,6 +176,7 @@ class Connection(RESTConnection):
         Upload the pending location updates to the Move database.
         """
         def process(r):
+            self.requestRunning = False
             if type(r) is IOError:
                 self.lastError = str(r)
                 return
@@ -204,6 +215,7 @@ class Connection(RESTConnection):
         l = '\n'.join(l_scanner)
         if len(l) > 0:
             self.plugin.logger.debug("move: Posting location: %s" % l)
+            self.requestRunning = True
             self.requestPost('scanner/location', process, l,
                 {'Content-Type': 'text/plain'})
 
@@ -235,6 +247,8 @@ class Connection(RESTConnection):
         Upload pending measurements to the Move database.
         """
         def upload():
+            if self.requestRunning or not self.plugin.config.getValue('upload_enabled'):
+                return
             m = ""
             m_scanner = []
             self.plugin.logger.debug("Posting measurements")
@@ -308,9 +322,6 @@ class Connection(RESTConnection):
                         alertPlugin.mailer.addAlert(olof.plugins.alert.Alert(self.plugin.filename, [],
                             olof.plugins.alert.Alert.Type.MoveUploadFailed, autoexpire=False, message=str(r),
                             info=1, warning=5, alert=10, fire=20))
-
-        if self.requestRunning or not self.plugin.config.getValue('upload_enabled'):
-            return
 
         to_delete = []
         measurements_uploaded = {}
