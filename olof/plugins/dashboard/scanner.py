@@ -12,6 +12,7 @@ Module providing storage-safe classes for use in dashboard plugin.
 from twisted.internet import reactor, task, threads
 
 import pickle
+import re
 import subprocess
 import time
 import urllib2
@@ -35,9 +36,11 @@ def formatNumber(number):
     @return   (str)                       HTML representation of the given number.
     """
     if (type(number) is int) or (type(number) is long):
-        return '{:,.0f}'.format(number).replace(',', '<span class="thousandSep"></span>')
+        return re.sub("(\d)(?=(\d{3})+(?!\d))", r"\1,", "%.0f" % number).replace(
+            ',', '<span class="thousandSep"></span>')
     elif type(number) is float:
-        return '{:,.2f}'.format(number).replace(',', '<span class="thousandSep"></span>')
+        return re.sub("(\d)(?=(\d{3})+(?!\d))", r"\1,", "%.2f" % number).replace(
+            ',', '<span class="thousandSep"></span>')
 
 class ScannerStatus:
     """
