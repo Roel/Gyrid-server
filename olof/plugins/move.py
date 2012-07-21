@@ -105,13 +105,6 @@ class Connection(RESTConnection):
                 return
             else:
                 self.lastError = None
-                if alertPlugin != None:
-                    a = alertPlugin.mailer.getAlerts(self.plugin.filename,
-                        [olof.plugins.alert.Alert.Type.MoveUploadFailed])
-                    alertPlugin.mailer.removeAlerts(a)
-                    alertPlugin.mailer.addAlert(olof.plugins.alert.Alert(self.plugin.filename, [],
-                        olof.plugins.alert.Alert.Type.MoveUploadRestored, info=1, warning=None, alert=None,
-                        fire=None))
             if r != None:
                 for s in r:
                     ls = s.strip().split(',')
