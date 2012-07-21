@@ -49,14 +49,9 @@ class RESTConnection(object):
         self.baseUrl = baseUrl
         self.timeout = float(timeout)
         self.username = username
+        self.password = password
+        self.authHandler = authHandler
         self.url = urlparse.urlparse(baseUrl)
-
-        if username and password and authHandler:
-            passman = urllib2.HTTPPasswordMgrWithDefaultRealm()
-            passman.add_password(None, self.baseUrl, username, password)
-            self.opener = urllib2.build_opener(authHandler(passman))
-        else:
-            self.opener = None
 
         self.returns = {}
         self.returnCount = 0
@@ -146,9 +141,16 @@ class RESTConnection(object):
         for i in headers.iteritems():
             req.add_header(i[0],i[1])
 
+        if self.username and self.password and self.authHandler:
+            passman = urllib2.HTTPPasswordMgrWithDefaultRealm()
+            passman.add_password(None, self.baseUrl, self.username, self.password)
+            opener = urllib2.build_opener(self.authHandler(passman))
+        else:
+            opener = None
+
         try:
-            if self.opener:
-                resp = self.opener.open(req, timeout=self.timeout)
+            if opener:
+                resp = opener.open(req, timeout=self.timeout)
             else:
                 resp = urllib2.urlopen(req, timeout=self.timeout)
             return resp.readlines()
