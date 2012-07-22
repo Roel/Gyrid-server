@@ -251,21 +251,6 @@ class ContentResource(resource.Resource):
 
         return html
 
-    def renderFooter(self):
-        """
-        Render the footer of the webpage to HTML.
-
-        @return   (str)   HTML representation of the footer of the webpage.
-        """
-        html = '<div id="footer">'
-        if self.plugin.git_commit != None and self.plugin.git_date != None:
-            html += '<p>Gyrid Server version <span title="%s">%s</span>.</p>' % (
-                self.plugin.git_commit, time.strftime('%Y-%m-%d', time.localtime(self.plugin.git_date)))
-        html += '<p>&#169; 2011-2012 Universiteit Gent, Roel Huybrechts. '
-        html += '<br>Icons by <a href="http://p.yusukekamiyamane.com/">Yusuke Kamiyamane</a>.</p>'
-        html += '</div>'
-        return html
-
     def render_GET(self, request):
         """
         GET and POST should be identical, so call render_POST instead.
@@ -316,8 +301,6 @@ class ContentResource(resource.Resource):
             for scanner in projectless_scanners:
                 s = self.plugin.scanners[scanner]
                 html += s.render()
-
-        html += self.renderFooter()
 
         return str(html)
 
@@ -405,16 +388,6 @@ class Plugin(olof.core.Plugin):
             self.cpuCount = 1
 
         self.connectionLagProcessing = True
-
-        try:
-            import git
-            repo = git.Repo('.')
-            commit = repo.commits(repo.active_branch)[0]
-            self.git_commit = commit.id
-            self.git_date = int(time.strftime('%s', commit.committed_date))
-        except:
-            self.git_commit = None
-            self.git_date = None
 
         self.parseMVNumbers()
         self.updateConnectionLagConfig()

@@ -59,7 +59,7 @@
 
                 error: function(data){
                     $("#content").html(
-                        '<div id="title"><p>Failed to connect to Gyrid Server</p></div>');
+                        '<div id="title"><p style="margin-bottom: 40px;">Failed to connect to Gyrid Server</p></div>');
                     $("#spinner").find('img').fadeOut('slow');
                     connected = false;
                     setTimeout('getContent()', 10000);
@@ -83,6 +83,13 @@
     <div id="spinner"><img alt="Updating.." src="/dashboard/static/icons/spinner.gif"></div>
     <div id="logo"><p><img alt="UGent logo" src="/dashboard/static/logos/logo.png"/></p></div>
     <div id="content"></div>
+    <div id="footer">
+        <p><img alt="Gyrid logo" src="/dashboard/static/logos/gyrid-logo.png"></p>
+        <p>
+            &#169; 2011-2012 Universiteit Gent, <a href="mailto:roel.huybrechts@ugent.be">Roel Huybrechts</a>.
+            <br>Icons by <a href="http://p.yusukekamiyamane.com/">Yusuke Kamiyamane</a>.
+        </p>
+    </div>
 </body>
 
 </html>
