@@ -98,7 +98,7 @@ class Connection(RESTConnection):
                     if alertPlugin != None:
                         a = alertPlugin.mailer.getAlerts(self.plugin.filename,
                             [olof.plugins.alert.Alert.Type.MoveUploadFailed])
-                        if len(a) < 1:
+                        if len(a) < 1 and sum(len(self.measurements[i]) for i in self.measurements) > 0:
                             alertPlugin.mailer.addAlert(olof.plugins.alert.Alert(self.plugin.filename, [],
                                 olof.plugins.alert.Alert.Type.MoveUploadFailed, autoexpire=False, message=str(r),
                                 info=1, warning=5, alert=10, fire=20))
