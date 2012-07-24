@@ -240,8 +240,6 @@ class Connection(RESTConnection):
         Upload pending measurements to the Move database.
         """
         def upload():
-            if self.requestRunning or not self.plugin.config.getValue('upload_enabled'):
-                return
             m = ""
             m_scanner = []
             self.plugin.logger.debug("Posting measurements")
@@ -316,10 +314,14 @@ class Connection(RESTConnection):
                             olof.plugins.alert.Alert.Type.MoveUploadFailed, autoexpire=False, message=str(r),
                             info=1, warning=5, alert=10, fire=20))
 
-        to_delete = []
-        measurements_uploaded = {}
-        max_request_size = self.plugin.config.getValue('max_request_size')
-        self.getScanners(upload)
+        if self.requestRunning or not self.plugin.config.getValue('upload_enabled'):
+            return
+
+        if sum(len(self.measurements[i]) for i in self.measurements) > 0:
+            to_delete = []
+            measurements_uploaded = {}
+            max_request_size = self.plugin.config.getValue('max_request_size')
+            self.getScanners(upload)
 
 class Plugin(olof.core.Plugin):
     """
