@@ -440,8 +440,6 @@ class Plugin(olof.core.Plugin):
             if self.config.getValue('caching_enabled') == False:
                 r.append({'id': 'caching', 'str': 'disabled'})
 
-        elif m['last_upload'] < 0:
-            r.append({'status': 'error'})
         elif cache > 0 and (now - m['last_upload']) > 60*5:
             r.append({'status': 'error'})
         elif self.conn.lastError != None:
