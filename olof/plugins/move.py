@@ -391,7 +391,14 @@ class Plugin(olof.core.Plugin):
         options.append(o)
 
         o = olof.configuration.Option('upload_enabled')
-        o.setDescription('Whether uploading measurements to the MOVE database is enabled.')
+        o.setDescription('Whether uploading detections to the MOVE database is enabled.')
+        o.addValue(olof.configuration.OptionValue(True, default=True))
+        o.addValue(olof.configuration.OptionValue(False))
+        options.append(o)
+
+        o = olof.configuration.Option('detections_enabled')
+        o.setDescription('Whether adding detections to the MOVE database is enabled. ' \ +
+            'When this is False, only location and scanner updates are pushed.')
         o.addValue(olof.configuration.OptionValue(True, default=True))
         o.addValue(olof.configuration.OptionValue(False))
         options.append(o)
@@ -512,6 +519,6 @@ class Plugin(olof.core.Plugin):
         """
         Add measurements when RSSI data is received.
         """
-        if self.conn != None:
+        if self.conn != None and self.config.getValue('detections_enabled') == True:
             deviceclass = self.server.getDeviceclass(mac)
             self.conn.addMeasurement(sensorMac, timestamp, mac, deviceclass, rssi)
