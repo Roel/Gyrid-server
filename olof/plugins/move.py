@@ -396,9 +396,10 @@ class Plugin(olof.core.Plugin):
         o.addValue(olof.configuration.OptionValue(False))
         options.append(o)
 
-        o = olof.configuration.Option('detections_enabled')
-        o.setDescription('Whether adding detections to the MOVE database is enabled. ' \ +
-            'When this is False, only location and scanner updates are pushed.')
+        o = olof.configuration.Option('caching_enabled')
+        o.setDescription('Whether adding detections to the cache and the MOVE database is enabled. ' + \
+            'When this is False, only location and scanner updates are stored and pushed. ' + \
+            'This is potentially dangerous, be careful!')
         o.addValue(olof.configuration.OptionValue(True, default=True))
         o.addValue(olof.configuration.OptionValue(False))
         options.append(o)
@@ -432,9 +433,13 @@ class Plugin(olof.core.Plugin):
         cache = sum(len(self.measurements[i]) for i in self.measurements)
         now = time.time()
 
-        if self.config.getValue('upload_enabled') == False:
+        if self.config.getValue('upload_enabled') == False or self.config.getValue('caching_enabled') == False:
             r.append({'status': 'disabled'})
-            r.append({'id': 'uploading disabled'})
+            if self.config.getValue('upload_enabled') == False:
+                r.append({'id': 'upload', 'str': 'disabled'})
+            if self.config.getValue('caching_enabled') == False:
+                r.append({'id': 'caching', 'str': 'disabled'})
+
         elif m['last_upload'] < 0:
             r.append({'status': 'error'})
         elif cache > 0 and (now - m['last_upload']) > 60*5:
@@ -519,6 +524,6 @@ class Plugin(olof.core.Plugin):
         """
         Add measurements when RSSI data is received.
         """
-        if self.conn != None and self.config.getValue('detections_enabled') == True:
+        if self.conn != None and self.config.getValue('caching_enabled') == True:
             deviceclass = self.server.getDeviceclass(mac)
             self.conn.addMeasurement(sensorMac, timestamp, mac, deviceclass, rssi)
