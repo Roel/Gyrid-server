@@ -113,7 +113,7 @@ class Connection(RESTConnection):
                     callback()
             return r
 
-        if self.requestRunning or not self.plugin.config.getValue('upload_enabled'):
+        if self.requestRunning:
             return
 
         self.requestRunning = True
@@ -134,7 +134,7 @@ class Connection(RESTConnection):
             else:
                 self.lastError = None
 
-        if self.requestRunning or not self.plugin.config.getValue('upload_enabled'):
+        if self.requestRunning:
             return
 
         self.requestRunning = True
@@ -180,7 +180,7 @@ class Connection(RESTConnection):
                     for l in self.locations[scanner]:
                         l[1] = True
 
-        if self.requestRunning or not self.plugin.config.getValue('upload_enabled'):
+        if self.requestRunning:
             return
 
         l = ""
@@ -389,7 +389,7 @@ class Plugin(olof.core.Plugin):
         options.append(o)
 
         o = olof.configuration.Option('upload_enabled')
-        o.setDescription('Whether uploading to the MOVE database is enabled.')
+        o.setDescription('Whether uploading measurements to the MOVE database is enabled.')
         o.addValue(olof.configuration.OptionValue(True, default=True))
         o.addValue(olof.configuration.OptionValue(False))
         options.append(o)
