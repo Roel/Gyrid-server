@@ -333,7 +333,7 @@ class Plugin(olof.core.Plugin):
         Send new_inquiry status messages to the Db4O server.
         """
         if info == 'new_inquiry':
-            for project in [i for i in projects if i != None]:
+            for project in [i.id for i in projects if i != None]:
                 self.db4o_factory.sendLine(','.join([project, hostname, 'INFO', str(int(timestamp*1000)),
                     'new_inquiry', sensorMac]))
 
@@ -341,7 +341,7 @@ class Plugin(olof.core.Plugin):
         """
         Send cell data to the Db4O server.
         """
-        for project in [i for i in projects if i != None]:
+        for project in [i.id for i in projects if i != None]:
             self.db4o_factory.sendLine(','.join([project, hostname, sensorMac, mac, str(deviceclass),
                 str(int(timestamp*1000)), move]))
 
@@ -350,6 +350,6 @@ class Plugin(olof.core.Plugin):
         Send RSSI data to the Db4O server.
         """
         deviceclass = str(self.server.getDeviceclass(mac))
-        for project in [i for i in projects if i != None]:
+        for project in [i.id for i in projects if i != None]:
             self.db4o_factory.sendLine(','.join([project, hostname, sensorMac, mac, str(deviceclass),
                 str(int(timestamp*1000)), str(rssi)]))

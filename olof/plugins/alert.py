@@ -176,7 +176,7 @@ class Mailer(object):
                     if alert.origin in (['Server'] + [p.filename for p in self.plugin.server.pluginmgr.getPlugins()]):
                         projects = [alert.origin]
                     else:
-                        projects = [i for i in alert.projects if i != None]
+                        projects = [i.id for i in alert.projects if i != None]
                     for project in projects:
                         if re.match(r[0], project):
                             for a in r[1]:

@@ -90,7 +90,7 @@ class Plugin(object):
         Called when new uptime information is received from the scanner.
 
         @param   hostname (str)      The hostname of the scanner.
-        @param   projects (set)      Projectnames of the scanner. Singleton None when projectless.
+        @param   projects (set)      Projects of the scanner. Singleton None when projectless.
         @param   hostUptime (int)    The timestamp since when the scanner is last booted up, in UNIX time.
         @param   gyridUptime (int)   The timestamp since when the Gyrid daemon in running, in UNIX time.
         """
@@ -101,7 +101,7 @@ class Plugin(object):
         Called when a new connection is made with a scanner.
 
         @param   hostname (str)   The hostname of the connected scanner.
-        @param   projects (set)   Projectnames of the scanner. Singleton None when projectless.
+        @param   projects (set)   Projects of the scanner. Singleton None when projectless.
         @param   ip (str)         The IP-address of the connected scanner.
         @param   port (int)       The TCP port from which the scanner is connected.
         """
@@ -112,7 +112,7 @@ class Plugin(object):
         Called when a connection to a scanner is lost.
 
         @param   hostname (str)  The hostname of the scanner that lost a connection.
-        @param   projects (set)  Projectnames of the scanner. Singleton None when projectless.
+        @param   projects (set)  Projects of the scanner. Singleton None when projectless.
         @param   ip (str)        The IP-address the scanner was connected from.
         @param   port (int)      The TCP port the scanner was connected from.
         """
@@ -123,7 +123,7 @@ class Plugin(object):
         Called when a new or updated Location is received from the data provider.
 
         @param   hostname (str)   The hostname of the scanner.
-        @param   projects (set)   Projectnames of the scanner. Singleton None when projectless.
+        @param   projects (set)   Projects of the scanner. Singleton None when projectless.
         @param   module (str)     The module of the new or updated location. Currently implemented:
                                     "scanner": A new or updated location for a scanner.
                                     "sensor": A new or updated location for a sensor.
@@ -136,7 +136,7 @@ class Plugin(object):
         Called when new structured status information is received for a specific sensor.
 
         @param   hostname (str)      The hostname of the scanner.
-        @param   projects (set)      Projectnames of the scanner. Singleton None when projectless.
+        @param   projects (set)      Projects of the scanner. Singleton None when projectless.
         @param   timestamp (float)   The timestamp of the status update, in UNIX time.
         @param   sensorMac (str)     The MAC-address of the respective Bluetooth sensor.
         @param   info (str)          The status info. Currently implemented:
@@ -151,7 +151,7 @@ class Plugin(object):
         Called when new structured general status information is received.
 
         @param   hostname (str)   The hostname of the scanner.
-        @param   projects (set)   Projectnames of the scanner. Singleton None when projectless.
+        @param   projects (set)   Projects of the scanner. Singleton None when projectless.
         @param   module (str)     The module the status info is valid for. Currently implemented:
                                     "gyrid": Status info from the Gyrid daemon.
         @param   info (str)       The status info. Currently implemented:
@@ -165,7 +165,7 @@ class Plugin(object):
         Called when a textual information message is received.
 
         @param   hostname (str)      The hostname of the scanner.
-        @param   projects (set)      Projectnames of the scanner. Singleton None when projectless.
+        @param   projects (set)      Projects of the scanner. Singleton None when projectless.
         @param   timestamp (float)   The timestamp of the info, in UNIX time.
         @param   info (str)          The info that was received.
         """
@@ -177,7 +177,7 @@ class Plugin(object):
         Called when new cell data is received.
 
         @param   hostname (str)      The hostname of the scanner that detected the device.
-        @param   projects (set)      Projectnames of the scanner. Singleton None when projectless.
+        @param   projects (set)      Projects of the scanner. Singleton None when projectless.
         @param   timestamp (float)   The timestamp at which the device was first or last detected, depending on the
                                        move. In UNIX time.
         @param   sensorMac (str)    The MAC-address of the Bluetooth sensor that discovered the device. Representation
@@ -195,7 +195,7 @@ class Plugin(object):
         Called when new RSSI data is received.
 
         @param   hostname (str)      The hostname of the scanner that detected the device.
-        @param   projects (set)      Projectnames of the scanner. Singleton None when projectless.
+        @param   projects (set)      Projects of the scanner. Singleton None when projectless.
         @param   timestamp (float)   The timestamp at which the device was detected. In UNIX time.
         @param   sensorMac (str)     The MAC-address of the Bluetooth sensor that discovered the device. Representation
                                        without colons, f.ex. 001122334455

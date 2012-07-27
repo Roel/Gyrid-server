@@ -10,6 +10,7 @@ Module that defines the datatypes that can be used in data.conf.py to define
 scanner setups at specific projects, times and locations.
 """
 
+import re
 import time
 
 # A reference to the main Olof server object. This reference is made at runtime.
@@ -95,8 +96,8 @@ class Location(object):
 
         @param    location (Location)   The location to check. Use this location when None.
         @param    timestamp (int)       The UNIX timestamp to check. Use current time when None.
-        @return   set(tuple)            A set of tuples mapping active projects to plugins.
-                                          Project can be None for plugins that are active without project.
+        @return   (dict)                A dictionary mapping plugins to projects. Project can be None for
+                                          plugins that are active without project.
         """
         ap = {}
         if location == None:
@@ -113,11 +114,11 @@ class Location(object):
                     if p.filename in ENABLED_PLUGINS:
                         if not p in ap:
                             ap[p] = set()
-                        ap[p].add(pr.name)
+                        ap[p].add(pr)
                     elif location.isActive(p.filename, pr, timestamp):
                         if not p in ap:
                             ap[p] = set()
-                        ap[p].add(pr.name)
+                        ap[p].add(pr)
         return ap
 
     def compare(self, location):
@@ -203,13 +204,18 @@ class Project(object):
     """
     Class that represents a project.
     """
-    def __init__(self, name):
+    def __init__(self, name, id=None):
         """
         Initialisation.
 
         @param   name (str)   The name of the project.
+        @param   id (str)     The id of the project, should not contain spaces or puctuation. When None it is formed
+                                automatically based on the project name.
         """
         self.name = name
+        self.id = id
+        if self.id == None:
+            self.id = re.sub(r'_+', '_', re.sub(r'[^A-z0-9]', '_', self.name))
 
         self.active = True
         self.disabled_plugins = []

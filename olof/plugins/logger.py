@@ -228,7 +228,7 @@ class Plugin(olof.core.Plugin):
         """
         Pass the information to the corresponding Scanner to be saved to the connection log.
         """
-        for project in projects:
+        for project in [i.id for i in projects if i != None]:
             sc = self.getScanner(hostname, project)
             sc.logConnection(time.time(), ip, port, 'made')
 
@@ -236,7 +236,7 @@ class Plugin(olof.core.Plugin):
         """
         Pass the information to the corresponding Scanner to be saved to the connection log.
         """
-        for project in projects:
+        for project in [i.id for i in projects if i != None]:
             sc = self.getScanner(hostname, project)
             try:
                 sc.logConnection(time.time(), ip, port, 'lost')
@@ -247,7 +247,7 @@ class Plugin(olof.core.Plugin):
         """
         Pass the information to the corresponding Scanner to be saved to the info log.
         """
-        for project in projects:
+        for project in [i.id for i in projects if i != None]:
             sc = self.getScanner(hostname, project)
             sc.logInfo(timestamp, info)
 
@@ -255,7 +255,7 @@ class Plugin(olof.core.Plugin):
         """
         Pass the information to the corresponding ScanSetup to be saved to the cell-data log.
         """
-        for project in projects:
+        for project in [i.id for i in projects if i != None]:
             ss = self.getScanSetup(hostname, project, sensorMac)
             ss.logCell(timestamp, mac, deviceclass, move)
 
@@ -263,6 +263,6 @@ class Plugin(olof.core.Plugin):
         """
         Pass the information to the corresponding ScanSetup to be saved to the RSSI-data log.
         """
-        for project in projects:
+        for project in [i.id for i in projects if i != None]:
             ss = self.getScanSetup(hostname, project, sensorMac)
             ss.logRssi(timestamp, mac, rssi)
