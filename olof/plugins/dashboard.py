@@ -158,10 +158,10 @@ class ContentResource(resource.Resource):
             html +='<span class="block_data_attr"><b>scanners</b> %s</span>' % formatNumber(len(p.locations))
             if p.start:
                 html += '<span class="block_data_attr"><b>start</b> %s</span>' % getRelativeTime(p.start,
-                    wrapper=htmlSpanWrapper)
+                    wrapper=htmlSpanWrapper, levels=2)
             if p.end:
                 html += '<span class="block_data_attr"><b>end</b> %s</span>' % getRelativeTime(p.end,
-                    wrapper=htmlSpanWrapper)
+                    wrapper=htmlSpanWrapper, levels=2)
             if len(p.disabled_plugins) > 0:
                 html += '<span class="block_data_attr"><b>disabled</b> %s</span>' % ', '.join(sorted(
                     p.disabled_plugins))
@@ -204,10 +204,10 @@ class ContentResource(resource.Resource):
             html += '<img alt="" src="/dashboard/static/icons/radar-grey.png">Inactive'
         if project.start:
             html += '<span class="block_data_attr"><b>start</b> %s</span>' % getRelativeTime(project.start,
-                wrapper=htmlSpanWrapper)
+                wrapper=htmlSpanWrapper, levels=2)
         if project.end:
             html += '<span class="block_data_attr"><b>end</b> %s</span>' % getRelativeTime(project.end,
-                wrapper=htmlSpanWrapper)
+                wrapper=htmlSpanWrapper, levels=2)
         html += '</div>'
 
         if len(project.disabled_plugins) > 0:
