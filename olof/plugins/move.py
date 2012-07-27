@@ -27,7 +27,8 @@ class Connection(RESTConnection):
     """
     Class that implements the REST connection with the Move database.
     """
-    def __init__(self, plugin, url, user, password, scanners={}, measurements={}, measureCount={}, locations={}):
+    def __init__(self, plugin, url, user, password, scanners={}, projects={}, measurements={}, measureCount={},
+                 locations={}):
         """
         Initialisation.
 
@@ -38,6 +39,7 @@ class Connection(RESTConnection):
         @param   user (str)            Username to log in on the server.
         @param   password (str)        Password to log in on the server.
         @param   scanners (dict)       Cached scanners. Optional.
+        @param   projects (dict)       Cached projects. Optional.
         @param   measurements (dict)   Cached measurements. Optional.
         @param   measureCount (dict)   Cache statistics. Optional.
         @param   locations (dict)      Cached location data. Optional.
@@ -46,11 +48,12 @@ class Connection(RESTConnection):
         self.plugin = plugin
         self.server = self.plugin.server
         self.scanners = scanners
+        self.projects = projects
         self.requestRunning = False
-        self.getScanners()
         self.lastError = None
-
         self.measurements = measurements
+        self.getProjects(self.getScanners)
+
         if len(measureCount) == 0:
             self.measureCount = {'uploads': 0, 'uploaded': 0, 'last_upload': -1, 'failed_uploads': 0,
                 'recent_uploads': []}
@@ -119,6 +122,45 @@ class Connection(RESTConnection):
         self.requestRunning = True
         self.requestGet('scanner', process)
 
+    def getProjects(self, callback=None):
+        """
+        Get the list of projects from the Move database and update local project data.
+
+        @param    callback   Function to call on succesfull request.
+        @return   (str)      Result of the query.
+        """
+        def process(r):
+            self.requestRunning = False
+            alertPlugin = self.plugin.server.pluginmgr.getPlugin('alert')
+            if type(r) is IOError:
+                self.lastError = str(r)
+                self.plugin.logger.logError("GET/project request failed: %s" % str(r))
+                if callback != None:
+                    self.measureCount['failed_uploads'] += 1
+                    if alertPlugin != None:
+                        a = alertPlugin.mailer.getAlerts(self.plugin.filename,
+                            [olof.plugins.alert.Alert.Type.MoveUploadFailed])
+                        if len(a) < 1 and sum(len(self.measurements[i]) for i in self.measurements) > 0:
+                            alertPlugin.mailer.addAlert(olof.plugins.alert.Alert(self.plugin.filename, [],
+                                olof.plugins.alert.Alert.Type.MoveUploadFailed, autoexpire=False, message=str(r),
+                                info=1, warning=5, alert=10, fire=20))
+                return
+            else:
+                self.lastError = None
+            if r != None:
+                for s in r:
+                    ls = s.strip().split(',')
+                    self.projects[ls[0]] = True
+                if callback != None:
+                    callback()
+            return r
+
+        if self.requestRunning:
+            return
+
+        self.requestRunning = True
+        self.requestGet('project', process)
+
     def addScanner(self, mac, description):
         """
         Add a scanner to the Move database.
@@ -133,19 +175,44 @@ class Connection(RESTConnection):
                 self.plugin.logger.logError("POST/scanner request failed: %s" % str(r))
             else:
                 self.lastError = None
+            self.getScanners()
 
         if self.requestRunning:
             return
 
         self.requestRunning = True
-        self.requestPost('scanner', process, '%s,%s' % (mac, description),
+        self.requestPost('scanner', process, '%s,%s' % (mac, description.replace(',', '')),
             {'Content-Type': 'text/plain'})
 
-    def addLocation(self, sensor, timestamp, coordinates, description):
+    def addProject(self, id, name):
+        """
+        Add a project to the Move database.
+
+        @param   id (str)           ID of the project.
+        @param   name (str)         Name of the project.
+        """
+        def process(r):
+            self.requestRunning = False
+            if type(r) is IOError:
+                self.lastError = str(r)
+                self.plugin.logger.logError("POST/project request failed: %s" % str(r))
+            else:
+                self.lastError = None
+            self.getProjects()
+
+        if self.requestRunning:
+            return
+
+        self.requestRunning = True
+        self.requestPost('project', process, '%s,%s' % (id, name.replace(',', '')),
+            {'Content-Type': 'text/plain'})
+
+    def addLocation(self, sensor, project, timestamp, coordinates, description):
         """
         Add a location to the local location list.
 
         @param   sensor (str)          MAC-address of the Bluetooth sensor.
+        @param   project (Project)     Project of this location.
         @param   timestamp (int)       Timestamp of the time the scanner was added/removed. In UNIX time.
         @param   coordinates (tuple)   Tuple containing the X and Y coordinates of the location respectively.
         @param   description (str)     Description of the location.
@@ -154,13 +221,17 @@ class Connection(RESTConnection):
             self.addScanner(sensor, 'test scanner')
             self.scanners[sensor] = False
 
+        if not project.id in self.projects:
+            self.addProject(project.id, project.name)
+            self.projects[project.id] = False
+
         if not sensor in self.locations:
-            self.locations[sensor] = [[(timestamp, coordinates, description), False]]
+            self.locations[sensor] = [[(timestamp, coordinates, description, project.id), False]]
             self.plugin.logger.debug("move: Adding location for %s at %s: %s (%s)" % (sensor, timestamp, description,
                 coordinates))
         else:
-            if not (timestamp, coordinates, description) in [i[0] for i in self.locations[sensor]]:
-                self.locations[sensor].append([(timestamp, coordinates, description), False])
+            if not (timestamp, coordinates, description, project.id) in [i[0] for i in self.locations[sensor]]:
+                self.locations[sensor].append([(timestamp, coordinates, description, project.id), False])
                 self.plugin.logger.debug("move: Adding location for %s at %s: %s (%s)" % (sensor, timestamp,
                     description, coordinates))
 
@@ -172,6 +243,7 @@ class Connection(RESTConnection):
             self.requestRunning = False
             if type(r) is IOError:
                 self.lastError = str(r)
+                self.plugin.logger.logError("POST/scanner/location request failed: %s" % str(r))
                 return
             else:
                 self.lastError = None
@@ -199,10 +271,10 @@ class Connection(RESTConnection):
                     loc.append(','.join([time.strftime('%Y%m%d-%H%M%S-%Z',
                         time.localtime(location[0])),
                         'SRID=4326;POINT(%0.6f %0.6f)' % location[1],
-                        'EWKT', location[2]]))
+                        'EWKT', location[2], location[3]]))
                 else:
                     loc.append(','.join([time.strftime('%Y%m%d-%H%M%S-%Z',
-                        time.localtime(location[0])), 'NULL', 'NULL', 'NULL']))
+                        time.localtime(location[0])), 'NULL', 'NULL', '', 'NULL']))
             l_scanner.append("\n".join(loc))
 
         l = '\n'.join(l_scanner)
@@ -212,11 +284,12 @@ class Connection(RESTConnection):
             self.requestPost('scanner/location', process, l,
                 {'Content-Type': 'text/plain'})
 
-    def addMeasurement(self, sensor, timestamp, mac, deviceclass, rssi):
+    def addMeasurement(self, sensor, project, timestamp, mac, deviceclass, rssi):
         """
         Add a measurement to the local measurement list.
 
         @param   sensor (str)        MAC-address of the Bluetooth sensor that detected the device.
+        @param   project (Project)   Project of the sensor that detected the device.
         @param   timestamp (int)     Timestamp of the detection. In UNIX time.
         @param   mac (str)           Bluetooth MAC-address of the detected device.
         @param   deviceclass (int)   Deviceclass of the detected Bluetooth device.
@@ -228,6 +301,10 @@ class Connection(RESTConnection):
         if not sensor in self.scanners:
             self.addScanner(sensor, 'test scanner')
             self.scanners[sensor] = False
+
+        if not project.id in self.projects:
+            self.addProject(project.id, project.name)
+            self.projects[project.id] = project.name
 
         tm = "%0.3f" % timestamp
         decSec = tm[tm.find('.')+1:]
@@ -349,6 +426,7 @@ class Plugin(olof.core.Plugin):
         self.measurements = self.storage.loadObject('measurements', {})
         self.locations = self.storage.loadObject('locations', {})
         self.scanners = self.storage.loadObject('scanners', {})
+        self.projects = self.storage.loadObject('projects', {})
 
         self.setupConnection()
 
@@ -360,9 +438,10 @@ class Plugin(olof.core.Plugin):
         user = self.config.getValue('username')
         password = self.config.getValue('password')
         scanners = dict(zip(self.scanners.keys(), [False] * len(self.scanners)))
+        projects = dict(zip(self.projects.keys(), [False] * len(self.projects)))
 
         if None not in [url, user, password]:
-            self.conn = Connection(self, url, user, password, scanners, self.measurements, self.measureCount,
+            self.conn = Connection(self, url, user, password, scanners, projects, self.measurements, self.measureCount,
                 self.locations)
         else:
             self.conn = None
@@ -417,6 +496,7 @@ class Plugin(olof.core.Plugin):
             self.storage.storeObject(self.conn.measurements, 'measurements')
             self.storage.storeObject(self.conn.locations, 'locations')
             self.storage.storeObject(self.conn.scanners, 'scanners')
+            self.storage.storeObject(self.conn.projects, 'projects')
 
     def getStatus(self):
         """
@@ -499,24 +579,25 @@ class Plugin(olof.core.Plugin):
         if self.conn == None:
             return
 
-        if module == 'scanner':
-            for sensor in obj.sensors.values():
-                if sensor.start != None:
-                    desc = ' - '.join([i for i in [obj.name, obj.description] if i != None])
-                    self.conn.addLocation(sensor.mac, sensor.start, (sensor.lon, sensor.lat), desc)
-                if sensor.end != None:
-                    desc = ' - '.join([i for i in [obj.name, obj.description] if i != None])
-                    self.conn.addLocation(sensor.mac, sensor.end, None, desc)
+        for project in projects:
+            if module == 'scanner':
+                for sensor in obj.sensors.values():
+                    if sensor.start != None:
+                        desc = ' - '.join([i for i in [obj.name, obj.description] if i != None])
+                        self.conn.addLocation(sensor.mac, project, sensor.start, (sensor.lon, sensor.lat), desc)
+                    if sensor.end != None:
+                        desc = ' - '.join([i for i in [obj.name, obj.description] if i != None])
+                        self.conn.addLocation(sensor.mac, project, sensor.end, None, desc)
 
-        elif module == 'sensor' and obj.mac != None:
-            if (obj.lat == None or obj.lon == None) and obj.end != None:
-                timestamp = obj.end
-                desc = ' - '.join([i for i in [obj.location.name, obj.location.description] if i != None])
-                self.conn.addLocation(obj.mac, timestamp, (obj.lon, obj.lat), desc)
-            elif (obj.lat != None and obj.lon != None) and obj.start != None:
-                timestamp = obj.start
-                desc = ' - '.join([i for i in [obj.location.name, obj.location.description] if i != None])
-                self.conn.addLocation(obj.mac, timestamp, (obj.lon, obj.lat), desc)
+            elif module == 'sensor' and obj.mac != None:
+                if (obj.lat == None or obj.lon == None) and obj.end != None:
+                    timestamp = obj.end
+                    desc = ' - '.join([i for i in [obj.location.name, obj.location.description] if i != None])
+                    self.conn.addLocation(obj.mac, project, timestamp, (obj.lon, obj.lat), desc)
+                elif (obj.lat != None and obj.lon != None) and obj.start != None:
+                    timestamp = obj.start
+                    desc = ' - '.join([i for i in [obj.location.name, obj.location.description] if i != None])
+                    self.conn.addLocation(obj.mac, project, timestamp, (obj.lon, obj.lat), desc)
 
     def dataFeedRssi(self, hostname, projects, timestamp, sensorMac, mac, rssi):
         """
@@ -524,4 +605,5 @@ class Plugin(olof.core.Plugin):
         """
         if self.conn != None and self.config.getValue('caching_enabled') == True:
             deviceclass = self.server.getDeviceclass(mac)
-            self.conn.addMeasurement(sensorMac, timestamp, mac, deviceclass, rssi)
+            for project in projects:
+                self.conn.addMeasurement(sensorMac, project, timestamp, mac, deviceclass, rssi)
