@@ -243,11 +243,11 @@ class ContentResource(resource.Resource):
 
         html += '<div class="navigation_block">'
         for location in sorted(project.locations.keys()):
-            html += self.plugin.match(project.locations[location]).renderNavigation(project.name)
+            html += self.plugin.match(project.locations[location]).renderNavigation(project.id)
         html += '</div>'
 
         for location in sorted(project.locations.keys()):
-            html += self.plugin.match(project.locations[location]).render(project.name)
+            html += self.plugin.match(project.locations[location]).render(project.id)
 
         return html
 

@@ -328,7 +328,7 @@ class Scanner(object):
             d = threads.deferToThread(run, ip)
             d.addCallback(process)
 
-    def render(self, projectName=None):
+    def render(self, projectId=None):
         """
         Render this scanner to HTML.
 
@@ -343,10 +343,10 @@ class Scanner(object):
                     self.location_description != None else self.location
                 html += '<a href="%s">%s</a><img alt="" src="/dashboard/static/icons/marker.png">' % (
                     ("http://maps.google.be/maps?z=17&amp;q=loc:%s,%s(%s)" % (self.lat, self.lon, self.hostname)), loc)
-            if projectName == None:
+            if projectId == None:
                 goto = 'No-project'
             else:
-                goto = projectName.replace(' ','-')
+                goto = projectId
             html += '</div><div style="clear: both;"></div><div class="block_content" onclick="goTo(\'#%s\')">' % goto
 
             if self.location_description:
@@ -468,9 +468,9 @@ class Scanner(object):
 
         sd = {ScannerStatus.Good: 'block_status_good', ScannerStatus.Bad: 'block_status_bad', ScannerStatus.Ugly:
             'block_status_ugly'}
-        p = '-%s' % projectName.replace(' ', '-') if projectName != None else ''
+        p = '-%s' % projectId if projectId != None else ''
         d = {'h': self.hostname, 'hp': '%s%s' % (self.hostname, p), 'status': sd[self.getStatus()],
-            'other_projects': [i.name for i in self.projects if i.name != projectName]}
+            'other_projects': [i.name for i in self.projects if i.id != projectId]}
         bl = False
         html = '<div id="%(hp)s" class="block">' % d
 
@@ -504,14 +504,14 @@ class Scanner(object):
             html += '</div>'
         return html
 
-    def renderNavigation(self, projectName=None):
+    def renderNavigation(self, projectId=None):
         """
         Render the navition block for this scanner to HTML.
 
         @return   (str)   HTML representation of the navigation block for this scanner.
         """
         bl = False
-        p = '-%s' % projectName.replace(' ', '-') if projectName != None else ''
+        p = '-%s' % projectId if projectId != None else ''
         html = '<div class="navigation_item" onclick="goTo(\'#%s%s\')">' % (self.hostname, p)
 
         if bl:
