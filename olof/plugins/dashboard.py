@@ -149,11 +149,11 @@ class ContentResource(resource.Resource):
             html = '<div class="block_data">'
             if p.isActive():
                 html += '<img alt="" src="/dashboard/static/icons/radar.png">'
-                html += '<a href="#" onclick="goTo(\'#%s\')">%s</a>' % (p.name.replace(' ','-'), p.name)
+                html += '<a href="#" onclick="goTo(\'#%s\')">%s</a>' % (p.id, p.name)
                 html += '<span class="block_data_attr">active</span>'
             else:
                 html += '<img alt="" src="/dashboard/static/icons/radar-grey.png">'
-                html += '<a href="#" onclick="goTo(\'#%s\')">%s</a>' % (p.name.replace(' ','-'), p.name)
+                html += '<a href="#" onclick="goTo(\'#%s\')">%s</a>' % (p.id, p.name)
                 html += '<span class="block_data_attr">inactive</span>'
             html +='<span class="block_data_attr"><b>scanners</b> %s</span>' % formatNumber(len(p.locations))
             if p.start:
@@ -177,12 +177,12 @@ class ContentResource(resource.Resource):
         html += '<div class="block_content">'
 
         # Active projects
-        for p_name in sorted([p.name for p in projects.values() if p.isActive()]):
-            html += renderProject(projects[p_name])
+        for pid in sorted([p.id for p in projects.values() if p.isActive()]):
+            html += renderProject(projects[pid])
 
         # Inactive projects
-        for p_name in sorted([p.name for p in projects.values() if not p.isActive()]):
-            html += renderProject(projects[p_name])
+        for pid in sorted([p.id for p in projects.values() if not p.isActive()]):
+            html += renderProject(projects[pid])
 
         html += '</div></div>'
         return html
@@ -195,7 +195,7 @@ class ContentResource(resource.Resource):
         @return   (str)                              HTML representation of the project.
         """
         html = '<div class="h2-outline" id="%s"><h2 onclick="goTo(\'#server_block\')">%s</h2>' % \
-            (project.name.replace(' ','-'), project.name)
+            (project.id, project.name)
         html += '<div class="block_content"><div class="block_data">'
 
         if project.isActive():
@@ -279,12 +279,12 @@ class ContentResource(resource.Resource):
             del(self.plugin.scanners[i])
 
         # Active projects
-        for p_name in sorted([p.name for p in projects.values() if p.isActive()]):
-            html += self.renderProject(projects[p_name])
+        for pid in sorted([p.id for p in projects.values() if p.isActive()]):
+            html += self.renderProject(projects[pid])
 
         # Inactive projects
-        for p_name in sorted([p.name for p in projects.values() if not p.isActive()]):
-            html += self.renderProject(projects[p_name])
+        for pid in sorted([p.id for p in projects.values() if not p.isActive()]):
+            html += self.renderProject(projects[pid])
 
         # Projectless scanners
         projectless_scanners = sorted([s for s in self.plugin.scanners if len(self.plugin.scanners[s].projects) < 1])
