@@ -155,9 +155,6 @@ class Connection(RESTConnection):
                     callback()
             return r
 
-        if self.requestRunning:
-            return
-
         self.requestRunning = True
         self.requestGet('project', process)
 
@@ -176,9 +173,6 @@ class Connection(RESTConnection):
             else:
                 self.lastError = None
             self.getScanners()
-
-        if self.requestRunning:
-            return
 
         self.requestRunning = True
         self.requestPost('scanner', process, '%s,%s' % (mac, description.replace(',', '')),
@@ -199,9 +193,6 @@ class Connection(RESTConnection):
             else:
                 self.lastError = None
             self.getProjects()
-
-        if self.requestRunning:
-            return
 
         self.requestRunning = True
         self.requestPost('project', process, '%s,%s' % (id, name.replace(',', '')),
