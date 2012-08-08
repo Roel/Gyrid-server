@@ -121,23 +121,48 @@ class ScanSetup(Logger):
         """
         Logger.__init__(self, plugin, hostname, projectname)
         self.sensor = sensorMac
+        self.enableLagLogging = plugin.config.getValue('enable_lag_logging')
 
         self.logFiles = ['scan', 'rssi']
         self.logs = dict(zip(self.logFiles, [open('/'.join([
             self.logDir, '%s-%s-%s.log' % (self.hostname, self.sensor, i)]),
             'a') for i in self.logFiles]))
 
-    def logRssi(self, timestamp, mac, rssi):
+    def enableLagLog(self, value):
+        """
+        Enable or disable detailed logging of connection lag.
+
+        @param   value (bool)   True to enable, False to disable lag logging.
+        """
+        self.enableLagLogging = value
+        if value == True:
+            if 'lag' not in self.logs or self.logs['lag'].closed:
+                self.logs['lag'] = open('/'.join([self.logDir, '%s-%s-%s.log' % (
+                    self.hostname, self.sensor, 'lag')]), 'a')
+        elif value == False:
+            if 'lag' in self.logs and not self.logs['lag'].closed:
+                self.logs['lag'].close()
+
+    def logRssi(self, rxtime, txtime, mac, rssi):
         """
         Write the given RSSI data to the log.
 
-        @param   timestamp (int)   Timestamp, in UNIX time the detected was received.
-        @param   mac (str)         The Bluetooth MAC-address of the detected device.
-        @param   rssi (int)        The value of the Received Signal Strength Indication of the detection.
+        @param   rxtime (int)   UNIX timestamp when the detection was received.
+        @param   txtime (int)   UNIX timestamp when the detection was registered.
+        @param   mac (str)      The Bluetooth MAC-address of the detected device.
+        @param   rssi (int)     The value of the Received Signal Strength Indication of the detection.
         """
         self.logs['rssi'].write(','.join([str(i) for i in [
-            self.formatTimestamp(timestamp), mac, rssi]]) + '\n')
+            self.formatTimestamp(txtime), mac, rssi]]) + '\n')
         self.logs['rssi'].flush()
+
+        if self.enableLagLogging:
+            self.logs['lag'].write(','.join([str(i) for i in [
+                self.formatTimestamp(txtime), mac, rssi,
+                '%0.4f' % rxtime,
+                '%0.4f' % txtime,
+                '%0.4f' % (rxtime-txtime)]]) + '\n')
+            self.logs['lag'].flush()
 
     def logCell(self, timestamp, mac, deviceclass, move):
         """
@@ -163,6 +188,7 @@ class Plugin(olof.core.Plugin):
         olof.core.Plugin.__init__(self, server, filename)
 
         self.scanSetups = {}
+        self.updateLagConfig()
 
     def defineConfiguration(self):
         """
@@ -172,12 +198,24 @@ class Plugin(olof.core.Plugin):
             v = olof.tools.validation.parseString(value)
             return v.rstrip().rstrip('/')
 
+        options = []
+
         o = olof.configuration.Option('log_directory')
         o.setDescription('Path of the directory where the data will be stored. This can be absolute or relative.')
         o.addValue(olof.configuration.OptionValue('olof/plugins/logger', default=True))
         o.setValidation(validatePath)
         o.addCallback(self.clearScanSetups)
-        return [o]
+        options.append(o)
+
+        o = olof.configuration.Option('enable_lag_logging')
+        o.setDescription('Write a separate logfile with detailed timestamps when a detection was registered and ' + \
+            'received. Useful for analysing connection lag or performance.')
+        o.addValue(olof.configuration.OptionValue(False, default=True))
+        o.addValue(olof.configuration.OptionValue(True))
+        o.addCallback(self.updateLagConfig)
+        options.append(o)
+
+        return options
 
     def clearScanSetups(self, value=None):
         """
@@ -186,6 +224,17 @@ class Plugin(olof.core.Plugin):
         for ss in self.scanSetups.values():
             ss.unload()
         self.scanSetups = {}
+
+    def updateLagConfig(self, value=None):
+        """
+        Update lag config for all registered scan setups.
+        """
+        if value == None:
+            value = self.config.getValue('enable_lag_logging')
+
+        for ss in self.scanSetups.values():
+            if isinstance(ss, ScanSetup):
+                ss.enableLagLog(value)
 
     def unload(self, shutdown=False):
         """
@@ -263,6 +312,7 @@ class Plugin(olof.core.Plugin):
         """
         Pass the information to the corresponding ScanSetup to be saved to the RSSI-data log.
         """
+        t = time.time()
         for project in [i.id for i in projects if i != None]:
             ss = self.getScanSetup(hostname, project, sensorMac)
-            ss.logRssi(timestamp, mac, rssi)
+            ss.logRssi(t, timestamp, mac, rssi)
