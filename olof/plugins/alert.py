@@ -178,7 +178,7 @@ class Mailer(object):
                     else:
                         projects = [i.id for i in alert.projects if i != None]
                     for project in projects:
-                        if re.match(r[0], project):
+                        if re.search(r[0], project):
                             for a in r[1]:
                                 if level >= r[1][a]:
                                     if a not in recipients_sent:
