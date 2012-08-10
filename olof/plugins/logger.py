@@ -121,7 +121,7 @@ class ScanSetup(Logger):
         """
         Logger.__init__(self, plugin, hostname, projectname)
         self.sensor = sensorMac
-        self.enableLagLogging = plugin.config.getValue('enable_lag_logging')
+        self.enableLagLog(plugin.config.getValue('enable_lag_logging'))
 
         self.logFiles = ['scan', 'rssi']
         self.logs = dict(zip(self.logFiles, [open('/'.join([
