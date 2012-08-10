@@ -121,12 +121,13 @@ class ScanSetup(Logger):
         """
         Logger.__init__(self, plugin, hostname, projectname)
         self.sensor = sensorMac
-        self.enableLagLog(plugin.config.getValue('enable_lag_logging'))
 
         self.logFiles = ['scan', 'rssi']
         self.logs = dict(zip(self.logFiles, [open('/'.join([
             self.logDir, '%s-%s-%s.log' % (self.hostname, self.sensor, i)]),
             'a') for i in self.logFiles]))
+
+        self.enableLagLog(plugin.config.getValue('enable_lag_logging'))
 
     def enableLagLog(self, value):
         """
