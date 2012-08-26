@@ -567,7 +567,7 @@ class Sensor(object):
         vendor = macvendor.getVendor(self.mac)
         mac = self.mac if vendor == None else '<span title="%s">%s</span>' % (vendor, self.mac)
         if self.connected == False:
-            html += '<img alt="" src="/dashboard/static/icons/plug-disconnect.png">%s' % mac
+            html += '<img alt="" src="/dashboard/static/icons/bluetooth-grey.png">%s' % mac
             if self.disconnect_time != None:
                 html += '<span class="block_data_attr"><b>disconnected</b> %s</span>' % getRelativeTime(int(float(
                     self.disconnect_time)), wrapper=htmlSpanWrapper)
