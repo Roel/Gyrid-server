@@ -491,8 +491,8 @@ class Plugin(olof.core.Plugin):
         o = olof.configuration.Option('performance_log')
         o.setDescription('Whether the performance (i.e. the time it takes for an upload request to finish) ' + \
             'should be logged.')
-        o.addValue(olof.configuration.OptionValue(True, default=False))
-        o.addValue(olof.configuration.OptionValue(False))
+        o.addValue(olof.configuration.OptionValue(True))
+        o.addValue(olof.configuration.OptionValue(False, default=True))
         options.append(o)
 
         return options
