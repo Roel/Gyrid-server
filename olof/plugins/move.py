@@ -332,14 +332,14 @@ class Connection(RESTConnection):
             m = '\n'.join(m_scanner)
             if len(m) > 0:
                 self.requestRunning = True
-                timeRequestStart = int(time.time())
+                self.timeRequestStart = time.time()
                 self.plugin.logger.debug("Sending request with %i lines" % linecount)
                 self.requestPost('measurement', process, m,
                     {'Content-Type': 'text/plain'})
 
         def process(r):
             self.plugin.logger.debug("Request done")
-            timeRequestFinish = int(time.time())
+            self.timeRequestFinish = time.time()
             self.requestRunning = False
             if type(r) is IOError:
                 self.lastError = str(r)
@@ -362,16 +362,11 @@ class Connection(RESTConnection):
                             self.measurements[scanner[0]].remove(l)
                     else:
                         self.plugin.logger.logError("Upload for scanner %s: FAIL" % scanner[0])
-                    if self.plugin.config.getValue('performance_log'):
-                        rS = time.strftime("%Y%m%d-%H%M%S-%Z", time.localtime(timeRequestStart))
-                        rF = time.strftime("%Y%m%d-%H%M%S-%Z", time.localtime(timeRequestFinish))
-                        rD = timeRequestFinish - timeRequestStart
-                        self.plugin.logger.logInfo("Upload finished: " + ','.join([rS, rF, timeRequestStart,
-                            timeRequestFinish, rD, move__lines]))
                 if len(self.measureCount['recent_uploads']) > (self.plugin.maxRecent - 1):
                     self.measureCount['recent_uploads'].pop(0)
                 self.measureCount['recent_uploads'].append(uploadSize)
                 self.measureCount['uploaded'] += uploadSize
+                success = True
                 if alertPlugin != None:
                     a = alertPlugin.mailer.getAlerts(self.plugin.filename,
                         [olof.plugins.alert.Alert.Type.MoveUploadFailed])
@@ -382,12 +377,7 @@ class Connection(RESTConnection):
             else:
                 self.plugin.logger.logError("Upload failed: %s" % str(r))
                 self.measureCount['failed_uploads'] += 1
-                if self.plugin.config.getValue('performance_log'):
-                    rS = time.strftime("%Y%m%d-%H%M%S-%Z", time.localtime(timeRequestStart))
-                    rF = time.strftime("%Y%m%d-%H%M%S-%Z", time.localtime(timeRequestFinish))
-                    rD = timeRequestFinish - timeRequestStart
-                    self.plugin.logger.logInfo("Upload finished: " + ','.join([rS, rF, timeRequestStart,
-                        timeRequestFinish, rD, move__lines]))
+                success = False
                 if alertPlugin != None:
                     a = alertPlugin.mailer.getAlerts(self.plugin.filename,
                         [olof.plugins.alert.Alert.Type.MoveUploadFailed])
@@ -396,10 +386,21 @@ class Connection(RESTConnection):
                             olof.plugins.alert.Alert.Type.MoveUploadFailed, autoexpire=False, message=str(r),
                             info=1, warning=5, alert=10, fire=20))
 
+            if self.plugin.config.getValue('performance_log'):
+                rS = time.strftime("%Y%m%d-%H%M%S-%Z", time.localtime(self.timeRequestStart))
+                rF = time.strftime("%Y%m%d-%H%M%S-%Z", time.localtime(self.timeRequestFinish))
+                rD = '%0.3f' % (self.timeRequestFinish - self.timeRequestStart)
+                rR = "finished" if success else "failed"
+                self.plugin.logger.logInfo("Upload %s: " % rR + ','.join([str(i) for i in \
+                    rS, rF, '%0.3f' % self.timeRequestStart, '%0.3f' % self.timeRequestFinish,
+                    rD, uploadSize]))
+
         if self.requestRunning or not self.plugin.config.getValue('upload_enabled'):
             return
 
         if sum(len(self.measurements[i]) for i in self.measurements) > 0:
+            if self.plugin.config.getValue('performance_log'):
+                self.timeRequestStart = self.timeRequestFinish = 0
             to_delete = []
             measurements_uploaded = {}
             max_request_size = self.plugin.config.getValue('max_request_size')
