@@ -313,7 +313,8 @@ class Connection(RESTConnection):
             self.plugin.logger.debug("Posting measurements")
             linecount = 0
             for scanner in [s for s in self.scanners.keys() if (self.scanners[s] == True \
-                and s in self.measurements)]:
+                and s in self.measurements and s in self.locations and \
+                (False not in [i[1] for i in self.locations[s]]))]:
                 if linecount < max_request_size:
                     mc = copy.deepcopy(self.measurements[scanner])
                     measurements_uploaded[scanner] = set()
