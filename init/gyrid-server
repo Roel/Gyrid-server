@@ -1,0 +1,105 @@
+#!/bin/sh
+### BEGIN INIT INFO
+# Provides:          gyrid-server
+# Required-Start:    $local_fs $remote_fs $network $syslog
+# Required-Stop:     $local_fs $remote_fs $network $syslog
+# Default-Start:     2 3 4 5
+# Default-Stop:      0 1 6
+# Short-Description: Start/stop Gyrid Server
+### END INIT INFO-
+#
+# This file belongs to Gyrid Server.
+#
+# Copyright (C) 2012  Roel Huybrechts
+# All rights reserved.
+
+DAEMON=/usr/share/gyrid-server/gyrid-server
+PIDFILE=/run/gyrid-server.pid
+PATH=/bin:/usr/bin:/sbin:/usr/sbin
+
+if [ `id -u` -ne 0 ]; then
+    echo "You need root privileges to run this script."
+    exit 1
+fi
+
+test -f $DAEMON || exit 0
+
+. /lib/lsb/init-functions
+
+is_running() {
+    start-stop-daemon --status --pidfile $PIDFILE
+    if [ $? -gt 0 ]; then
+        return 1 #FALSE
+    else
+        return 0 #TRUE
+    fi
+}
+
+ok_fail() {
+    if [ $1 -gt 0 ]; then
+        log_end_msg 1
+    else
+        log_end_msg 0
+    fi
+}
+
+q_fail() {
+    if [ $1 -gt 0 ]; then
+        log_end_msg 1
+    fi
+}
+
+case "$1" in
+  start)
+    log_daemon_msg "Starting Gyrid Server" "gyrid-server"
+    if is_running; then
+        log_progress_msg "(already running)"
+        log_end_msg 0
+    else
+        start-stop-daemon --start --background --quiet --make-pidfile --pidfile $PIDFILE --exec $DAEMON debug
+        q_fail $?
+        sleep 1
+        if is_running; then
+            log_end_msg 0
+        else
+            rm -f $PIDFILE
+            log_end_msg 1
+        fi
+    fi
+	;;
+  stop)
+    log_daemon_msg "Stopping Gyrid Server" "gyrid-server"
+    if is_running; then
+        start-stop-daemon --stop --quiet --retry 30 --pidfile $PIDFILE
+        ok_fail $?
+        rm -f $PIDFILE
+    else
+        log_progress_msg "(not running)"
+        log_end_msg 0
+    fi
+	;;
+  restart)
+    $0 stop
+    $0 start
+  ;;
+  force-reload)
+    $0 stop
+    $0 start
+  ;;
+  status)
+    if is_running; then
+        log_success_msg "Gyrid Server is running with pid `cat $PIDFILE`"
+    elif [ -f $PIDFILE ]; then
+        log_success_msg "Gyrid Server is not running, but pid file exists"
+        exit 1
+    else
+        log_success_msg "Gyrid Server is not running"
+        exit 3
+    fi
+  ;;
+  *)
+    echo "Usage: "$1" {start|stop|restart|force-reload|status}"
+    exit 1
+esac
+
+exit 0
