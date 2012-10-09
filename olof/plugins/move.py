@@ -64,10 +64,17 @@ class Connection(RESTConnection):
         self.locations = locations
 
         self.task_postM = task.LoopingCall(self.postMeasurements)
-        self.task_postM.start(60, now=False)
-
         self.task_postL = task.LoopingCall(self.postLocations)
-        reactor.callLater(40, self.task_postL.start, 60, now=False)
+        self.init()
+
+    def init(self):
+        """
+        Start the looping calls for uploads.
+        """
+        self.uploadInterval = self.plugin.config.getValue('upload_interval')
+        self.task_postM.start(self.uploadInterval, now=False)
+        reactor.callLater(int(self.uploadInterval * (2.0/3.0)), self.task_postL.start,
+            self.uploadInterval, now=False)
 
     def unload(self, shutdown=False):
         """
@@ -453,6 +460,18 @@ class Plugin(olof.core.Plugin):
         else:
             self.conn = None
 
+    def restartUploads(self, value=None):
+        """
+        Restart the uploads looping calls, f.ex. after updating the upload interval.
+        """
+        if value == None:
+            value = self.config.getValue('upload_interval')
+
+        if self.conn:
+            self.logger.debug("Restarting uploads; using an interval of %i seconds" % value)
+            self.conn.unload()
+            self.conn.init()
+
     def defineConfiguration(self):
         options = []
 
@@ -474,6 +493,13 @@ class Plugin(olof.core.Plugin):
         o = olof.configuration.Option('max_request_size')
         o.setDescription('The maximum number of detections that can be uploaded in one request.')
         o.addValue(olof.configuration.OptionValue(200000, default=True))
+        options.append(o)
+
+        o = olof.configuration.Option('upload_interval')
+        o.setDescription('The amount of seconds between two successive uploads; i.e. the time ' + \
+            'between the start of an upload and the start of the next one.')
+        o.addValue(olof.configuration.OptionValue(60, default=True))
+        o.addCallback(self.restartUploads)
         options.append(o)
 
         o = olof.configuration.Option('upload_enabled')
@@ -534,7 +560,7 @@ class Plugin(olof.core.Plugin):
             if self.config.getValue('caching_enabled') == False:
                 r.append({'id': 'caching', 'str': 'disabled'})
 
-        elif cache > 0 and (now - m['last_upload']) > 60*5:
+        elif cache > 0 and (now - m['last_upload']) > (self.conn.uploadInterval*5):
             r.append({'status': 'error'})
         elif self.conn.lastError != None:
             r.append({'status': 'error'})
