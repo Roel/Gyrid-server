@@ -29,12 +29,11 @@ class PluginManager(object):
         @param   server (Olof)   Reference to main Olof server instance.
         """
         self.server = server
-        self.plugin_dirs = ['olof/plugins']
 
         self.plugins = {}
         self.loadAllPlugins()
 
-        self.inotifier = INotifier('olof/plugins')
+        self.inotifier = INotifier(self.server.paths['plugins'])
         self.inotifier.addCallback(INotifier.Write, self.__processINotifyWrite)
         self.inotifier.addCallback(INotifier.Delete, self.__processINotifyDelete)
 
@@ -83,10 +82,10 @@ class PluginManager(object):
         """
         home = os.getcwd()
 
-        for path in self.plugin_dirs:
-            for filename in os.listdir(path):
-                if filename.endswith('.py') and not filename == '__init__.py':
-                    self.loadPlugin(os.path.join(home, path, filename), dynamic)
+        for filename in os.listdir(self.server.paths['plugins']):
+            if filename.endswith('.py') and not filename == '__init__.py':
+                self.loadPlugin(os.path.join(home, self.server.paths['plugins'], filename),
+                    dynamic)
 
     def unload(self, shutdown=False):
         """

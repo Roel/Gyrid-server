@@ -24,7 +24,7 @@ class StorageManager(object):
         @param   directoryName (str)   Name of the storage subdirectory to save and load files.
         """
         self.server = server
-        self.base_path = 'storage/%s/' % directoryName
+        self.base_path = self.server.paths['storage'] + '/%s/' % directoryName
 
     def __createDir(self):
         """

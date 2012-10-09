@@ -42,15 +42,18 @@ class RootResource(resource.Resource):
 
     This resource basically serves the olof/plugins/dashboard/static/index.html page.
     """
-    def __init__(self):
+    def __init__(self, plugin):
         """
         Initialisation.
 
         Read the index.html page from disk.
+
+        @param   plugin (Plugin)   Reference to main Olof plugin instance.
         """
         resource.Resource.__init__(self)
+        self.plugin = plugin
 
-        f = open('olof/plugins/dashboard/static/index.html', 'r')
+        f = open(self.plugin.base_path + '/static/index.html', 'r')
         self.rendered_page = f.read()
         f.close()
 
@@ -358,22 +361,22 @@ class Plugin(olof.core.Plugin):
         @param   server (Olof)   Reference to the main Olof server instance.
         """
         olof.core.Plugin.__init__(self, server, filename)
+        self.base_path = self.server.paths['plugins'] + '/dashboard'
 
-        self.root = RootResource()
+        self.root = RootResource(self)
         status_resource = self.root
         self.root.putChild("dashboard", status_resource)
 
-        authFile = 'olof/plugins/dashboard/data/auth.password'
+        authFile = self.base_path + '/data/auth.password'
         if os.path.isfile(authFile):
-            portal = Portal(AuthenticationRealm(self), [FilePasswordDB('olof/plugins/dashboard/data/auth.password')])
+            portal = Portal(AuthenticationRealm(self), [FilePasswordDB(authFile)])
             credfac = BasicCredentialFactory("Gyrid Server")
             rsrc = HTTPAuthSessionWrapper(portal, [credfac])
             status_resource.putChild("content", rsrc)
         else:
             status_resource.putChild("content", ContentResource(self))
 
-        status_resource.putChild("static",
-            StaticResource("olof/plugins/dashboard/static/"))
+        status_resource.putChild("static", StaticResource(self.base_path + "/static/"))
 
         self.scanners = self.storage.loadObject('scanners', {})
         for s in self.scanners.values():

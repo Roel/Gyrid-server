@@ -273,12 +273,15 @@ class Olof(object):
     """
     Main Olof server class.
     """
-    def __init__(self):
+    def __init__(self, paths):
         """
         Initialisation.
 
         Read the MAC-adress:deviceclass dictionary from disk, load the pluginmanager and the dataprovider.
+
+        @param   paths (dict)   Dictionary setting the filepaths to use.
         """
+        self.paths = paths
         self.logger = olof.logger.Logger(self, 'server')
         warnings.simplefilter("ignore", RuntimeWarning)
 

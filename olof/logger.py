@@ -28,7 +28,7 @@ class Logger(object):
         """
         self.server = server
         self.filename = filename
-        self.base_path = 'logs'
+        self.base_path = self.server.paths['logs']
         self.location = os.path.join(self.base_path, self.filename)
 
         if not os.path.exists(self.base_path):

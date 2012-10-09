@@ -49,7 +49,7 @@ class Configuration(object):
         self.name = filename if name == None else name
         self.options = {}
         self.option_list = []
-        self.base_path = 'config/'
+        self.base_path = self.server.paths['config'] + '/'
         self.location = self.base_path + self.filename + '.conf.py'
 
         if not os.path.isdir(self.base_path):
