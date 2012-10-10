@@ -34,6 +34,7 @@ class Logger(object):
         if not os.path.exists(self.base_path):
             os.makedirs(self.base_path)
 
+        self.server.checkDiskAccess(self.location)
         self.logger = None
 
     def __getLogger(self):

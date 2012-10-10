@@ -360,19 +360,36 @@ class Olof(object):
 
         @param    paths (list)   A list of paths to check.
         """
+        def hardExit(path):
+            """
+            Write error directly to standarderror and exit immediately without unloading.
+            Used when the logfiles or -directory itself is not writeable.
+            """
+            sys.stderr.write(time.strftime('%Y%m%d-%H%M%S-%Z ') + 'Gyrid Server: ' + \
+                "Error: Needs write access to '%s'.\n" % path)
+            sys.exit(1)
+
         access = True
 
+        if type(paths) is str or type(paths) is unicode:
+            paths = [paths]
+
         for path in paths:
-            if not os.path.exists(os.path.dirname(path)):
+            if os.path.dirname(path) and not os.path.exists(os.path.dirname(path)):
                 os.makedirs(os.path.dirname(path))
             elif (os.path.exists(path)) and (os.access(path, os.W_OK) == False):
-                self.logger.logError("Error: Needs write access to %s" % path)
+                if 'logger' not in self.__dict__:
+                    hardExit(path)
+                self.logger.logError("Needs write access to '%s'" % path)
                 access = False
             elif (not os.path.exists(path)) and (os.access(os.path.dirname(path), os.W_OK) == False):
-                self.logger.logError("Error: Needs write access to %s" % path)
+                if 'logger' not in self.__dict__:
+                    hardExit(path)
+                self.logger.logError("Needs write access to '%s'" % path)
                 access = False
 
         if not access:
+            self.unload()
             sys.exit(1)
 
     def run(self):
