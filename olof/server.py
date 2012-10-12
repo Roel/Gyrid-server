@@ -48,9 +48,6 @@ class GyridServerProtocol(LineReceiver):
         """
         Called when a new connection is made with a scanner. Initialise the connection.
         """
-        def pushCache():
-            self.sendLine('MSG,cache,push')
-
         self.last_keepalive = -1
         self.hostname = None
 
@@ -66,9 +63,6 @@ class GyridServerProtocol(LineReceiver):
 
         self.sendLine('MSG,enable_keepalive,%i' % self.factory.timeout)
         self.sendLine('MSG,keepalive')
-
-        self.pushCacheCall = task.LoopingCall(pushCache)
-        self.pushCacheCall.start(15*60, now=False)
 
     def keepalive(self):
         """
