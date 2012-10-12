@@ -355,10 +355,11 @@ class Olof(object):
 
     def checkDiskAccess(self, paths):
         """
-        Check read/write access to all given paths. Prints errors when read/write access is forbidden, and exits
-        with an exit code of 1 when not all paths have read/write access.
+        Check read/write access to all given paths. Prints errors when read/write access is
+        forbidden, and returns True only when all paths have read/write access.
 
         @param    paths (list)   A list of paths to check.
+        @return   (bool)         Whether all paths are accessible.
         """
         def hardExit(path):
             """
@@ -388,9 +389,7 @@ class Olof(object):
                 self.logger.logError("Needs write access to '%s'" % path)
                 access = False
 
-        if not access:
-            self.unload()
-            sys.exit(1)
+        return access
 
     def run(self):
         """
