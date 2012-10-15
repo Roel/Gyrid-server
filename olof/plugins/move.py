@@ -389,6 +389,7 @@ class Connection(RESTConnection):
             if len(m) > 0:
                 self.requestRunning = True
                 self.timeRequestStart = time.time()
+                self.requestSize = linecount
                 self.plugin.logger.debug("Sending request with %i lines" % linecount)
                 self.requestPost('measurement', process, m,
                     {'Content-Type': 'text/plain'})
@@ -449,7 +450,7 @@ class Connection(RESTConnection):
                 rR = "finished" if success else "failed"
                 self.plugin.logger.logInfo("Upload %s: " % rR + ','.join([str(i) for i in \
                     rS, rF, '%0.3f' % self.timeRequestStart, '%0.3f' % self.timeRequestFinish,
-                    rD, uploadSize]))
+                    rD, self.requestSize]))
 
         if self.requestRunning or not self.plugin.config.getValue('upload_enabled'):
             return
