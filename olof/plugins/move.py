@@ -13,6 +13,7 @@ from twisted.internet import reactor, task
 
 import copy
 import os
+import re
 import time
 import urllib2
 
@@ -52,7 +53,7 @@ class Connection(RESTConnection):
         self.requestRunning = False
         self.lastError = None
         self.measurements = measurements
-        self.getProjects(self.getScanners)
+        self.getProjects(self.getScanners, self.getLocations)
 
         if len(measureCount) == 0:
             self.measureCount = {'uploads': 0, 'uploaded': 0, 'last_upload': -1, 'failed_uploads': 0,
@@ -90,11 +91,12 @@ class Connection(RESTConnection):
         except AssertionError:
             pass
 
-    def getScanners(self, callback=None):
+    def getScanners(self, callback=None, *args):
         """
         Get the list of scanners from the Move database and update local scanner data.
 
         @param    callback   Function to call on succesfull request.
+        @param    *args      Arguments to pass to the callback function.
         @return   (str)      Result of the query.
         """
         def process(r):
@@ -120,7 +122,7 @@ class Connection(RESTConnection):
                     ls = s.strip().split(',')
                     self.scanners[ls[0]] = True
                 if callback != None:
-                    callback()
+                    callback(*args)
             return r
 
         if self.requestRunning:
@@ -129,11 +131,12 @@ class Connection(RESTConnection):
         self.requestRunning = True
         self.requestGet('scanner', process)
 
-    def getProjects(self, callback=None):
+    def getProjects(self, callback=None, *args):
         """
         Get the list of projects from the Move database and update local project data.
 
         @param    callback   Function to call on succesfull request.
+        @param    *args      Arguments to pass to the callback function.
         @return   (str)      Result of the query.
         """
         def process(r):
@@ -159,11 +162,56 @@ class Connection(RESTConnection):
                     ls = s.strip().split(',')
                     self.projects[ls[0]] = True
                 if callback != None:
-                    callback()
+                    callback(*args)
             return r
 
         self.requestRunning = True
         self.requestGet('project', process)
+
+    def getLocations(self, callback=None, *args):
+        """
+        Get the list of locations from the Move database and update local location data.
+
+        @param    callback   Function to call on succesfull request.
+        @param    *args      Arguments to pass to the callback function.
+        @return   (str)      Result of the query.
+        """
+        def process(r):
+            self.requestRunning = False
+            alertPlugin = self.plugin.server.pluginmgr.getPlugin('alert')
+            if type(r) is IOError:
+                self.lastError = str(r)
+                self.plugin.logger.logError("GET/scanner/location request failed: %s" % str(r))
+                if callback != None:
+                    self.measureCount['failed_uploads'] += 1
+                    if alertPlugin != None:
+                        a = alertPlugin.mailer.getAlerts(self.plugin.filename,
+                            [olof.plugins.alert.Alert.Type.MoveUploadFailed])
+                        if len(a) < 1 and sum(len(self.measurements[i]) for i in self.measurements) > 0:
+                            alertPlugin.mailer.addAlert(olof.plugins.alert.Alert(self.plugin.filename, [],
+                                olof.plugins.alert.Alert.Type.MoveUploadFailed, autoexpire=False, message=str(r),
+                                info=1, warning=5, alert=10, fire=20))
+                return
+            else:
+                self.lastError = None
+            if r != None:
+                for s in r:
+                    ls = s.strip().split(',')
+                    t = ls[1]
+                    if '.' in t:
+                        t = "".join([t[:t.find('.')], t[t.find('.')+4:]])
+                    timestamp = time.strftime("%s", time.strptime(t, "%Y%m%d-%H%M%S-%Z"))
+                    coord = tuple([float(i) for i in re.split(r'\((.*)\)', ls[2])[1].split()[::-1]])
+                    if ls[0] not in self.locations:
+                        self.locations[ls[0]] = [[(timestamp, coord, ls[4], ls[5]), True]]
+                    else:
+                        self.locations[ls[0]].append([(timestamp, coord, ls[4], ls[5]), True])
+                if callback != None:
+                    callback(*args)
+            return r
+
+        self.requestRunning = True
+        self.requestGet('scanner/location', process)
 
     def addScanner(self, mac, description):
         """
@@ -314,7 +362,7 @@ class Connection(RESTConnection):
         """
         Upload pending measurements to the Move database.
         """
-        def upload():
+        def upload(*args):
             m = ""
             m_scanner = []
             self.plugin.logger.debug("Posting measurements")
@@ -341,6 +389,7 @@ class Connection(RESTConnection):
             if len(m) > 0:
                 self.requestRunning = True
                 self.timeRequestStart = time.time()
+                self.requestSize = linecount
                 self.plugin.logger.debug("Sending request with %i lines" % linecount)
                 self.requestPost('measurement', process, m,
                     {'Content-Type': 'text/plain'})
@@ -401,7 +450,7 @@ class Connection(RESTConnection):
                 rR = "finished" if success else "failed"
                 self.plugin.logger.logInfo("Upload %s: " % rR + ','.join([str(i) for i in \
                     rS, rF, '%0.3f' % self.timeRequestStart, '%0.3f' % self.timeRequestFinish,
-                    rD, uploadSize]))
+                    rD, self.requestSize]))
 
         if self.requestRunning or not self.plugin.config.getValue('upload_enabled'):
             return
