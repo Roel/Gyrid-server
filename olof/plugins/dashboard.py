@@ -692,7 +692,7 @@ class Plugin(olof.core.Plugin):
             sens.connected = False
             sens.disconnect_time = int(float(timestamp))
 
-    def dataFeedRssi(self, hostname, projects, timestamp, sensorMac, mac, rssi):
+    def dataFeedRssi(self, hostname, projects, timestamp, sensorMac, mac, rssi, cache):
         """
         Save detection information in the corresponding Sensor instance.
         """

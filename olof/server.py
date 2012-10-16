@@ -196,22 +196,23 @@ class GyridServerProtocol(LineReceiver):
         else:
             self.sendLine('ACK,%s' % self.checksum(line))
 
-            if self.hostname != None:
-                if len(ll) == 5:
+            if 'CELL' in ll[0]:
+                if self.hostname != None:
                     try:
-                        mac = str(ll[2])
-                        dc = int(ll[3])
+                        mac = str(ll[3])
+                        dc = int(ll[4])
                     except:
                         return
                     else:
                         self.factory.server.mac_dc[mac] = dc
                         try:
                             args = {'hostname': str(self.hostname),
-                                    'timestamp': float(ll[1]),
-                                    'sensorMac': str(ll[0]),
+                                    'timestamp': float(ll[2]),
+                                    'sensorMac': str(ll[1]),
                                     'mac': mac,
                                     'deviceclass': dc,
-                                    'move': str(ll[4])}
+                                    'move': str(ll[5]),
+                                    'cache': ll[0].startswith('CACHE')}
                         except:
                             return
                         else:
@@ -219,13 +220,15 @@ class GyridServerProtocol(LineReceiver):
                             for plugin in ap:
                                 args['projects'] = ap[plugin]
                                 plugin.dataFeedCell(**args)
-                elif len(ll) == 4:
+            elif 'RSSI' in ll[0]:
+                if self.hostname != None:
                     try:
                         args = {'hostname': str(self.hostname),
-                                'timestamp': float(ll[1]),
-                                'sensorMac': str(ll[0]),
-                                'mac': str(ll[2]),
-                                'rssi': int(ll[3])}
+                                'timestamp': float(ll[2]),
+                                'sensorMac': str(ll[1]),
+                                'mac': str(ll[3]),
+                                'rssi': int(ll[4]),
+                                'cache': ll[0].startswith('CACHE')}
                     except:
                         return
                     else:
@@ -233,7 +236,8 @@ class GyridServerProtocol(LineReceiver):
                         for plugin in ap:
                             args['projects'] = ap[plugin]
                             plugin.dataFeedRssi(**args)
-                elif len(ll) == 3 and ll[0] == 'INFO':
+            elif len(ll) == 3 and ll[0] == 'INFO':
+                if self.hostname != None:
                     try:
                         args = {'hostname': str(self.hostname),
                                 'timestamp': float(ll[1]),

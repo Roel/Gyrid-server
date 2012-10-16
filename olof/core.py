@@ -172,7 +172,7 @@ class Plugin(object):
         pass
 
     def dataFeedCell(self, hostname, projects, timestamp, sensorMac, mac, deviceclass,
-            move):
+            move, cache):
         """
         Called when new cell data is received.
 
@@ -187,10 +187,11 @@ class Plugin(object):
         @param   deviceclass (int)   The Bluetooth deviceclass of the detected device.
         @param   move (str)          Either 'in' or 'out', depending on whether the device move in or out the range of
                                        the sensor.
+        @param   cache (bool)        Whether the data is live or has been cached clientside.
         """
         pass
 
-    def dataFeedRssi(self, hostname, projects, timestamp, sensorMac, mac, rssi):
+    def dataFeedRssi(self, hostname, projects, timestamp, sensorMac, mac, rssi, cache):
         """
         Called when new RSSI data is received.
 
@@ -202,5 +203,6 @@ class Plugin(object):
         @param   mac (str)           The Bluetooth MAC-address of the detected device. Representation without colons,
                                        f.ex. 001122334455
         @param   rssi (int)          The value of the Received Signal Strength Indication of the detection.
+        @param   cache (bool)        Whether the data is live or has been cached clientside.
         """
         pass

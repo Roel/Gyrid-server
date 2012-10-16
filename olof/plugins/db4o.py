@@ -337,7 +337,7 @@ class Plugin(olof.core.Plugin):
                 self.db4o_factory.sendLine(','.join([project, hostname, 'INFO', str(int(timestamp*1000)),
                     'new_inquiry', sensorMac]))
 
-    def dataFeedCell(self, hostname, projects, timestamp, sensorMac, mac, deviceclass, move):
+    def dataFeedCell(self, hostname, projects, timestamp, sensorMac, mac, deviceclass, move, cache):
         """
         Send cell data to the Db4O server.
         """
@@ -345,7 +345,7 @@ class Plugin(olof.core.Plugin):
             self.db4o_factory.sendLine(','.join([project, hostname, sensorMac, mac, str(deviceclass),
                 str(int(timestamp*1000)), move]))
 
-    def dataFeedRssi(self, hostname, projects, timestamp, sensorMac, mac, rssi):
+    def dataFeedRssi(self, hostname, projects, timestamp, sensorMac, mac, rssi, cache):
         """
         Send RSSI data to the Db4O server.
         """

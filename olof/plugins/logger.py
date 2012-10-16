@@ -301,7 +301,7 @@ class Plugin(olof.core.Plugin):
             sc = self.getScanner(hostname, project)
             sc.logInfo(timestamp, info)
 
-    def dataFeedCell(self, hostname, projects, timestamp, sensorMac, mac, deviceclass, move):
+    def dataFeedCell(self, hostname, projects, timestamp, sensorMac, mac, deviceclass, move, cache):
         """
         Pass the information to the corresponding ScanSetup to be saved to the cell-data log.
         """
@@ -309,7 +309,7 @@ class Plugin(olof.core.Plugin):
             ss = self.getScanSetup(hostname, project, sensorMac)
             ss.logCell(timestamp, mac, deviceclass, move)
 
-    def dataFeedRssi(self, hostname, projects, timestamp, sensorMac, mac, rssi):
+    def dataFeedRssi(self, hostname, projects, timestamp, sensorMac, mac, rssi, cache):
         """
         Pass the information to the corresponding ScanSetup to be saved to the RSSI-data log.
         """
