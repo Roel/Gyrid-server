@@ -19,6 +19,7 @@ import urllib2
 
 import olof.configuration
 import olof.core
+import olof.plugins.alert
 import olof.storagemanager
 
 from olof.tools.datetimetools import getRelativeTime
