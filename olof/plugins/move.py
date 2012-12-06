@@ -19,6 +19,7 @@ import urllib2
 
 import olof.configuration
 import olof.core
+import olof.plugins.alert
 import olof.storagemanager
 
 from olof.tools.datetimetools import getRelativeTime
@@ -314,12 +315,12 @@ class Connection(RESTConnection):
             loc = []
             for location in [l[0] for l in self.locations[scanner] if l[1] == False]:
                 if location[1] != None:
-                    loc.append(','.join([time.strftime('%Y%m%d-%H%M%S-%Z',
+                    loc.append(','.join([time.strftime('%Y%m%d-%H%M%S.000-%Z',
                         time.localtime(location[0])),
                         'SRID=4326;POINT(%0.6f %0.6f)' % location[1],
                         'EWKT', location[2], location[3]]))
                 else:
-                    loc.append(','.join([time.strftime('%Y%m%d-%H%M%S-%Z',
+                    loc.append(','.join([time.strftime('%Y%m%d-%H%M%S.000-%Z',
                         time.localtime(location[0])), 'NULL', 'NULL', '', 'NULL']))
             l_scanner.append("\n".join(loc))
 
