@@ -206,7 +206,12 @@ class GyridServerProtocol(Int16StringReceiver):
         elif m.type == m.Type_REQUEST_KEEPALIVE and m.success:
             l = task.LoopingCall(self.keepalive)
             l.start(self.factory.timeout, now=False)
-            #FIXME self.sendLine('MSG,cache,push')
+
+        elif m.type == m.Type_REQUEST_STARTDATA and m.success:
+            msg = proto.Msg()
+            msg.type = msg.Type_REQUEST_CACHING
+            msg.requestCaching.pushCache = True
+            self.sendMsg(msg)
 
         elif m.type == m.Type_BLUETOOTH_STATE_INQUIRY:
             if self.hostname != None:
@@ -269,7 +274,7 @@ class GyridServerProtocol(Int16StringReceiver):
                                     'mac': mac,
                                     'deviceclass': dc,
                                     'move': mp[d.move],
-                                    'cache': d.cached}
+                                    'cache': m.cached}
                         except:
                             return
                         else:
@@ -289,7 +294,7 @@ class GyridServerProtocol(Int16StringReceiver):
                                 'sensorMac': binascii.b2a_hex(d.sensorMac),
                                 'mac': binascii.b2a_hex(d.hwid),
                                 'rssi': d.rssi,
-                                'cache': d.cached}
+                                'cache': m.cached}
                     except:
                         return
                     else:
