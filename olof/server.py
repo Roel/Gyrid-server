@@ -9,9 +9,11 @@ from OpenSSL import SSL
 
 from twisted.internet import reactor, ssl, task, threads
 from twisted.internet.protocol import Factory
-from twisted.protocols.basic import LineReceiver
+from twisted.protocols.basic import Int16StringReceiver
 
+import binascii
 import os
+import struct
 import sys
 import time
 import traceback
@@ -23,6 +25,7 @@ import olof.dataprovider
 import olof.datatypes
 import olof.logger
 import olof.pluginmanager
+import olof.protocol as proto
 import olof.storagemanager
 import olof.tools.validation
 
@@ -53,16 +56,39 @@ class GyridServerProtocol(LineReceiver):
 
         self.buffer = []
 
-        self.sendLine('MSG,hostname')
-        self.sendLine('MSG,enable_sensor_mac,true')
-        self.sendLine('MSG,enable_rssi,true')
-        self.sendLine('MSG,enable_cache,true')
-        self.sendLine('MSG,enable_uptime,true')
-        self.sendLine('MSG,enable_state_scanning,true')
-        self.sendLine('MSG,enable_state_inquiry,true')
+        m = proto.Msg()
+        m.type = m.Type_REQUEST_HOSTNAME
+        self.sendMsg(m)
 
-        self.sendLine('MSG,enable_keepalive,%i' % self.factory.timeout)
-        self.sendLine('MSG,keepalive')
+        m = proto.Msg()
+        m.type = m.Type_REQUEST_UPTIME
+        self.sendMsg(m)
+
+        m = proto.Msg()
+        m.type = m.Type_REQUEST_STATE
+        m.requestState.bluetooth_enableInquiry = True
+        self.sendmsg(m)
+
+        m = proto.Msg()
+        m.type = m.Type_REQUEST_CACHING
+        self.sendMsg(m)
+
+        m = proto.Msg()
+        m.type = m.Type_REQUEST_KEEPALIVE
+        m.requestKeepalive.interval = self.factory.timeout
+        self.sendMsg(m)
+
+        m = proto.Msg()
+        m.type = m.Type_KEEPALIVE
+        self.sendMsg(m)
+
+        m = proto.Msg()
+        m.type = m.Type_REQUEST_STARTDATA
+        m.requestStartdata.enableRaw = True
+        self.sendMsg(m)
+
+    def sendMsg(self, msg):
+        self.sendString(struct.pack('H', msg.ByteSize()) + msg.SerializeToString())
 
     def keepalive(self):
         """
@@ -73,7 +99,9 @@ class GyridServerProtocol(LineReceiver):
         if self.last_keepalive < (int(time.time())-(t+0.1*t)):
             self.transport.loseConnection()
         else:
-            self.sendLine('MSG,keepalive')
+            m = proto.Msg()
+            m.type = m.Type_KEEPALIVE
+            self.sendMsg(m)
 
     def connectionLost(self, reason):
         """
@@ -104,115 +132,141 @@ class GyridServerProtocol(LineReceiver):
         """
         return hex(abs(zlib.crc32(data)))[2:]
 
-    def lineReceived(self, line):
+    def stringReceived(self, data):
         """
-        Called when a line was received. Process the line.
-        """
-        self.process(line)
-
-    def process(self, line):
-        """
-        Process the line. The magic happens here!
+        Process received data. The magic happens here!
 
         Depending on the type of information received, the corresponding method is called for all plugins with the
         correct arguments based on the received data.
 
-        @param   line (str)   The line to process.
+        @param   data (str)   The data to process.
         """
-        ll = line.strip().split(',')
+        m = proto.Msg.FromString(data)
         dp = self.factory.server.dataprovider
 
-        if ll[0] == 'MSG':
-            ll[1] = ll[1].strip()
-            if ll[1] == 'hostname':
-                self.hostname = ll[2]
+        if m.type == m.Type_HOSTNAME:
+            self.hostname = m.hostname.hostname
+            try:
+                args = {'hostname': str(self.hostname),
+                        'ip': str(self.transport.getPeer().host),
+                        'port': int(self.transport.getPeer().port)}
+            except:
+                return
+            else:
+                ap = dp.getActivePlugins(self.hostname)
+                for plugin in ap:
+                    args['projects'] = ap[plugin]
+                    plugin.connectionMade(**args)
+
+            for l in self.buffer:
+                if l.type != l.Type_HOSTNAME:
+                    self.stringReceived(l)
+            self.buffer[:] = []
+
+        elif m.type == m.Type_UPTIME:
+            if self.hostname != None:
                 try:
                     args = {'hostname': str(self.hostname),
-                            'ip': str(self.transport.getPeer().host),
-                            'port': int(self.transport.getPeer().port)}
+                            'hostUptime': m.uptime.systemStartup,
+                            'gyridUptime': m.uptime.gyridStartup}
                 except:
                     return
                 else:
                     ap = dp.getActivePlugins(self.hostname)
                     for plugin in ap:
                         args['projects'] = ap[plugin]
-                        plugin.connectionMade(**args)
+                        plugin.uptime(**args)
+            else:
+                self.buffer.append(m)
 
-                for l in self.buffer:
-                    if not 'hostname' in l:
-                        self.process(l)
-                self.buffer[:] = []
-            elif ll[1] == 'uptime':
-                if self.hostname != None:
-                    try:
-                        args = {'hostname': str(self.hostname),
-                                'hostUptime': int(ll[3]),
-                                'gyridUptime': int(ll[2])}
-                    except:
-                        return
-                    else:
-                        ap = dp.getActivePlugins(self.hostname)
-                        for plugin in ap:
-                            args['projects'] = ap[plugin]
-                            plugin.uptime(**args)
-                else:
-                    self.buffer.append(line)
-            elif ll[1] == 'gyrid':
-                if self.hostname != None:
-                    try:
-                        args = {'hostname': str(self.hostname),
-                                'module': str(ll[1]),
-                                'info': str(ll[2])}
-                    except:
-                        return
-                    else:
-                        ap = dp.getActivePlugins(self.hostname)
-                        for plugin in ap:
-                            args['projects'] = ap[plugin]
-                            plugin.sysStateFeed(**args)
-                else:
-                    self.buffer.append(line)
-            elif len(ll) == 2 and ll[1] == 'keepalive':
-                self.last_keepalive = int(time.time())
-            elif len(ll) == 3 and ll[1] == 'enable_keepalive':
-                l = task.LoopingCall(self.keepalive)
-                l.start(self.factory.timeout, now=False)
-                self.sendLine('MSG,cache,push')
-        elif ll[0] == 'STATE':
+        elif m.type == m.Type_STATE_GYRID:
             if self.hostname != None:
-                if len(ll) == 4 and ll[0] == 'STATE':
-                    try:
-                        args = {'hostname': str(self.hostname),
-                                'timestamp': float(ll[2]),
-                                'sensorMac': str(ll[1]),
-                                'info': str(ll[3])}
-                    except:
-                        return
-                    else:
-                        ap = dp.getActivePlugins(self.hostname, timestamp=args['timestamp'])
-                        for plugin in ap:
-                            args['projects'] = ap[plugin]
-                            plugin.stateFeed(**args)
-        else:
-            self.sendLine('ACK,%s' % self.checksum(line))
+                mp = {m.stateGyrid.Type_CONNECTED: 'connected',
+                      m.stateGyrid.Type_DISCONNECTED: 'disconnected'}
+                try:
+                    args = {'hostname': str(self.hostname),
+                            'module': 'gyrid',
+                            'info': mp[m.type]}
+                except:
+                    return
+                else:
+                    ap = dp.getActivePlugins(self.hostname)
+                    for plugin in ap:
+                        args['projects'] = ap[plugin]
+                        plugin.sysStateFeed(**args)
+            else:
+                self.buffer.append(m)
 
-            if 'CELL' in ll[0]:
+        elif m.type == m.Type_KEEPALIVE:
+            self.last_keepalive = int(time.time())
+
+        elif m.type == m.Type_REQUEST_KEEPALIVE and m.success:
+            l = task.LoopingCall(self.keepalive)
+            l.start(self.factory.timeout, now=False)
+            #FIXME self.sendLine('MSG,cache,push')
+
+        elif m.type == m.Type_BLUETOOTH_STATE_INQUIRY:
+            if self.hostname != None:
+                try:
+                    args = {'hostname': str(self.hostname),
+                            'timestamp': m.bluetooth_stateInquiry.timestamp,
+                            'sensorMac': m.bluetooth_stateInquiry.sensorMac,
+                            'info': 'new_inquiry'}
+                except:
+                    return
+                else:
+                    ap = dp.getActivePlugins(self.hostname, timestamp=args['timestamp'])
+                    for plugin in ap:
+                        args['projects'] = ap[plugin]
+                        plugin.stateFeed(**args)
+            else:
+                self.buffer.append(m)
+
+        elif m.type == m.Type_STATE_SCANNING:
+            if self.hostname != None:
+                mp = {m.stateScanning.Type_STARTED: 'started_scanning',
+                      m.stateScanning.Type_STOPPED: 'stopped_scanning'}
+                try:
+                    args = {'hostname': str(self.hostname),
+                            'timestamp': m.stateScanning.timestamp,
+                            'sensorMac': m.stateScanning.sensorMac,
+                            'info': mp[m.type]}
+                except:
+                    return
+                else:
+                    ap = dp.getActivePlugins(self.hostname, timestamp=args['timestamp'])
+                    for plugin in ap:
+                        args['projects'] = ap[plugin]
+                        plugin.stateFeed(**args)
+            else:
+                self.buffer.append(m)
+
+        else:
+            mr = proto.Msg()
+            mr.type = mr.Type_ACK
+            mr.ack.crc32 = binascii.a2b_hex(self.checksum(m))
+            self.sendMsg(mr)
+
+            if m.type == m.Type_BLUETOOTH_DATAIO:
+                d = m.bluetooth_dataIO
+                mp = {d.Move_IN: 'in',
+                      d.Move_OUT: 'out'}
                 if self.hostname != None:
                     try:
-                        mac = str(ll[3])
-                        dc = int(ll[4])
+                        mac = binascii.b2a_hex(d.hwid)
+                        dc = d.deviceclass
                     except:
                         return
                     else:
                         self.factory.server.mac_dc[mac] = dc
                         try:
                             args = {'hostname': str(self.hostname),
-                                    'timestamp': float(ll[2]),
-                                    'sensorMac': str(ll[1]),
+                                    'timestamp': d.timestamp,
+                                    'sensorMac': binascii.b2a_hex(d.sensorMac),
                                     'mac': mac,
                                     'deviceclass': dc,
-                                    'move': str(ll[5]),
-                                    'cache': ll[0].startswith('CACHE')}
+                                    'move': mp[d.move],
+                                    'cache': d.cached}
                         except:
                             return
                         else:
@@ -220,15 +274,19 @@ class GyridServerProtocol(LineReceiver):
                             for plugin in ap:
                                 args['projects'] = ap[plugin]
                                 plugin.dataFeedCell(**args)
-            elif 'RSSI' in ll[0]:
+                else:
+                    self.buffer.append(m)
+
+            elif m.type == m.Type_BLUETOOTH_DATARAW:
+                d = m.bluetooth_dataRaw
                 if self.hostname != None:
                     try:
                         args = {'hostname': str(self.hostname),
-                                'timestamp': float(ll[2]),
-                                'sensorMac': str(ll[1]),
-                                'mac': str(ll[3]),
-                                'rssi': int(ll[4]),
-                                'cache': ll[0].startswith('CACHE')}
+                                'timestamp': d.timestamp,
+                                'sensorMac': binascii.b2a_hex(d.sensorMac),
+                                'mac': binascii.b2a_hex(d.hwid),
+                                'rssi': d.rssi,
+                                'cache': d.cached}
                     except:
                         return
                     else:
@@ -236,12 +294,15 @@ class GyridServerProtocol(LineReceiver):
                         for plugin in ap:
                             args['projects'] = ap[plugin]
                             plugin.dataFeedRssi(**args)
-            elif len(ll) == 3 and ll[0] == 'INFO':
+                else:
+                    self.buffer.append(m)
+
+            elif m.type == m.Type_INFO:
                 if self.hostname != None:
                     try:
                         args = {'hostname': str(self.hostname),
-                                'timestamp': float(ll[1]),
-                                'info': str(ll[2])}
+                                'timestamp': d.info.timestamp,
+                                'info': d.info.info}
                     except:
                         return
                     else:
@@ -249,6 +310,8 @@ class GyridServerProtocol(LineReceiver):
                         for plugin in ap:
                             args['projects'] = ap[plugin]
                             plugin.infoFeed(**args)
+                else:
+                    self.buffer.append(m)
 
 
 class GyridServerFactory(Factory):
