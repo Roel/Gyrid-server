@@ -25,7 +25,7 @@ import olof.dataprovider
 import olof.datatypes
 import olof.logger
 import olof.pluginmanager
-import olof.protocol as proto
+import olof.protocol.network as proto
 import olof.storagemanager
 import olof.tools.validation
 
@@ -43,7 +43,7 @@ def verifyCallback(connection, x509, errnum, errdepth, ok):
         pass
     return True
 
-class GyridServerProtocol(LineReceiver):
+class GyridServerProtocol(Int16StringReceiver):
     """
     The main Gyrid server protocol. This provides the interaction with the scanners.
     """
@@ -67,7 +67,7 @@ class GyridServerProtocol(LineReceiver):
         m = proto.Msg()
         m.type = m.Type_REQUEST_STATE
         m.requestState.bluetooth_enableInquiry = True
-        self.sendmsg(m)
+        self.sendMsg(m)
 
         m = proto.Msg()
         m.type = m.Type_REQUEST_CACHING
@@ -130,7 +130,10 @@ class GyridServerProtocol(LineReceiver):
         @param   data (str)   The data to check.
         @return  (hex)        The absolute (positive) hexadecimal CRC32 checksum of the data.
         """
-        return hex(abs(zlib.crc32(data)))[2:]
+        r = '%x' % abs(zlib.crc32(data))
+        if len(r) % 2 != 0:
+            r = '0' + r
+        return r
 
     def stringReceived(self, data):
         """
@@ -186,7 +189,7 @@ class GyridServerProtocol(LineReceiver):
                 try:
                     args = {'hostname': str(self.hostname),
                             'module': 'gyrid',
-                            'info': mp[m.type]}
+                            'info': mp[m.stateGyrid.type]}
                 except:
                     return
                 else:
@@ -210,7 +213,7 @@ class GyridServerProtocol(LineReceiver):
                 try:
                     args = {'hostname': str(self.hostname),
                             'timestamp': m.bluetooth_stateInquiry.timestamp,
-                            'sensorMac': m.bluetooth_stateInquiry.sensorMac,
+                            'sensorMac': binascii.b2a_hex(m.bluetooth_stateInquiry.sensorMac),
                             'info': 'new_inquiry'}
                 except:
                     return
@@ -229,8 +232,8 @@ class GyridServerProtocol(LineReceiver):
                 try:
                     args = {'hostname': str(self.hostname),
                             'timestamp': m.stateScanning.timestamp,
-                            'sensorMac': m.stateScanning.sensorMac,
-                            'info': mp[m.type]}
+                            'sensorMac': binascii.b2a_hex(m.stateScanning.sensorMac),
+                            'info': mp[m.stateScanning.type]}
                 except:
                     return
                 else:
@@ -244,7 +247,7 @@ class GyridServerProtocol(LineReceiver):
         else:
             mr = proto.Msg()
             mr.type = mr.Type_ACK
-            mr.ack.crc32 = binascii.a2b_hex(self.checksum(m))
+            mr.ack.crc32 = binascii.a2b_hex(self.checksum(m.SerializeToString()))
             self.sendMsg(mr)
 
             if m.type == m.Type_BLUETOOTH_DATAIO:
