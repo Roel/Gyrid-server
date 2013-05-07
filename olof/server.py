@@ -5,9 +5,7 @@
 # Copyright (C) 2011-2012  Roel Huybrechts
 # All rights reserved.
 
-from OpenSSL import SSL
-
-from twisted.internet import reactor, ssl, task, threads
+from twisted.internet import reactor, task, threads
 from twisted.internet.protocol import Factory
 from twisted.protocols.basic import Int16StringReceiver
 
@@ -482,6 +480,8 @@ class Olof(object):
             if False in [os.path.isfile(i) for i in [ssl_server_key, ssl_server_crt, ssl_server_ca]]:
                 self.logger.logError("SSL credentials missing")
             else:
+                from OpenSSL import SSL
+                from twisted.internet import ssl
                 gyridCtxFactory = ssl.DefaultOpenSSLContextFactory(ssl_server_key, ssl_server_crt)
                 ctx = gyridCtxFactory.getContext()
                 ctx.set_verify(SSL.VERIFY_PEER | SSL.VERIFY_FAIL_IF_NO_PEER_CERT, verifyCallback)
