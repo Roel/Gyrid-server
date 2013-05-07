@@ -88,7 +88,7 @@ class GyridServerProtocol(Int16StringReceiver):
         self.sendMsg(m)
 
     def sendMsg(self, msg):
-        self.sendString(struct.pack('H', msg.ByteSize()) + msg.SerializeToString())
+        self.sendString(struct.pack('!H', msg.ByteSize()) + msg.SerializeToString())
 
     def keepalive(self):
         """
@@ -213,49 +213,49 @@ class GyridServerProtocol(Int16StringReceiver):
             msg.requestCaching.pushCache = True
             self.sendMsg(msg)
 
-        elif m.type == m.Type_BLUETOOTH_STATE_INQUIRY:
-            if self.hostname != None:
-                try:
-                    args = {'hostname': str(self.hostname),
-                            'timestamp': m.bluetooth_stateInquiry.timestamp,
-                            'sensorMac': binascii.b2a_hex(m.bluetooth_stateInquiry.sensorMac),
-                            'info': 'new_inquiry'}
-                except:
-                    return
-                else:
-                    ap = dp.getActivePlugins(self.hostname, timestamp=args['timestamp'])
-                    for plugin in ap:
-                        args['projects'] = ap[plugin]
-                        plugin.stateFeed(**args)
-            else:
-                self.buffer.append(m)
-
-        elif m.type == m.Type_STATE_SCANNING:
-            if self.hostname != None:
-                mp = {m.stateScanning.Type_STARTED: 'started_scanning',
-                      m.stateScanning.Type_STOPPED: 'stopped_scanning'}
-                try:
-                    args = {'hostname': str(self.hostname),
-                            'timestamp': m.stateScanning.timestamp,
-                            'sensorMac': binascii.b2a_hex(m.stateScanning.sensorMac),
-                            'info': mp[m.stateScanning.type]}
-                except:
-                    return
-                else:
-                    ap = dp.getActivePlugins(self.hostname, timestamp=args['timestamp'])
-                    for plugin in ap:
-                        args['projects'] = ap[plugin]
-                        plugin.stateFeed(**args)
-            else:
-                self.buffer.append(m)
-
-        else:
+        elif not m.success:
             mr = proto.Msg()
             mr.type = mr.Type_ACK
             mr.ack.crc32 = binascii.a2b_hex(self.checksum(m.SerializeToString()))
             self.sendMsg(mr)
 
-            if m.type == m.Type_BLUETOOTH_DATAIO:
+            if m.type == m.Type_BLUETOOTH_STATE_INQUIRY:
+                if self.hostname != None:
+                    try:
+                        args = {'hostname': str(self.hostname),
+                                'timestamp': m.bluetooth_stateInquiry.timestamp,
+                                'sensorMac': binascii.b2a_hex(m.bluetooth_stateInquiry.sensorMac),
+                                'info': 'new_inquiry'}
+                    except:
+                        return
+                    else:
+                        ap = dp.getActivePlugins(self.hostname, timestamp=args['timestamp'])
+                        for plugin in ap:
+                            args['projects'] = ap[plugin]
+                            plugin.stateFeed(**args)
+                else:
+                    self.buffer.append(m)
+
+            elif m.type == m.Type_STATE_SCANNING:
+                if self.hostname != None:
+                    mp = {m.stateScanning.Type_STARTED: 'started_scanning',
+                          m.stateScanning.Type_STOPPED: 'stopped_scanning'}
+                    try:
+                        args = {'hostname': str(self.hostname),
+                                'timestamp': m.stateScanning.timestamp,
+                                'sensorMac': binascii.b2a_hex(m.stateScanning.sensorMac),
+                                'info': mp[m.stateScanning.type]}
+                    except:
+                        return
+                    else:
+                        ap = dp.getActivePlugins(self.hostname, timestamp=args['timestamp'])
+                        for plugin in ap:
+                            args['projects'] = ap[plugin]
+                            plugin.stateFeed(**args)
+                else:
+                    self.buffer.append(m)
+
+            elif m.type == m.Type_BLUETOOTH_DATAIO:
                 d = m.bluetooth_dataIO
                 mp = {d.Move_IN: 'in',
                       d.Move_OUT: 'out'}
