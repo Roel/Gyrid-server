@@ -677,7 +677,7 @@ class Plugin(olof.core.Plugin):
                 s.gyrid_connected = False
                 s.gyrid_disconnect_time = int(time.time())
 
-    def stateFeed(self, hostname, projects, timestamp, sensorMac, info):
+    def stateFeed(self, hostname, projects, timestamp, sensorMac, info, cache):
         """
         Save the Bluetooth sensor informatio in the corresponding Sensor instance.
         """

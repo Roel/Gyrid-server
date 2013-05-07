@@ -486,7 +486,7 @@ class Plugin(olof.core.Plugin):
             else:
                 a[0].etime = int(time.time())
 
-    def stateFeed(self, hostname, projects, timestamp, sensorMac, info):
+    def stateFeed(self, hostname, projects, timestamp, sensorMac, info, cache):
         """
         On 'started_scanning': remove SensorDisconnect alerts and add SensorConnect info alert.
         On 'stopped_scanning': add SensorDisconnect alert.

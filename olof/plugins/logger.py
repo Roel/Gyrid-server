@@ -293,7 +293,7 @@ class Plugin(olof.core.Plugin):
             except ValueError:
                 pass
 
-    def infoFeed(self, hostname, projects, timestamp, info):
+    def infoFeed(self, hostname, projects, timestamp, info, cache):
         """
         Pass the information to the corresponding Scanner to be saved to the info log.
         """

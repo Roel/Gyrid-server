@@ -131,7 +131,7 @@ class Plugin(object):
         """
         pass
 
-    def stateFeed(self, hostname, projects, timestamp, sensorMac, info):
+    def stateFeed(self, hostname, projects, timestamp, sensorMac, info, cache):
         """
         Called when new structured status information is received for a specific sensor.
 
@@ -143,6 +143,7 @@ class Plugin(object):
                                        "new_inquiry": A new inquiry started on the sensor.
                                        "started_scanning": Started scanning with the sensor.
                                        "stopped_scanning": Stopped scanning with the sensor.
+        @param   cache (bool)        Whether the data is live or has been cached clientside.
         """
         pass
 
@@ -160,7 +161,7 @@ class Plugin(object):
         """
         pass
 
-    def infoFeed(self, hostname, projects, timestamp, info):
+    def infoFeed(self, hostname, projects, timestamp, info, cache):
         """
         Called when a textual information message is received.
 
@@ -168,6 +169,7 @@ class Plugin(object):
         @param   projects (set)      Projects of the scanner. Singleton None when projectless.
         @param   timestamp (float)   The timestamp of the info, in UNIX time.
         @param   info (str)          The info that was received.
+        @param   cache (bool)        Whether the data is live or has been cached clientside.
         """
         pass
 

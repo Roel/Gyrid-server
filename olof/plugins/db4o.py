@@ -328,7 +328,7 @@ class Plugin(olof.core.Plugin):
                 self.addLocation(obj.mac, obj.location.id, obj.location.description, obj.lon, obj.lat)
                 self.addScanSetup(hostname, obj.mac, obj.location.id, obj.start)
 
-    def stateFeed(self, hostname, projects, timestamp, sensorMac, info):
+    def stateFeed(self, hostname, projects, timestamp, sensorMac, info, cache):
         """
         Send new_inquiry status messages to the Db4O server.
         """

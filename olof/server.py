@@ -223,7 +223,8 @@ class GyridServerProtocol(Int16StringReceiver):
                         args = {'hostname': str(self.hostname),
                                 'timestamp': m.bluetooth_stateInquiry.timestamp,
                                 'sensorMac': binascii.b2a_hex(m.bluetooth_stateInquiry.sensorMac),
-                                'info': 'new_inquiry'}
+                                'info': 'new_inquiry',
+                                'cache': m.cached}
                     except:
                         return
                     else:
@@ -242,7 +243,8 @@ class GyridServerProtocol(Int16StringReceiver):
                         args = {'hostname': str(self.hostname),
                                 'timestamp': m.stateScanning.timestamp,
                                 'sensorMac': binascii.b2a_hex(m.stateScanning.sensorMac),
-                                'info': mp[m.stateScanning.type]}
+                                'info': mp[m.stateScanning.type],
+                                'cache': m.cached}
                     except:
                         return
                     else:
@@ -308,7 +310,8 @@ class GyridServerProtocol(Int16StringReceiver):
                     try:
                         args = {'hostname': str(self.hostname),
                                 'timestamp': d.info.timestamp,
-                                'info': d.info.info}
+                                'info': d.info.info,
+                                'cache': m.cached}
                     except:
                         return
                     else:
