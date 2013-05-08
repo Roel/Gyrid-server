@@ -689,7 +689,7 @@ class Plugin(olof.core.Plugin):
                     desc = ' - '.join([i for i in [obj.location.name, obj.location.description] if i != None])
                     self.conn.addLocation(obj.mac, project, timestamp, (obj.lon, obj.lat), desc)
 
-    def dataFeedRssi(self, hostname, projects, timestamp, sensorMac, mac, rssi, cache):
+    def dataFeedBluetoothRaw(self, hostname, projects, timestamp, sensorMac, mac, rssi, cache):
         """
         Add measurements when RSSI data is received.
         """

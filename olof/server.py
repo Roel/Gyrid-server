@@ -53,6 +53,7 @@ class GyridServerProtocol(Int16StringReceiver):
         self.hostname = None
 
         self.buffer = []
+        self.bytecount = 0
 
         m = proto.Msg()
         m.type = m.Type_REQUEST_HOSTNAME
@@ -65,6 +66,7 @@ class GyridServerProtocol(Int16StringReceiver):
         m = proto.Msg()
         m.type = m.Type_REQUEST_STATE
         m.requestState.bluetooth_enableInquiry = True
+        m.requestState.wifi_enableFrequency = True
         self.sendMsg(m)
 
         m = proto.Msg()
@@ -86,6 +88,10 @@ class GyridServerProtocol(Int16StringReceiver):
         self.sendMsg(m)
 
     def sendMsg(self, msg):
+        self.bytecount += 2
+        self.bytecount += msg.ByteSize()
+        print "==>", msg.ByteSize(), self.bytecount
+        print msg
         self.sendString(struct.pack('!H', msg.ByteSize()) + msg.SerializeToString())
 
     def keepalive(self):
@@ -143,6 +149,10 @@ class GyridServerProtocol(Int16StringReceiver):
         @param   data (str)   The data to process.
         """
         m = proto.Msg.FromString(data)
+        self.bytecount += 2
+        self.bytecount += m.ByteSize()
+        print "<==", m.ByteSize(), self.bytecount
+        print m
         dp = self.factory.server.dataprovider
 
         if m.type == m.Type_HOSTNAME:
@@ -214,7 +224,7 @@ class GyridServerProtocol(Int16StringReceiver):
         elif not m.success:
             mr = proto.Msg()
             mr.type = mr.Type_ACK
-            mr.ack.crc32 = binascii.a2b_hex(self.checksum(m.SerializeToString()))
+            mr.ack = binascii.a2b_hex(self.checksum(m.SerializeToString()))
             self.sendMsg(mr)
 
             if m.type == m.Type_BLUETOOTH_STATE_INQUIRY:
@@ -223,7 +233,29 @@ class GyridServerProtocol(Int16StringReceiver):
                         args = {'hostname': str(self.hostname),
                                 'timestamp': m.bluetooth_stateInquiry.timestamp,
                                 'sensorMac': binascii.b2a_hex(m.bluetooth_stateInquiry.sensorMac),
-                                'info': 'new_inquiry',
+                                'hwType': 'bluetooth',
+                                'type': 'new_inquiry',
+                                'info': m.bluetooth_stateInquiry.duration,
+                                'cache': m.cached}
+                    except:
+                        return
+                    else:
+                        ap = dp.getActivePlugins(self.hostname, timestamp=args['timestamp'])
+                        for plugin in ap:
+                            args['projects'] = ap[plugin]
+                            plugin.stateFeed(**args)
+                else:
+                    self.buffer.append(m)
+
+            elif m.type == m.Type_WIFI_STATE_FREQUENCY:
+                if self.hostname != None:
+                    try:
+                        args = {'hostname': str(self.hostname),
+                                'timestamp': m.wifi_stateFrequency.timestamp,
+                                'sensorMac': binascii.b2a_hex(m.wifi_stateFrequency.sensorMac),
+                                'hwType': 'wifi',
+                                'type': 'frequency',
+                                'info': m.wifi_stateFrequency.frequency,
                                 'cache': m.cached}
                     except:
                         return
@@ -239,11 +271,15 @@ class GyridServerProtocol(Int16StringReceiver):
                 if self.hostname != None:
                     mp = {m.stateScanning.Type_STARTED: 'started_scanning',
                           m.stateScanning.Type_STOPPED: 'stopped_scanning'}
+                    hw = {m.stateScanning.HwType_BLUETOOTH: 'bluetooth',
+                          m.stateScanning.HwType_WIFI: 'wifi'}
                     try:
                         args = {'hostname': str(self.hostname),
                                 'timestamp': m.stateScanning.timestamp,
+                                'hwType': hw[m.stateScanning.hwType],
                                 'sensorMac': binascii.b2a_hex(m.stateScanning.sensorMac),
-                                'info': mp[m.stateScanning.type],
+                                'type': mp[m.stateScanning.type],
+                                'info': None,
                                 'cache': m.cached}
                     except:
                         return
@@ -301,7 +337,28 @@ class GyridServerProtocol(Int16StringReceiver):
                         ap = dp.getActivePlugins(self.hostname, timestamp=args['timestamp'])
                         for plugin in ap:
                             args['projects'] = ap[plugin]
-                            plugin.dataFeedRssi(**args)
+                            plugin.dataFeedBluetoothRaw(**args)
+                else:
+                    self.buffer.append(m)
+
+            elif m.type == m.Type_WIFI_DATARAW:
+                d = m.wifi_dataRaw
+                if self.hostname != None:
+                    try:
+                        args = {'hostname': str(self.hostname),
+                                'timestamp': d.timestamp,
+                                'sensorMac': binascii.b2a_hex(d.sensorMac),
+                                'hwid1': binascii.b2a_hex(d.hwid1),
+                                'hwid2': binascii.b2a_hex(d.hwid2),
+                                'ssi': d.ssi,
+                                'cache': m.cached}
+                    except:
+                        return
+                    else:
+                        ap = dp.getActivePlugins(self.hostname, timestamp=args['timestamp'])
+                        for plugin in ap:
+                            args['projects'] = ap[plugin]
+                            plugin.dataFeedWifiRaw(**args)
                 else:
                     self.buffer.append(m)
 
@@ -337,7 +394,7 @@ class GyridServerFactory(Factory):
         """
         self.server = server
         self.client_dict = {}
-        self.timeout = 60
+        self.timeout = 10
 
 class Olof(object):
     """

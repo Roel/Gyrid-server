@@ -328,11 +328,11 @@ class Plugin(olof.core.Plugin):
                 self.addLocation(obj.mac, obj.location.id, obj.location.description, obj.lon, obj.lat)
                 self.addScanSetup(hostname, obj.mac, obj.location.id, obj.start)
 
-    def stateFeed(self, hostname, projects, timestamp, sensorMac, info, cache):
+    def stateFeed(self, hostname, projects, timestamp, hwType, sensorMac, type, info, cache):
         """
         Send new_inquiry status messages to the Db4O server.
         """
-        if info == 'new_inquiry':
+        if type == 'new_inquiry':
             for project in [i.id for i in projects if i != None]:
                 self.db4o_factory.sendLine(','.join([project, hostname, 'INFO', str(int(timestamp*1000)),
                     'new_inquiry', sensorMac]))
@@ -345,7 +345,7 @@ class Plugin(olof.core.Plugin):
             self.db4o_factory.sendLine(','.join([project, hostname, sensorMac, mac, str(deviceclass),
                 str(int(timestamp*1000)), move]))
 
-    def dataFeedRssi(self, hostname, projects, timestamp, sensorMac, mac, rssi, cache):
+    def dataFeedBluetoothRaw(self, hostname, projects, timestamp, sensorMac, mac, rssi, cache):
         """
         Send RSSI data to the Db4O server.
         """

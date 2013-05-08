@@ -192,7 +192,7 @@ class Scanner(object):
             s for s in self.sensors.values() if s.connected == True]) < self.sensor_count:
             # Not all sensors connected
             return ScannerStatus.Bad
-        elif len([s for s in self.sensors.values() if (s.last_inquiry == None or t-s.last_inquiry >= 80)]) == len(
+        elif len([s for s in self.sensors.values() if (s.last_activity == None or t-s.last_activity >= 80)]) == len(
             self.sensors):
             # No recent inquiry
             return ScannerStatus.Bad
@@ -534,15 +534,16 @@ class Sensor(object):
     """
     Class representing a Bluetooth sensor.
     """
-    def __init__(self, mac):
+    def __init__(self, hwType, mac):
         """
         Initialisation.
 
         @param   mac (str)   MAC-adress of this Bluetooth sensor.
         """
+        self.hwType = hwType
         self.mac = mac
-        self.last_inquiry = None
         self.last_data = None
+        self.last_activity = None
         self.detections = 0
 
         self.init()
@@ -557,6 +558,10 @@ class Sensor(object):
         self.connected = False
         self.disconnect_time = None
 
+class BluetoothSensor(Sensor):
+    def __init__(self, mac):
+        Sensor.__init__(self, 'bluetooth', mac)
+
     def render(self):
         """
         Render this sensor to HTML.
@@ -567,15 +572,48 @@ class Sensor(object):
         vendor = macvendor.getVendor(self.mac)
         mac = self.mac if vendor == None else '<span title="%s">%s</span>' % (vendor, self.mac)
         if self.connected == False:
-            html += '<img alt="" src="/dashboard/static/icons/bluetooth-grey.png">%s' % mac
+            html += '<img alt="" src="/dashboard/static/icons/%s-grey.png">%s' % (self.hwType, mac)
             if self.disconnect_time != None:
                 html += '<span class="block_data_attr"><b>disconnected</b> %s</span>' % getRelativeTime(int(float(
                     self.disconnect_time)), wrapper=htmlSpanWrapper)
         else:
-            html += '<img alt="" src="/dashboard/static/icons/bluetooth.png">%s' % mac
-            if self.last_inquiry != None:
-                html += '<span class="block_data_attr"><b>last inquiry</b> %s</span>' % getRelativeTime(int(float(
-                    self.last_inquiry)), wrapper=htmlSpanWrapper)
+            html += '<img alt="" src="/dashboard/static/icons/%s.png">%s' % (self.hwType, mac)
+            if self.last_activity != None:
+                html += '<span class="block_data_attr"><b>last activity</b> %s</span>' % getRelativeTime(int(float(
+                    self.last_activity)), wrapper=htmlSpanWrapper)
+        if self.last_data != None:
+            html += '<span class="block_data_attr"><b>last data</b> %s</span>' % getRelativeTime(int(float(
+                self.last_data)), wrapper=htmlSpanWrapper)
+        if self.detections > 0:
+            html += '<span class="block_data_attr"><b>detections</b> %s</span>' % formatNumber(self.detections)
+        html += '</div>'
+        return html
+
+class WiFiSensor(Sensor):
+    def __init__(self, mac):
+        Sensor.__init__(self, 'wifi', mac)
+        self.frequency = None
+
+    def render(self):
+        """
+        Render this sensor to HTML.
+
+        @return   (str)   HTML representation of this sensor.
+        """
+        html = '<div class="block_data">'
+        vendor = macvendor.getVendor(self.mac)
+        mac = self.mac if vendor == None else '<span title="%s">%s</span>' % (vendor, self.mac)
+        if self.connected == False:
+            html += '<img alt="" src="/dashboard/static/icons/%s-grey.png">%s' % (self.hwType, mac)
+            if self.disconnect_time != None:
+                html += '<span class="block_data_attr"><b>disconnected</b> %s</span>' % getRelativeTime(int(float(
+                    self.disconnect_time)), wrapper=htmlSpanWrapper)
+        else:
+            html += '<img alt="" src="/dashboard/static/icons/%s.png">%s' % (self.hwType, mac)
+            if self.last_activity != None:
+                html += '<span class="block_data_attr"><b>last activity</b> %s</span>' % getRelativeTime(int(float(
+                    self.last_activity)), wrapper=htmlSpanWrapper)
+                html += '<span class="block_data_attr"><b>frequency</b> %s Hz</span>' % self.frequency
         if self.last_data != None:
             html += '<span class="block_data_attr"><b>last data</b> %s</span>' % getRelativeTime(int(float(
                 self.last_data)), wrapper=htmlSpanWrapper)

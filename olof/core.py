@@ -131,18 +131,21 @@ class Plugin(object):
         """
         pass
 
-    def stateFeed(self, hostname, projects, timestamp, sensorMac, info, cache):
+    def stateFeed(self, hostname, projects, timestamp, hwType, sensorMac, type, info, cache):
         """
         Called when new structured status information is received for a specific sensor.
 
         @param   hostname (str)      The hostname of the scanner.
         @param   projects (set)      Projects of the scanner. Singleton None when projectless.
         @param   timestamp (float)   The timestamp of the status update, in UNIX time.
-        @param   sensorMac (str)     The MAC-address of the respective Bluetooth sensor.
-        @param   info (str)          The status info. Currently implemented:
+        @param   hwType (str)        Hardware type of the sensor, either 'bluetooth' or 'wifi'.
+        @param   sensorMac (str)     The MAC-address of the respective sensor.
+        @param   type (str)          The status type. Currently implemented:
                                        "new_inquiry": A new inquiry started on the sensor.
                                        "started_scanning": Started scanning with the sensor.
                                        "stopped_scanning": Stopped scanning with the sensor.
+                                       "frequency": A frequency change on the sensor.
+        @param   info (float/int)    Either duration of the inquiry or new frequency in Hz.
         @param   cache (bool)        Whether the data is live or has been cached clientside.
         """
         pass
@@ -193,7 +196,7 @@ class Plugin(object):
         """
         pass
 
-    def dataFeedRssi(self, hostname, projects, timestamp, sensorMac, mac, rssi, cache):
+    def dataFeedBluetoothRaw(self, hostname, projects, timestamp, sensorMac, mac, rssi, cache):
         """
         Called when new RSSI data is received.
 
@@ -207,4 +210,7 @@ class Plugin(object):
         @param   rssi (int)          The value of the Received Signal Strength Indication of the detection.
         @param   cache (bool)        Whether the data is live or has been cached clientside.
         """
+        pass
+
+    def dataFeedWifiRaw(self, hostname, projects, timestamp, sensorMac, hwid1, hwid2, ssi, cache):
         pass

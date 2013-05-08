@@ -33,7 +33,7 @@ import olof.core
 import olof.storagemanager
 import olof.tools.validation
 
-from olof.plugins.dashboard.scanner import formatNumber, htmlSpanWrapper, Scanner, ScannerStatus, Sensor
+from olof.plugins.dashboard.scanner import formatNumber, htmlSpanWrapper, Scanner, ScannerStatus, BluetoothSensor, WiFiSensor
 from olof.tools.datetimetools import getRelativeTime
 
 class RootResource(resource.Resource):
@@ -614,7 +614,7 @@ class Plugin(olof.core.Plugin):
             s = None
         return s
 
-    def getSensor(self, hostname, mac):
+    def getSensor(self, hostname, hwType, mac):
         """
         Get a Sensor instance for the given hostname and MAC-address combination.
         If none exists yet, create a new one.
@@ -625,7 +625,10 @@ class Plugin(olof.core.Plugin):
         """
         s = self.getScanner(hostname)
         if not mac in s.sensors:
-            sens = Sensor(mac)
+            if hwType == 'bluetooth':
+                sens = BluetoothSensor(mac)
+            elif hwType == 'wifi':
+                sens = WiFiSensor(mac)
             s.sensors[mac] = sens
         else:
             sens = s.sensors[mac]
@@ -677,27 +680,31 @@ class Plugin(olof.core.Plugin):
                 s.gyrid_connected = False
                 s.gyrid_disconnect_time = int(time.time())
 
-    def stateFeed(self, hostname, projects, timestamp, sensorMac, info, cache):
+    def stateFeed(self, hostname, projects, timestamp, hwType, sensorMac, type, info, cache):
         """
-        Save the Bluetooth sensor informatio in the corresponding Sensor instance.
+        Save the Bluetooth sensor information in the corresponding Sensor instance.
         """
-        sens = self.getSensor(hostname, sensorMac)
-        if info == 'new_inquiry':
+        sens = self.getSensor(hostname, hwType, sensorMac)
+        if type in ('new_inquiry', 'frequency'):
             sens.connected = True
-            if sens.last_inquiry == None or timestamp > sens.last_inquiry:
-                sens.last_inquiry = timestamp
-        elif info == 'started_scanning':
+            if sens.last_activity == None or timestamp > sens.last_activity:
+                sens.last_activity = timestamp
+            if type == 'frequency':
+                sens.frequency = info
+        elif type == 'started_scanning':
             sens.connected = True
-        elif info == 'stopped_scanning':
+        elif type == 'stopped_scanning':
             sens.connected = False
             sens.disconnect_time = int(float(timestamp))
 
-    def dataFeedRssi(self, hostname, projects, timestamp, sensorMac, mac, rssi, cache):
+    def dataFeedBluetoothRaw(self, hostname, projects, timestamp, sensorMac, mac, rssi, cache):
         """
         Save detection information in the corresponding Sensor instance.
         """
-        sens = self.getSensor(hostname, sensorMac)
+        sens = self.getSensor(hostname, 'bluetooth', sensorMac)
         sens.detections += 1
+        if sens.last_activity == None or timestamp > sens.last_activity:
+            sens.last_activity = timestamp
         if sens.last_data == None or timestamp > sens.last_data:
             sens.last_data = timestamp
 
@@ -705,3 +712,11 @@ class Plugin(olof.core.Plugin):
             scann = self.getScanner(hostname)
             t = time.time()
             scann.lagData.append([t, float(timestamp), mac])
+
+    def dataFeedWifiRaw(self, hostname, projects, timestamp, sensorMac, hwid1, hwid2, ssi, cache):
+        sens = self.getSensor(hostname, 'wifi', sensorMac)
+        sens.detections += 1
+        if sens.last_activity == None or timestamp > sens.last_activity:
+            sens.last_activity = timestamp
+        if sens.last_data == None or timestamp > sens.last_data:
+            sens.last_data = timestamp
