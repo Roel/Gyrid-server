@@ -67,6 +67,7 @@ class GyridServerProtocol(Int16StringReceiver):
         m.type = m.Type_REQUEST_STATE
         m.requestState.bluetooth_enableInquiry = True
         m.requestState.wifi_enableFrequency = True
+        m.requestState.enableAntenna = True
         self.sendMsg(m)
 
         m = proto.Msg()
@@ -256,6 +257,26 @@ class GyridServerProtocol(Int16StringReceiver):
                                 'hwType': 'wifi',
                                 'type': 'frequency',
                                 'info': m.wifi_stateFrequency.frequency,
+                                'cache': m.cached}
+                    except:
+                        return
+                    else:
+                        ap = dp.getActivePlugins(self.hostname, timestamp=args['timestamp'])
+                        for plugin in ap:
+                            args['projects'] = ap[plugin]
+                            plugin.stateFeed(**args)
+                else:
+                    self.buffer.append(m)
+
+            elif m.type == m.Type_STATE_ANTENNA:
+                if self.hostname != None:
+                    try:
+                        args = {'hostname': str(self.hostname),
+                                'timestamp': m.stateAntenna.timestamp,
+                                'sensorMac': binascii.b2a_hex(m.stateAntenna.sensorMac),
+                                'hwType': 'bluetooth',
+                                'type': 'antenna',
+                                'info': m.stateAntenna.angle,
                                 'cache': m.cached}
                     except:
                         return

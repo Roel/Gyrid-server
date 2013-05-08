@@ -696,6 +696,8 @@ class Plugin(olof.core.Plugin):
         elif type == 'stopped_scanning':
             sens.connected = False
             sens.disconnect_time = int(float(timestamp))
+        elif type == 'antenna':
+            sens.last_rotation = int(float(timestamp))
 
     def dataFeedBluetoothRaw(self, hostname, projects, timestamp, sensorMac, mac, rssi, cache):
         """

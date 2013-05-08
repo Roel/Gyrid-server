@@ -561,6 +561,7 @@ class Sensor(object):
 class BluetoothSensor(Sensor):
     def __init__(self, mac):
         Sensor.__init__(self, 'bluetooth', mac)
+        self.last_rotation = None
 
     def render(self):
         """
@@ -577,7 +578,14 @@ class BluetoothSensor(Sensor):
                 html += '<span class="block_data_attr"><b>disconnected</b> %s</span>' % getRelativeTime(int(float(
                     self.disconnect_time)), wrapper=htmlSpanWrapper)
         else:
-            html += '<img alt="" src="/dashboard/static/icons/%s.png">%s' % (self.hwType, mac)
+            html += '<img alt="" src="/dashboard/static/icons/%s.png">' % self.hwType
+            if self.last_rotation != None:
+                if time.time() - self.last_rotation < 300:
+                    img = 'rotation'
+                else:
+                    img = 'rotation-grey'
+                html += '<img alt="" src="/dashboard/static/icons/%s.png">' % img
+            html += mac
             if self.last_activity != None:
                 html += '<span class="block_data_attr"><b>last activity</b> %s</span>' % getRelativeTime(int(float(
                     self.last_activity)), wrapper=htmlSpanWrapper)
