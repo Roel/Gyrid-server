@@ -720,3 +720,17 @@ class Plugin(olof.core.Plugin):
             sens.last_activity = timestamp
         if sens.last_data == None or timestamp > sens.last_data:
             sens.last_data = timestamp
+
+    def dataFeedWifiIO(self, hostname, projects, timestamp, sensorMac, hwid, type, move, cache):
+        sens = self.getSensor(hostname, 'wifi', sensorMac)
+
+        if type == 'acp':
+            if move == 'in':
+                sens.accesspoints += 1
+            elif move == 'out' and sens.accesspoints > 0:
+                sens.accesspoints -= 1
+        elif type == 'dev':
+            if move == 'in':
+                sens.devices += 1
+            elif move == 'out' and sens.devices > 0:
+                sens.devices -= 1

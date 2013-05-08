@@ -341,6 +341,36 @@ class GyridServerProtocol(Int16StringReceiver):
                 else:
                     self.buffer.append(m)
 
+            elif m.type == m.Type_WIFI_DATAIO:
+                d = m.wifi_dataIO
+                mp = {d.Move_IN: 'in',
+                      d.Move_OUT: 'out'}
+                ty = {d.Type_ACCESSPOINT: 'acp',
+                      d.Type_DEVICE: 'dev'}
+                if self.hostname != None:
+                    try:
+                        mac = binascii.b2a_hex(d.hwid)
+                    except:
+                        return
+                    else:
+                        try:
+                            args = {'hostname': str(self.hostname),
+                                    'timestamp': d.timestamp,
+                                    'sensorMac': binascii.b2a_hex(d.sensorMac),
+                                    'hwid': mac,
+                                    'type': ty[d.type],
+                                    'move': mp[d.move],
+                                    'cache': m.cached}
+                        except:
+                            return
+                        else:
+                            ap = dp.getActivePlugins(self.hostname, timestamp=args['timestamp'])
+                            for plugin in ap:
+                                args['projects'] = ap[plugin]
+                                plugin.dataFeedWifiIO(**args)
+                else:
+                    self.buffer.append(m)
+
             elif m.type == m.Type_WIFI_DATARAW:
                 d = m.wifi_dataRaw
                 if self.hostname != None:
@@ -394,7 +424,7 @@ class GyridServerFactory(Factory):
         """
         self.server = server
         self.client_dict = {}
-        self.timeout = 10
+        self.timeout = 60
 
 class Olof(object):
     """

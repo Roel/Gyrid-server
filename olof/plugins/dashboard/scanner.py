@@ -593,6 +593,8 @@ class WiFiSensor(Sensor):
     def __init__(self, mac):
         Sensor.__init__(self, 'wifi', mac)
         self.frequency = None
+        self.accesspoints = 0
+        self.devices = 0
 
     def render(self):
         """
@@ -617,6 +619,10 @@ class WiFiSensor(Sensor):
         if self.last_data != None:
             html += '<span class="block_data_attr"><b>last data</b> %s</span>' % getRelativeTime(int(float(
                 self.last_data)), wrapper=htmlSpanWrapper)
+        if self.accesspoints > 0:
+            html += '<span class="block_data_attr"><b>accesspoints</b> %s</span>' % formatNumber(self.accesspoints)
+        if self.devices > 0:
+            html += '<span class="block_data_attr"><b>devices</b> %s</span>' % formatNumber(self.devices)
         if self.detections > 0:
             html += '<span class="block_data_attr"><b>detections</b> %s</span>' % formatNumber(self.detections)
         html += '</div>'
