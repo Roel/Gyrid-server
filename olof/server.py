@@ -149,7 +149,11 @@ class GyridServerProtocol(Int16StringReceiver):
 
         @param   data (str)   The data to process.
         """
-        m = proto.Msg.FromString(data)
+        try:
+            m = proto.Msg.FromString(data)
+        except:
+            return
+
         self.bytecount += 2
         self.bytecount += m.ByteSize()
         print "<==", m.ByteSize(), self.bytecount
