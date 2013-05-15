@@ -23,7 +23,6 @@ import olof.dataprovider
 import olof.datatypes
 import olof.logger
 import olof.pluginmanager
-import olof.protocol.network as proto
 import olof.storagemanager
 import olof.tools.validation
 
@@ -466,6 +465,10 @@ class Olof(object):
         self.paths = paths
         self.logger = olof.logger.Logger(self, 'server')
         warnings.simplefilter("ignore", RuntimeWarning)
+
+        os.system('protoc --python_out=. olof/protocol/gyrid.proto')
+        os.rename('olof/protocol/gyrid_pb2.py', 'olof/protocol/network.py')
+        import olof.protocol.network as proto
 
         self.debug_mode = False
         if len(sys.argv) > 1 and sys.argv[1] == 'debug':

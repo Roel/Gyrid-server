@@ -1,0 +1,263 @@
+// This file belongs to Gyrid.
+//
+// Gyrid is a mobile device scanner.
+// Copyright (C) 2013  Roel Huybrechts
+//
+// This program is free software: you can redistribute it and/or modify
+// it under the terms of the GNU General Public License as published by
+// the Free Software Foundation, either version 3 of the License, or
+// (at your option) any later version.
+//
+// This program is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+// GNU General Public License for more details.
+//
+// You should have received a copy of the GNU General Public License
+// along with this program.  If not, see <http://www.gnu.org/licenses/>.
+
+
+message Msg {
+    enum Type {
+        Type_ACK = 1;
+        Type_KEEPALIVE = 2;
+
+        Type_BLUETOOTH_DATAIO = 3;
+        Type_BLUETOOTH_DATARAW = 4;
+        Type_BLUETOOTH_STATE_INQUIRY = 5;
+
+        Type_WIFI_STATE_FREQUENCY = 6;
+        Type_WIFI_DATARAW = 7;
+        Type_WIFI_DATAIO = 8;
+
+        Type_INFO = 9;
+        Type_STATE_SCANNING = 10;
+        Type_STATE_GYRID = 11;
+        Type_STATE_ANTENNA = 12;
+        Type_UPTIME = 13;
+        Type_REQUEST_HOSTNAME = 14;
+        Type_REQUEST_KEEPALIVE = 15;
+        Type_REQUEST_UPTIME = 16;
+        Type_REQUEST_CACHING = 17;
+        Type_REQUEST_STARTDATA = 18;
+        Type_REQUEST_STATE = 19;
+        Type_HOSTNAME = 20;
+    }
+
+    required Type type = 1;
+
+    optional bytes ack = 2;
+    optional bool cached = 3 [default = false];
+
+    optional Bluetooth_DataIO bluetooth_dataIO = 4;
+    optional Bluetooth_DataRaw bluetooth_dataRaw = 5;
+    optional Bluetooth_StateInquiry bluetooth_stateInquiry = 6;
+
+    optional WiFi_StateFrequency wifi_stateFrequency = 7;
+    optional WiFi_DataRaw wifi_dataRaw = 8;
+    optional WiFi_DataIO wifi_dataIO = 9;
+
+    optional Info info = 10;
+    optional StateScanning stateScanning = 11;
+    optional StateGyrid stateGyrid = 12;
+    optional StateAntenna stateAntenna = 13;
+    optional Uptime uptime = 14;
+    optional RequestKeepalive requestKeepalive = 15;
+    optional bool requestUptime = 16 [default = true];
+    optional RequestCaching requestCaching = 17;
+    optional RequestStartdata requestStartdata = 18;
+    optional RequestState requestState = 19;
+    optional Hostname hostname = 20;
+
+    optional bool success = 21;
+}
+
+message RequestKeepalive {
+    optional uint32 interval = 1 [default = 60];
+    optional bool enable = 2 [default = true];
+}
+
+message RequestState {
+    optional bool bluetooth_enableInquiry = 1 [default = false];
+    optional bool enableScanning = 2 [default = true];
+    optional bool wifi_enableFrequency = 3 [default = false];
+    optional bool enableAntenna = 4 [default = false];
+}
+
+message RequestCaching {
+    optional bool enableCaching = 1 [default = true];
+    optional bool clearCache = 2 [default = false];
+    optional bool pushCache = 3 [default = false];
+}
+
+message RequestStartdata {
+    optional bool enableData = 1 [default = true];
+    optional bool enableRaw = 2 [default = false];
+    optional bool enableSensorMac = 3 [default = true];
+}
+
+message Hostname {
+    optional string hostname = 1;
+}
+
+message Uptime {
+    optional double gyridStartup = 1;
+    optional double systemStartup = 2;
+}
+
+message Info {
+    optional double timestamp = 1;
+    optional string info = 2;
+}
+
+message StateScanning {
+    enum Type {
+        Type_STARTED = 1;
+        Type_STOPPED = 2;
+    }
+
+    enum HwType {
+        HwType_BLUETOOTH = 1;
+        HwType_WIFI = 2;
+    }
+
+    optional Type type = 1;
+    optional double timestamp = 2;
+    optional bytes sensorMac = 3;
+    optional HwType hwType = 4;
+}
+
+message StateGyrid {
+    enum Type {
+        Type_CONNECTED = 1;
+        Type_DISCONNECTED = 2;
+    }
+
+    optional Type type = 1;
+}
+
+message StateAntenna {
+    optional double timestamp = 1;
+    optional bytes sensorMac = 2;
+    optional float angle = 3;
+}
+
+message Bluetooth_StateInquiry {
+    optional double timestamp = 1;
+    optional bytes sensorMac = 2;
+    optional float duration = 3;
+}
+
+message Bluetooth_DataIO {
+    enum Move {
+        Move_IN = 1;
+        Move_OUT = 2;
+    }
+
+    optional double timestamp = 2;
+    optional bytes sensorMac = 3;
+    optional bytes hwid = 4;
+    optional uint32 deviceclass = 5;
+    optional Move move = 6;
+}
+
+message Bluetooth_DataRaw {
+    optional double timestamp = 2;
+    optional bytes sensorMac = 3;
+    optional bytes hwid = 4;
+    optional sint32 rssi = 5;
+}
+
+message WiFi_StateFrequency {
+    optional double timestamp = 1;
+    optional bytes sensorMac = 2;
+    optional uint32 frequency = 3;
+}
+
+message WiFi_DataIO {
+    enum Type {
+        Type_ACCESSPOINT = 1;
+        Type_DEVICE = 2;
+    }
+
+    enum Move {
+        Move_IN = 1;
+        Move_OUT = 2;
+    }
+
+    optional Type type = 1;
+    optional double timestamp = 2;
+    optional bytes sensorMac = 3;
+    optional bytes hwid = 4;
+    optional Move move = 5;
+}
+
+message WiFi_DataRaw {
+    enum FrameType {
+        FrameType_MGMT = 1;
+        FrameType_CTRL = 2;
+        FrameType_DATA = 3;
+    }
+
+    message Data {
+        optional bool from_ds = 1;
+        optional bool to_ds = 2;
+    }
+
+    message Ctrl {
+        enum SubType {
+            SubType_PSPOLL = 1;
+            SubType_OTHER = 2;
+        }
+
+        optional SubType subType = 1;
+    }
+
+    message Mgmt {
+        enum SubType {
+            SubType_BEACON = 1;
+            SubType_PROBERESP = 2;
+            SubType_PROBEREQ = 3;
+            SubType_DEAUTH = 4;
+            SubType_DISAS = 5;
+            SubType_ATIM = 6;
+            SubType_ASSOREQ = 7;
+            SubType_ASSORESP = 8;
+            SubType_REASSOREQ = 9;
+            SubType_REASSORESP = 10;
+        }
+
+        message Beacon {
+            enum Type {
+                Type_ESS = 1;
+                Type_IBSS = 2;
+            }
+
+            optional Type type = 1;
+        }
+
+        message ProbeReq {
+            optional bytes hSsid = 1;
+        }
+
+        optional SubType subType = 1;
+        optional Beacon beacon = 2;
+        optional ProbeReq probeReq = 3;
+    }
+
+    optional double timestamp = 1;
+    optional bytes sensorMac = 2;
+    optional uint32 frequency = 3;
+    optional bool pw_mgmt = 4 [default = false];
+    optional bool retry = 5 [default = false];
+    optional FrameType frametype = 6;
+
+    optional Mgmt mgmt = 7;
+    optional Ctrl ctrl = 8;
+    optional Data data = 9;
+
+    optional bytes hwid1 = 10;
+    optional bytes hwid2 = 11;
+    
+    optional sint32 ssi = 12;
+}
