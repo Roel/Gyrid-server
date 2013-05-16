@@ -26,6 +26,10 @@ import olof.pluginmanager
 import olof.storagemanager
 import olof.tools.validation
 
+os.system('protoc --python_out=. olof/protocol/gyrid.proto')
+os.rename('olof/protocol/gyrid_pb2.py', 'olof/protocol/network.py')
+import olof.protocol.network as proto
+
 def verifyCallback(connection, x509, errnum, errdepth, ok):
     """
     Check SSL certificates.
@@ -517,10 +521,6 @@ class Olof(object):
         self.paths = paths
         self.logger = olof.logger.Logger(self, 'server')
         warnings.simplefilter("ignore", RuntimeWarning)
-
-        os.system('protoc --python_out=. olof/protocol/gyrid.proto')
-        os.rename('olof/protocol/gyrid_pb2.py', 'olof/protocol/network.py')
-        import olof.protocol.network as proto
 
         self.debug_mode = False
         if len(sys.argv) > 1 and sys.argv[1] == 'debug':
