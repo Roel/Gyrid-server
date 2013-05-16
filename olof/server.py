@@ -125,7 +125,11 @@ class GyridServerProtocol(Int16StringReceiver):
                 ap = dp.getActivePlugins(self.hostname)
                 for plugin in ap:
                     args['projects'] = ap[plugin]
-                    plugin.connectionLost(**args)
+                    try:
+                        plugin.connectionLost(**args)
+                    except Exception, e:
+                        plugin.logger.logException(e)
+                        continue
 
     def checksum(self, data):
         """
@@ -171,7 +175,11 @@ class GyridServerProtocol(Int16StringReceiver):
                 ap = dp.getActivePlugins(self.hostname)
                 for plugin in ap:
                     args['projects'] = ap[plugin]
-                    plugin.connectionMade(**args)
+                    try:
+                        plugin.connectionMade(**args)
+                    except Exception, e:
+                        plugin.logger.logException(e)
+                        continue
 
             for l in self.buffer:
                 if l.type != l.Type_HOSTNAME:
@@ -190,7 +198,11 @@ class GyridServerProtocol(Int16StringReceiver):
                     ap = dp.getActivePlugins(self.hostname)
                     for plugin in ap:
                         args['projects'] = ap[plugin]
-                        plugin.uptime(**args)
+                        try:
+                            plugin.uptime(**args)
+                        except Exception, e:
+                            plugin.logger.logException(e)
+                            continue
             else:
                 self.buffer.append(m)
 
@@ -208,7 +220,11 @@ class GyridServerProtocol(Int16StringReceiver):
                     ap = dp.getActivePlugins(self.hostname)
                     for plugin in ap:
                         args['projects'] = ap[plugin]
-                        plugin.sysStateFeed(**args)
+                        try:
+                            plugin.sysStateFeed(**args)
+                        except Exception, e:
+                            plugin.logger.logException(e)
+                            continue
             else:
                 self.buffer.append(m)
 
@@ -247,7 +263,11 @@ class GyridServerProtocol(Int16StringReceiver):
                         ap = dp.getActivePlugins(self.hostname, timestamp=args['timestamp'])
                         for plugin in ap:
                             args['projects'] = ap[plugin]
-                            plugin.stateFeed(**args)
+                            try:
+                                plugin.stateFeed(**args)
+                            except Exception, e:
+                                plugin.logger.logException(e)
+                                continue
                 else:
                     self.buffer.append(m)
 
@@ -267,7 +287,11 @@ class GyridServerProtocol(Int16StringReceiver):
                         ap = dp.getActivePlugins(self.hostname, timestamp=args['timestamp'])
                         for plugin in ap:
                             args['projects'] = ap[plugin]
-                            plugin.stateFeed(**args)
+                            try:
+                                plugin.stateFeed(**args)
+                            except Exception, e:
+                                plugin.logger.logException(e)
+                                continue
                 else:
                     self.buffer.append(m)
 
@@ -287,7 +311,11 @@ class GyridServerProtocol(Int16StringReceiver):
                         ap = dp.getActivePlugins(self.hostname, timestamp=args['timestamp'])
                         for plugin in ap:
                             args['projects'] = ap[plugin]
-                            plugin.stateFeed(**args)
+                            try:
+                                plugin.stateFeed(**args)
+                            except Exception, e:
+                                plugin.logger.logException(e)
+                                continue
                 else:
                     self.buffer.append(m)
 
@@ -311,7 +339,11 @@ class GyridServerProtocol(Int16StringReceiver):
                         ap = dp.getActivePlugins(self.hostname, timestamp=args['timestamp'])
                         for plugin in ap:
                             args['projects'] = ap[plugin]
-                            plugin.stateFeed(**args)
+                            try:
+                                plugin.stateFeed(**args)
+                            except Exception, e:
+                                plugin.logger.logException(e)
+                                continue
                 else:
                     self.buffer.append(m)
 
@@ -341,7 +373,11 @@ class GyridServerProtocol(Int16StringReceiver):
                             ap = dp.getActivePlugins(self.hostname, timestamp=args['timestamp'])
                             for plugin in ap:
                                 args['projects'] = ap[plugin]
-                                plugin.dataFeedCell(**args)
+                                try:
+                                    plugin.dataFeedCell(**args)
+                                except Exception, e:
+                                    plugin.logger.logException(e)
+                                    continue
                 else:
                     self.buffer.append(m)
 
@@ -361,7 +397,11 @@ class GyridServerProtocol(Int16StringReceiver):
                         ap = dp.getActivePlugins(self.hostname, timestamp=args['timestamp'])
                         for plugin in ap:
                             args['projects'] = ap[plugin]
-                            plugin.dataFeedBluetoothRaw(**args)
+                            try:
+                                plugin.dataFeedBluetoothRaw(**args)
+                            except Exception, e:
+                                plugin.logger.logException(e)
+                                continue
                 else:
                     self.buffer.append(m)
 
@@ -391,7 +431,11 @@ class GyridServerProtocol(Int16StringReceiver):
                             ap = dp.getActivePlugins(self.hostname, timestamp=args['timestamp'])
                             for plugin in ap:
                                 args['projects'] = ap[plugin]
-                                plugin.dataFeedWifiIO(**args)
+                                try:
+                                    plugin.dataFeedWifiIO(**args)
+                                except Exception, e:
+                                    plugin.logger.logException(e)
+                                    continue
                 else:
                     self.buffer.append(m)
 
@@ -412,7 +456,11 @@ class GyridServerProtocol(Int16StringReceiver):
                         ap = dp.getActivePlugins(self.hostname, timestamp=args['timestamp'])
                         for plugin in ap:
                             args['projects'] = ap[plugin]
-                            plugin.dataFeedWifiRaw(**args)
+                            try:
+                                plugin.dataFeedWifiRaw(**args)
+                            except Exception, e:
+                                plugin.logger.logException(e)
+                                continue
                 else:
                     self.buffer.append(m)
 
@@ -429,7 +477,11 @@ class GyridServerProtocol(Int16StringReceiver):
                         ap = dp.getActivePlugins(self.hostname, timestamp=args['timestamp'])
                         for plugin in ap:
                             args['projects'] = ap[plugin]
-                            plugin.infoFeed(**args)
+                            try:
+                                plugin.infoFeed(**args)
+                            except Exception, e:
+                                plugin.logger.logException(e)
+                                continue
                 else:
                     self.buffer.append(m)
 
