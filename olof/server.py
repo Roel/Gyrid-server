@@ -101,7 +101,7 @@ class GyridServerProtocol(Int16StringReceiver):
         """
         t = self.factory.timeout
         if self.last_keepalive < (int(time.time())-(t+0.1*t)):
-            self.transport.loseConnection()
+            self.transport.abortConnection()
         else:
             m = proto.Msg()
             m.type = m.Type_KEEPALIVE
