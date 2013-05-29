@@ -475,7 +475,8 @@ class Plugin(olof.core.Plugin):
 
         if value == False:
             for s in self.scanners.values():
-                s.lagData = []
+                for se in s.sensors:
+                    se.lagData = []
 
     def startListening(self):
         """
@@ -709,9 +710,8 @@ class Plugin(olof.core.Plugin):
             sens.last_data = timestamp
 
         if self.connectionLagProcessing and self.config.getValue('connection_lag_processing'):
-            scann = self.getScanner(hostname)
             t = time.time()
-            scann.lagData.append([t, float(timestamp), mac])
+            sens.lagData.append([t, float(timestamp), mac])
 
     def dataFeedWifiDevRaw(self, hostname, projects, timestamp, sensorMac, hwid, ssi, freq, cache):
         sens = self.getSensor(hostname, 'wifi', sensorMac)
@@ -722,9 +722,8 @@ class Plugin(olof.core.Plugin):
             sens.last_data = timestamp
 
         if self.connectionLagProcessing and self.config.getValue('connection_lag_processing'):
-            scann = self.getScanner(hostname)
             t = time.time()
-            scann.lagData.append([t, float(timestamp), hwid])
+            sens.lagData.append([t, float(timestamp), hwid])
 
     def dataFeedWifiIO(self, hostname, projects, timestamp, sensorMac, hwid, type, move, cache):
         sens = self.getSensor(hostname, 'wifi', sensorMac)

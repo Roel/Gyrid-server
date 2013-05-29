@@ -66,7 +66,6 @@ class Scanner(object):
         self.host_uptime = None
         self.sensors = {}
         self.sensor_count = None
-        self.lagData = []
         self.ip_provider = {}
         self.msisdn = None
         self.mv_balance = {}
@@ -95,13 +94,8 @@ class Scanner(object):
         @param   plugin (olof.core.Plugin)   Reference to main Dashboard plugin instance.
         """
         self.plugin = plugin
-        self.lag = {1: [0, 0], 5: [0, 0], 15: [0, 0]}
 
         self.initMVConnection()
-
-        self.checkLag_call = task.LoopingCall(reactor.callInThread,
-            self.checkLag)
-        self.checkLagCall('start')
 
         self.checkMVBalance_call = task.LoopingCall(reactor.callInThread,
             self.getMVBalance)
@@ -135,10 +129,9 @@ class Scanner(object):
             self.conn_time = {}
             self.connections = set()
         del(self.plugin)
-        self.checkLagCall('stop')
+        for s in self.sensors.values():
+            s.unload(shutdown=False)
         self.checkMVBalanceCall('stop')
-        if 'checkLag_call' in self.__dict__:
-            del(self.checkLag_call)
         if 'checkMVBalance_call' in self.__dict__:
             del(self.checkMVBalance_call)
 
@@ -178,8 +171,10 @@ class Scanner(object):
 
         @return   (ScannerStatus)   The status of the scanner.
         """
-        lag = [(self.lag[i][0]/self.lag[i][1]) for i in sorted(
-                self.lag.keys()) if (i <= 15 and self.lag[i][1] > 0)]
+        lag = []
+        for sens in self.sensors.values():
+            lag.extend([(sens.lag[i][0]/sens.lag[i][1]) for i in sorted(
+                sens.lag.keys()) if (i <= 15 and sens.lag[i][1] > 0)])
         t = int(time.time())
 
         if len(self.connections) == 0 or not self.gyrid_connected:
@@ -201,56 +196,6 @@ class Scanner(object):
             return ScannerStatus.Ugly
         else:
             return ScannerStatus.Good
-
-    def checkLagCall(self, action):
-        """
-        Start or stop the looping call that checks the connection lag.
-
-        @param   action (str)   Either 'start' or 'stop'.
-        """
-        if action == 'start':
-            if not 'checkLag_call' in self.__dict__:
-                self.checkLag_call = task.LoopingCall(reactor.callInThread,
-                    self.checkLag)
-            try:
-                self.checkLag_call.start(10)
-            except AssertionError:
-                pass
-
-        elif action == 'stop':
-            if 'checkLag_call' in self.__dict__:
-                try:
-                    self.checkLag_call.stop()
-                except AssertionError:
-                    pass
-
-    def checkLag(self):
-        """
-        Check the connection lag data. Removes old data and updates the process lag data.
-        """
-        t = time.time()
-        lag = {1: [0, 0, set()], 5: [0, 0, set()], 15: [0, 0, set()]}
-        lagKeys = dict((i, i*60) for i in lag)
-        maxSecs = lagKeys[max(lagKeys)]
-        remove = self.lagData.remove
-        for i in self.lagData:
-            if (t - i[0]) > maxSecs:
-                try:
-                    remove(i)
-                except:
-                    pass
-                continue
-
-            for j in lagKeys:
-                if (t - i[0]) <= lagKeys[j]:
-                    lag[j][0] += abs(i[0] - i[1])
-                    lag[j][1] += 1
-                    lag[j][2].add(i[2])
-
-        for j in lagKeys:
-            lag[j][2] = len(lag[j][2])
-
-        self.lag = lag
 
     def checkMVBalanceCall(self, action):
         """
@@ -369,18 +314,23 @@ class Scanner(object):
             return html
 
         def renderLag():
-            lag = [(self.lag[i][0]/self.lag[i][1]) for i in sorted(
-                self.lag.keys()) if (i <= 15 and self.lag[i][1] > 0)]
+            lag = []
+            tlag = {}
+            for sens in self.sensors.values():
+                lag.extend([(sens.lag[i][0]/sens.lag[i][1]) for i in sorted(
+                    sens.lag.keys()) if (i <= 15 and sens.lag[i][1] > 0)])
+                tlag.update(sens.lag)
+
             if len([i for i in lag[1:] if i >= 5]) > 0:
                 provider = self.ip_provider.get(list(self.connections)[0][0], (None, None))[0]
                 html = '<div class="block_data"><img alt="" src="/dashboard/static/icons/network-cloud.png">Network'
                 l = []
-                for i in sorted(self.lag.keys()):
+                for i in sorted(tlag.keys()):
                     if i <= 15:
-                        if self.lag[i][1] == 0:
+                        if tlag[i][1] == 0:
                             l.append('nd')
                         else:
-                            avg = self.lag[i][0]/self.lag[i][1]
+                            avg = tlag[i][0]/tlag[i][1]
                             if avg < 60:
                                 l.append(formatNumber(float("%0.2f" % (avg))) + 's')
                             else:
@@ -432,27 +382,6 @@ class Scanner(object):
             else:
                 return ''
 
-        def renderDetections():
-            try:
-                detc = [self.lag[i][1] for i in sorted(self.lag.keys()) if i <= 15]
-                udetc = [self.lag[i][2] for i in sorted(self.lag.keys()) if i <= 15]
-            except IndexError:
-                detc = udetc = []
-
-            if len([i for i in detc if i > 0]) > 0:
-                html = '<div class="block_data"><img alt="" src="/dashboard/static/icons/users.png">Detections'
-                html += '<span class="block_data_attr"><b>recently received</b> ' + \
-                    '<span title="1, 5 and 15 minutes moving averages">%s</span></span>' % \
-                    ', '.join([formatNumber(i) for i in detc])
-                sensors_connected = len([s for s in self.sensors.values() if s.connected == True])
-                html += '<span class="block_data_attr"><b>unique</b> ' + \
-                    '<span title="1, 5 and 15 minutes moving averages">%s</span></span>' % \
-                    ', '.join([formatNumber(i) for i in udetc])
-                html += '</div>'
-                return html
-            else:
-                return ""
-
         def renderNotconnected(disconnectTime, pastSuffix=""):
             html = '<div class="block_data"><img alt="" src="/dashboard/static/icons/traffic-cone.png">' + \
                 'No connection%s' % pastSuffix
@@ -487,7 +416,6 @@ class Scanner(object):
         if len(self.connections) >= 1:
             html += renderUptime()
             if self.gyrid_connected == True:
-                html += renderDetections()
                 html += renderLag()
                 html += renderBalance()
                 for sensor in self.sensors.values():
@@ -544,6 +472,7 @@ class Sensor(object):
         self.mac = mac
         self.last_data = None
         self.last_activity = None
+        self.lagData = []
         self.detections = 0
 
         self.init()
@@ -557,6 +486,87 @@ class Sensor(object):
         """
         self.connected = False
         self.disconnect_time = None
+        self.lag = {1: [0, 0], 5: [0, 0], 15: [0, 0]}
+
+        self.checkLag_call = task.LoopingCall(reactor.callInThread,
+            self.checkLag)
+        self.checkLagCall('start')
+
+    def unload(self, shutdown=False):
+        self.checkLagCall('stop')
+        if 'checkLag_call' in self.__dict__:
+            del(self.checkLag_call)
+
+    def checkLagCall(self, action):
+        """
+        Start or stop the looping call that checks the connection lag.
+
+        @param   action (str)   Either 'start' or 'stop'.
+        """
+        if action == 'start':
+            if not 'checkLag_call' in self.__dict__:
+                self.checkLag_call = task.LoopingCall(reactor.callInThread,
+                    self.checkLag)
+            try:
+                self.checkLag_call.start(10)
+            except AssertionError:
+                pass
+
+        elif action == 'stop':
+            if 'checkLag_call' in self.__dict__:
+                try:
+                    self.checkLag_call.stop()
+                except AssertionError:
+                    pass
+
+    def checkLag(self):
+        """
+        Check the connection lag data. Removes old data and updates the process lag data.
+        """
+        t = time.time()
+        lag = {1: [0, 0, set()], 5: [0, 0, set()], 15: [0, 0, set()]}
+        lagKeys = dict((i, i*60) for i in lag)
+        maxSecs = lagKeys[max(lagKeys)]
+        remove = self.lagData.remove
+        for i in self.lagData:
+            if (t - i[0]) > maxSecs:
+                try:
+                    remove(i)
+                except:
+                    pass
+                continue
+
+            for j in lagKeys:
+                if (t - i[0]) <= lagKeys[j]:
+                    lag[j][0] += abs(i[0] - i[1])
+                    lag[j][1] += 1
+                    lag[j][2].add(i[2])
+
+        for j in lagKeys:
+            lag[j][2] = len(lag[j][2])
+
+        self.lag = lag
+
+    def renderDetections():
+        try:
+            detc = [self.lag[i][1] for i in sorted(self.lag.keys()) if i <= 15]
+            udetc = [self.lag[i][2] for i in sorted(self.lag.keys()) if i <= 15]
+        except IndexError:
+            detc = udetc = []
+
+        if len([i for i in detc if i > 0]) > 0:
+            html = '<div class="block_data"><img alt="" src="/dashboard/static/icons/users.png">Detections'
+            html += '<span class="block_data_attr"><b>recently received</b> ' + \
+                '<span title="1, 5 and 15 minutes moving averages">%s</span></span>' % \
+                ', '.join([formatNumber(i) for i in detc])
+            sensors_connected = len([s for s in self.sensors.values() if s.connected == True])
+            html += '<span class="block_data_attr"><b>unique</b> ' + \
+                '<span title="1, 5 and 15 minutes moving averages">%s</span></span>' % \
+                ', '.join([formatNumber(i) for i in udetc])
+            html += '</div>'
+            return html
+        else:
+            return ""
 
 class BluetoothSensor(Sensor):
     def __init__(self, mac):
@@ -572,6 +582,12 @@ class BluetoothSensor(Sensor):
         html = '<div class="block_data">'
         vendor = macvendor.getVendor(self.mac)
         mac = self.mac.upper() if vendor == None else '<span title="%s">%s</span>' % (vendor, self.mac.upper())
+        try:
+            detc = [self.lag[i][1] for i in sorted(self.lag.keys()) if i <= 15]
+            udetc = [self.lag[i][2] for i in sorted(self.lag.keys()) if i <= 15]
+        except IndexError:
+            detc = udetc = []
+
         if self.connected == False:
             html += '<img alt="" src="/dashboard/static/icons/%s-grey.png">%s' % (self.hwType, mac)
             if self.disconnect_time != None:
@@ -592,7 +608,15 @@ class BluetoothSensor(Sensor):
         if self.last_data != None:
             html += '<span class="block_data_attr"><b>last data</b> %s</span>' % getRelativeTime(int(float(
                 self.last_data)), wrapper=htmlSpanWrapper)
-        if self.detections > 0:
+        if len([i for i in detc if i > 0]) > 0:
+            html += '<span class="block_data_attr"><b>detections</b> ' + \
+                '<span title="1, 5 and 15 minutes moving averages">%s</span></span>' % \
+                ', '.join([formatNumber(i) for i in detc])
+            html += '<span class="block_data_attr"><b>unique</b> ' + \
+                '<span title="1, 5 and 15 minutes moving averages">%s</span></span>' % \
+                ', '.join([formatNumber(i) for i in udetc])
+            html += '<span class="block_data_attr"><b>total</b> %s</span>' % formatNumber(self.detections)
+        elif self.detections > 0:
             html += '<span class="block_data_attr"><b>detections</b> %s</span>' % formatNumber(self.detections)
         html += '</div>'
         return html
@@ -612,6 +636,12 @@ class WiFiSensor(Sensor):
         html = '<div class="block_data">'
         vendor = macvendor.getVendor(self.mac)
         mac = self.mac.upper() if vendor == None else '<span title="%s">%s</span>' % (vendor, self.mac.upper())
+        try:
+            detc = [self.lag[i][1] for i in sorted(self.lag.keys()) if i <= 15]
+            udetc = [self.lag[i][2] for i in sorted(self.lag.keys()) if i <= 15]
+        except IndexError:
+            detc = udetc = []
+
         if self.connected == False:
             html += '<img alt="" src="/dashboard/static/icons/%s-grey.png">%s' % (self.hwType, mac)
             if self.disconnect_time != None:
@@ -625,11 +655,15 @@ class WiFiSensor(Sensor):
         if self.last_data != None:
             html += '<span class="block_data_attr"><b>last data</b> %s</span>' % getRelativeTime(int(float(
                 self.last_data)), wrapper=htmlSpanWrapper)
-        if self.accesspoints > 0:
-            html += '<span class="block_data_attr"><b>accesspoints</b> %s</span>' % formatNumber(self.accesspoints)
-        if self.devices > 0:
-            html += '<span class="block_data_attr"><b>devices</b> %s</span>' % formatNumber(self.devices)
-        if self.detections > 0:
+        if len([i for i in detc if i > 0]) > 0:
+            html += '<span class="block_data_attr"><b>detections</b> ' + \
+                '<span title="1, 5 and 15 minutes moving averages">%s</span></span>' % \
+                ', '.join([formatNumber(i) for i in detc])
+            html += '<span class="block_data_attr"><b>unique</b> ' + \
+                '<span title="1, 5 and 15 minutes moving averages">%s</span></span>' % \
+                ', '.join([formatNumber(i) for i in udetc])
+            html += '<span class="block_data_attr"><b>total</b> %s</span>' % formatNumber(self.detections)
+        elif self.detections > 0:
             html += '<span class="block_data_attr"><b>detections</b> %s</span>' % formatNumber(self.detections)
         html += '</div>'
         return html
