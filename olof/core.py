@@ -215,5 +215,8 @@ class Plugin(object):
     def dataFeedWifiRaw(self, hostname, projects, timestamp, sensorMac, hwid1, hwid2, ssi, cache):
         pass
 
+    def dataFeedWifiDevRaw(self, hostname, projects, timestamp, sensorMac, hwid, ssi, freq, cache):
+        pass
+
     def dataFeedWifiIO(self, hostname, projects, timestamp, sensorMac, hwid, type, move, cache):
         pass

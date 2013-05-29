@@ -689,8 +689,6 @@ class Plugin(olof.core.Plugin):
             sens.connected = True
             if sens.last_activity == None or timestamp > sens.last_activity:
                 sens.last_activity = timestamp
-            if type == 'frequency':
-                sens.frequency = info
         elif type == 'started_scanning':
             sens.connected = True
         elif type == 'stopped_scanning':
@@ -715,13 +713,18 @@ class Plugin(olof.core.Plugin):
             t = time.time()
             scann.lagData.append([t, float(timestamp), mac])
 
-    def dataFeedWifiRaw(self, hostname, projects, timestamp, sensorMac, hwid1, hwid2, ssi, cache):
+    def dataFeedWifiDevRaw(self, hostname, projects, timestamp, sensorMac, hwid, ssi, freq, cache):
         sens = self.getSensor(hostname, 'wifi', sensorMac)
         sens.detections += 1
         if sens.last_activity == None or timestamp > sens.last_activity:
             sens.last_activity = timestamp
         if sens.last_data == None or timestamp > sens.last_data:
             sens.last_data = timestamp
+
+        if self.connectionLagProcessing and self.config.getValue('connection_lag_processing'):
+            scann = self.getScanner(hostname)
+            t = time.time()
+            scann.lagData.append([t, float(timestamp), hwid])
 
     def dataFeedWifiIO(self, hostname, projects, timestamp, sensorMac, hwid, type, move, cache):
         sens = self.getSensor(hostname, 'wifi', sensorMac)

@@ -88,7 +88,8 @@ class GyridServerProtocol(Int16StringReceiver):
 
         m = proto.Msg()
         m.type = m.Type_REQUEST_STARTDATA
-        m.requestStartdata.enableRaw = True
+        m.requestStartdata.enableBluetoothRaw = True
+        m.requestStartdata.enableWifiDevRaw = True
         self.sendMsg(m)
 
     def sendMsg(self, msg):
@@ -440,6 +441,31 @@ class GyridServerProtocol(Int16StringReceiver):
                                 except Exception, e:
                                     plugin.logger.logException(e)
                                     continue
+                else:
+                    self.buffer.append(m)
+
+            elif m.type == m.Type_WIFI_DATADEVRAW:
+                d = m.wifi_dataDevRaw
+                if self.hostname != None:
+                    try:
+                        args = {'hostname': str(self.hostname),
+                                'timestamp': d.timestamp,
+                                'sensorMac': binascii.b2a_hex(d.sensorMac),
+                                'hwid': binascii.b2a_hex(d.hwid),
+                                'ssi': d.ssi,
+                                'freq': d.frequency,
+                                'cache': m.cached}
+                    except:
+                        return
+                    else:
+                        ap = dp.getActivePlugins(self.hostname, timestamp=args['timestamp'])
+                        for plugin in ap:
+                            args['projects'] = ap[plugin]
+                            try:
+                                plugin.dataFeedWifiDevRaw(**args)
+                            except Exception, e:
+                                plugin.logger.logException(e)
+                                continue
                 else:
                     self.buffer.append(m)
 

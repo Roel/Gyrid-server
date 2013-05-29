@@ -571,7 +571,7 @@ class BluetoothSensor(Sensor):
         """
         html = '<div class="block_data">'
         vendor = macvendor.getVendor(self.mac)
-        mac = self.mac if vendor == None else '<span title="%s">%s</span>' % (vendor, self.mac)
+        mac = self.mac.upper() if vendor == None else '<span title="%s">%s</span>' % (vendor, self.mac.upper())
         if self.connected == False:
             html += '<img alt="" src="/dashboard/static/icons/%s-grey.png">%s' % (self.hwType, mac)
             if self.disconnect_time != None:
@@ -600,7 +600,6 @@ class BluetoothSensor(Sensor):
 class WiFiSensor(Sensor):
     def __init__(self, mac):
         Sensor.__init__(self, 'wifi', mac)
-        self.frequency = None
         self.accesspoints = 0
         self.devices = 0
 
@@ -612,7 +611,7 @@ class WiFiSensor(Sensor):
         """
         html = '<div class="block_data">'
         vendor = macvendor.getVendor(self.mac)
-        mac = self.mac if vendor == None else '<span title="%s">%s</span>' % (vendor, self.mac)
+        mac = self.mac.upper() if vendor == None else '<span title="%s">%s</span>' % (vendor, self.mac.upper())
         if self.connected == False:
             html += '<img alt="" src="/dashboard/static/icons/%s-grey.png">%s' % (self.hwType, mac)
             if self.disconnect_time != None:
@@ -623,7 +622,6 @@ class WiFiSensor(Sensor):
             if self.last_activity != None:
                 html += '<span class="block_data_attr"><b>last activity</b> %s</span>' % getRelativeTime(int(float(
                     self.last_activity)), wrapper=htmlSpanWrapper)
-                html += '<span class="block_data_attr"><b>frequency</b> %s Hz</span>' % self.frequency
         if self.last_data != None:
             html += '<span class="block_data_attr"><b>last data</b> %s</span>' % getRelativeTime(int(float(
                 self.last_data)), wrapper=htmlSpanWrapper)
