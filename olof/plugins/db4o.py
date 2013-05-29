@@ -334,16 +334,11 @@ class Plugin(olof.core.Plugin):
         """
         if type == 'new_inquiry':
             for project in [i.id for i in projects if i != None]:
-                self.db4o_factory.sendLine(','.join([project, hostname, 'INFO', str(int(timestamp*1000)),
-                    'new_inquiry', sensorMac]))
-
-    def dataFeedCell(self, hostname, projects, timestamp, sensorMac, mac, deviceclass, move, cache):
-        """
-        Send cell data to the Db4O server.
-        """
-        for project in [i.id for i in projects if i != None]:
-            self.db4o_factory.sendLine(','.join([project, hostname, sensorMac, mac, str(deviceclass),
-                str(int(timestamp*1000)), move]))
+                self.db4o_factory.sendLine(','.join(['nbi', str(int(timestamp*1000)),hostname, sensorMac]))
+        elif type == 'antenna':
+            for project in [i.id for i in projects if i != None]:
+                self.db4o_factory.sendLine(','.join(['nba', str(int(timestamp*1000)), hostname, sensorMac, 
+                    str(info)]))
 
     def dataFeedBluetoothRaw(self, hostname, projects, timestamp, sensorMac, mac, rssi, cache):
         """
@@ -351,5 +346,4 @@ class Plugin(olof.core.Plugin):
         """
         deviceclass = str(self.server.getDeviceclass(mac))
         for project in [i.id for i in projects if i != None]:
-            self.db4o_factory.sendLine(','.join([project, hostname, sensorMac, mac, str(deviceclass),
-                str(int(timestamp*1000)), str(rssi)]))
+            self.db4o_factory.sendLine(','.join(['nbd', str(int(timestamp*1000)), hostname, sensorMac, mac, str(deviceclass), str(rssi)]))
