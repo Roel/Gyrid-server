@@ -169,7 +169,7 @@ class GyridServerProtocol(Int16StringReceiver):
         dp = self.factory.server.dataprovider
 
         if m.type == m.Type_HOSTNAME:
-            self.hostname = m.hostname.hostname
+            self.hostname = m.hostname
             try:
                 args = {'hostname': str(self.hostname),
                         'ip': str(self.transport.getPeer().host),
@@ -213,6 +213,7 @@ class GyridServerProtocol(Int16StringReceiver):
 
         elif m.type == m.Type_STATE_GYRID:
             if self.hostname != None:
+                m.hostname = self.hostname
                 mp = {m.stateGyrid.Type_CONNECTED: 'connected',
                       m.stateGyrid.Type_DISCONNECTED: 'disconnected'}
                 try:
@@ -226,6 +227,7 @@ class GyridServerProtocol(Int16StringReceiver):
                     for plugin in ap:
                         args['projects'] = ap[plugin]
                         try:
+                            plugin.rawProtoFeed(m)
                             plugin.sysStateFeed(**args)
                         except Exception, e:
                             plugin.logger.logException(e)
@@ -254,6 +256,7 @@ class GyridServerProtocol(Int16StringReceiver):
 
             if m.type == m.Type_BLUETOOTH_STATE_INQUIRY:
                 if self.hostname != None:
+                    m.hostname = self.hostname
                     try:
                         args = {'hostname': str(self.hostname),
                                 'timestamp': m.bluetooth_stateInquiry.timestamp,
@@ -269,6 +272,7 @@ class GyridServerProtocol(Int16StringReceiver):
                         for plugin in ap:
                             args['projects'] = ap[plugin]
                             try:
+                                plugin.rawProtoFeed(m)
                                 plugin.stateFeed(**args)
                             except Exception, e:
                                 plugin.logger.logException(e)
@@ -278,6 +282,7 @@ class GyridServerProtocol(Int16StringReceiver):
 
             elif m.type == m.Type_WIFI_STATE_FREQUENCY:
                 if self.hostname != None:
+                    m.hostname = self.hostname
                     try:
                         args = {'hostname': str(self.hostname),
                                 'timestamp': m.wifi_stateFrequency.timestamp,
@@ -293,6 +298,7 @@ class GyridServerProtocol(Int16StringReceiver):
                         for plugin in ap:
                             args['projects'] = ap[plugin]
                             try:
+                                plugin.rawProtoFeed(m)
                                 plugin.stateFeed(**args)
                             except Exception, e:
                                 plugin.logger.logException(e)
@@ -302,6 +308,7 @@ class GyridServerProtocol(Int16StringReceiver):
 
             elif m.type == m.Type_STATE_ANTENNA:
                 if self.hostname != None:
+                    m.hostname = self.hostname
                     try:
                         args = {'hostname': str(self.hostname),
                                 'timestamp': m.stateAntenna.timestamp,
@@ -317,6 +324,7 @@ class GyridServerProtocol(Int16StringReceiver):
                         for plugin in ap:
                             args['projects'] = ap[plugin]
                             try:
+                                plugin.rawProtoFeed(m)
                                 plugin.stateFeed(**args)
                             except Exception, e:
                                 plugin.logger.logException(e)
@@ -326,6 +334,7 @@ class GyridServerProtocol(Int16StringReceiver):
 
             elif m.type == m.Type_STATE_SCANNING:
                 if self.hostname != None:
+                    m.hostname = self.hostname
                     mp = {m.stateScanning.Type_STARTED: 'started_scanning',
                           m.stateScanning.Type_STOPPED: 'stopped_scanning'}
                     hw = {m.stateScanning.HwType_BLUETOOTH: 'bluetooth',
@@ -345,6 +354,7 @@ class GyridServerProtocol(Int16StringReceiver):
                         for plugin in ap:
                             args['projects'] = ap[plugin]
                             try:
+                                plugin.rawProtoFeed(m)
                                 plugin.stateFeed(**args)
                             except Exception, e:
                                 plugin.logger.logException(e)
@@ -353,10 +363,11 @@ class GyridServerProtocol(Int16StringReceiver):
                     self.buffer.append(m)
 
             elif m.type == m.Type_BLUETOOTH_DATAIO:
-                d = m.bluetooth_dataIO
-                mp = {d.Move_IN: 'in',
-                      d.Move_OUT: 'out'}
                 if self.hostname != None:
+                    m.hostname = self.hostname
+                    d = m.bluetooth_dataIO
+                    mp = {d.Move_IN: 'in',
+                          d.Move_OUT: 'out'}
                     try:
                         mac = binascii.b2a_hex(d.hwid)
                         dc = d.deviceclass
@@ -379,6 +390,7 @@ class GyridServerProtocol(Int16StringReceiver):
                             for plugin in ap:
                                 args['projects'] = ap[plugin]
                                 try:
+                                    plugin.rawProtoFeed(m)
                                     plugin.dataFeedCell(**args)
                                 except Exception, e:
                                     plugin.logger.logException(e)
@@ -387,8 +399,9 @@ class GyridServerProtocol(Int16StringReceiver):
                     self.buffer.append(m)
 
             elif m.type == m.Type_BLUETOOTH_DATARAW:
-                d = m.bluetooth_dataRaw
                 if self.hostname != None:
+                    m.hostname = self.hostname
+                    d = m.bluetooth_dataRaw
                     try:
                         args = {'hostname': str(self.hostname),
                                 'timestamp': d.timestamp,
@@ -403,6 +416,7 @@ class GyridServerProtocol(Int16StringReceiver):
                         for plugin in ap:
                             args['projects'] = ap[plugin]
                             try:
+                                plugin.rawProtoFeed(m)
                                 plugin.dataFeedBluetoothRaw(**args)
                             except Exception, e:
                                 plugin.logger.logException(e)
@@ -411,12 +425,13 @@ class GyridServerProtocol(Int16StringReceiver):
                     self.buffer.append(m)
 
             elif m.type == m.Type_WIFI_DATAIO:
-                d = m.wifi_dataIO
-                mp = {d.Move_IN: 'in',
-                      d.Move_OUT: 'out'}
-                ty = {d.Type_ACCESSPOINT: 'acp',
-                      d.Type_DEVICE: 'dev'}
                 if self.hostname != None:
+                    m.hostname = self.hostname
+                    d = m.wifi_dataIO
+                    mp = {d.Move_IN: 'in',
+                          d.Move_OUT: 'out'}
+                    ty = {d.Type_ACCESSPOINT: 'acp',
+                          d.Type_DEVICE: 'dev'}
                     try:
                         mac = binascii.b2a_hex(d.hwid)
                     except:
@@ -437,6 +452,7 @@ class GyridServerProtocol(Int16StringReceiver):
                             for plugin in ap:
                                 args['projects'] = ap[plugin]
                                 try:
+                                    plugin.rawProtoFeed(m)
                                     plugin.dataFeedWifiIO(**args)
                                 except Exception, e:
                                     plugin.logger.logException(e)
@@ -445,8 +461,9 @@ class GyridServerProtocol(Int16StringReceiver):
                     self.buffer.append(m)
 
             elif m.type == m.Type_WIFI_DATADEVRAW:
-                d = m.wifi_dataDevRaw
                 if self.hostname != None:
+                    m.hostname = self.hostname
+                    d = m.wifi_dataDevRaw
                     try:
                         args = {'hostname': str(self.hostname),
                                 'timestamp': d.timestamp,
@@ -462,6 +479,7 @@ class GyridServerProtocol(Int16StringReceiver):
                         for plugin in ap:
                             args['projects'] = ap[plugin]
                             try:
+                                plugin.rawProtoFeed(m)
                                 plugin.dataFeedWifiDevRaw(**args)
                             except Exception, e:
                                 plugin.logger.logException(e)
@@ -470,8 +488,9 @@ class GyridServerProtocol(Int16StringReceiver):
                     self.buffer.append(m)
 
             elif m.type == m.Type_WIFI_DATARAW:
-                d = m.wifi_dataRaw
                 if self.hostname != None:
+                    m.hostname = self.hostname
+                    d = m.wifi_dataRaw
                     try:
                         args = {'hostname': str(self.hostname),
                                 'timestamp': d.timestamp,
@@ -487,6 +506,7 @@ class GyridServerProtocol(Int16StringReceiver):
                         for plugin in ap:
                             args['projects'] = ap[plugin]
                             try:
+                                plugin.rawProtoFeed(m)
                                 plugin.dataFeedWifiRaw(**args)
                             except Exception, e:
                                 plugin.logger.logException(e)
@@ -496,6 +516,7 @@ class GyridServerProtocol(Int16StringReceiver):
 
             elif m.type == m.Type_INFO:
                 if self.hostname != None:
+                    m.hostname = self.hostname
                     try:
                         args = {'hostname': str(self.hostname),
                                 'timestamp': d.info.timestamp,
@@ -508,6 +529,7 @@ class GyridServerProtocol(Int16StringReceiver):
                         for plugin in ap:
                             args['projects'] = ap[plugin]
                             try:
+                                plugin.rawProtoFeed(m)
                                 plugin.infoFeed(**args)
                             except Exception, e:
                                 plugin.logger.logException(e)

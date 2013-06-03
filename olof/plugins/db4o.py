@@ -13,16 +13,17 @@ from OpenSSL import SSL
 
 from twisted.internet import reactor, ssl
 from twisted.internet.protocol import ReconnectingClientFactory
-from twisted.protocols.basic import LineReceiver
+from twisted.protocols.basic import Int16StringReceiver
 
 import os
 import time
 
 import olof.configuration
 import olof.core
+import olof.protocol.network as proto
 import olof.storagemanager
 
-class Db4OClient(LineReceiver):
+class Db4OClient(Int16StringReceiver):
     """
     The class handling the connection with the Db4O server.
     """
@@ -33,7 +34,6 @@ class Db4OClient(LineReceiver):
         @param   factory (t.i.p.ClientFactory)   Reference to a Twisted ClientFactory.
         @param   plugin (olof.core.Plugin)       Reference to the main Db4O Plugin instance.
         """
-        self.delimiter = '\n'
         self.factory = factory
         self.plugin = plugin
 
@@ -56,18 +56,20 @@ class Db4OClient(LineReceiver):
             self.plugin.cache.close()
         self.plugin.cache = open(self.plugin.cache_file, 'a')
 
-    def sendLine(self, line):
+    def sendMsg(self, msg):
         """
         Try to send the line to the Db4O server. When not connected, cache the line.
         """
         if self.transport != None and self.plugin.connected:
-            LineReceiver.sendLine(self, line.strip())
+            Int16StringReceiver.sendString(self, struct.pack('!H', msg.ByteSize()) + \
+                msg.SerializeToString())
         elif not self.plugin.connected and not self.plugin.cache.closed:
-            self.plugin.cache.write(line.strip() + '\n')
+            self.plugin.cache.write(struct.pack('!H', msg.ByteSize()) + \
+                msg.SerializeToString())
             self.plugin.cache.flush()
             self.plugin.cached_lines += 1
 
-    def lineReceived(self, line):
+    def stringReceived(self, line):
         """
         Called when a line of data is received.
         """
@@ -82,9 +84,21 @@ class Db4OClient(LineReceiver):
             self.plugin.cache.close()
 
         self.plugin.cache = open(self.plugin.cache_file, 'r')
-        for line in self.plugin.cache:
-            line = line.strip()
-            self.sendLine(line)
+
+        read = self.plugin.cache.read(2)
+        while read:
+            bts = struct.unpack('!H', read)[0]
+            try:
+                msg = proto.Msg.FromString(self.plugin.cache.read(bts))
+            except:
+                pass
+            else:
+                self.sendMsg(msg)
+            try:
+                read = self.plugin.cache.read(2)
+            except IOError:
+                read = False
+
             self.plugin.cached_lines -= 1
         self.plugin.cache.close()
 
@@ -117,14 +131,14 @@ class Db4OClientFactory(ReconnectingClientFactory):
         self.client = None
         self.buildProtocol(None)
 
-    def sendLine(self, line):
+    def sendMsg(self, msg):
         """
         Send a line via the Db4O client.
 
         @param   line (str)   The line to send.
         """
         if 'client' in self.__dict__ and self.client != None:
-            self.client.sendLine(line)
+            self.client.sendMsg(msg)
 
     def buildProtocol(self, addr):
         """
@@ -261,89 +275,5 @@ class Plugin(olof.core.Plugin):
             r.append(cl)
         return r
 
-    def addLocation(self, sensor, id, description, x, y):
-        """
-        Add a new location to the database. Only add if it is actually new.
-
-        @param   sensor (str)        The MAC-address of the Bluetooth sensor.
-        @param   id (str)            Unique ID (name) of the location.
-        @param   description (str)   Description of the location.
-        @param   x (float)           X-coordinate of the location.
-        @param   y (float)           Y-coordinate of the location.
-        """
-        if not [sensor, id, description, x, y] in self.locations:
-            self.logger.logInfo('db4o: Adding location %s|%s' % (id, sensor))
-            self.locations.append([sensor, id, description, x, y])
-            self.db4o_factory.sendLine(','.join(['addLocation',
-                '%s|%s' % (id, sensor), str(description), "%0.6f" % x, "%0.6f" % y]))
-
-    def addScanSetup(self, hostname, sensor, id, timestamp):
-        """
-        Add a new scansetup to the database.
-
-        @param   hostname (str)      Hostname of the scanner.
-        @param   sensor (str)        The MAC-address of the Bluetooth sensor.
-        @param   id (str)            Unique ID (name) of the location.
-        @param   timestamp (float)   Timestamp at which the scansetup is installed. In UNIX time.
-        """
-        if not [hostname, sensor, id, timestamp, 1] in self.scanSetups:
-            self.logger.logInfo('db4o: Adding ScanSetup for %s at %i: %s' % \
-                (hostname, timestamp, '%s|%s' % (id, sensor)))
-            self.scanSetups.append([hostname, sensor, id, timestamp, 1])
-            self.db4o_factory.sendLine(','.join(['installScannerSetup',
-                hostname, sensor, '%s|%s' % (id, sensor), str(int(timestamp*1000))]))
-
-    def removeScanSetup(self, hostname, sensor, id, timestamp):
-        """
-        Remove a scansetup from the database.
-
-        @param   hostname (str)      Hostname of the scanner.
-        @param   sensor (str)        The MAC-address of the Bluetooth sensor.
-        @param   id (str)            Unique ID (name) of the location.
-        @param   timestamp (float)   Timestamp at which the scansetup is installed. In UNIX time.
-        """
-        if not [hostname, sensor, id, timestamp, 0] in self.scanSetups:
-            self.logger.logInfo('db4o: Removing ScanSetup for %s at %i: %s' % \
-                (hostname, timestamp, '%s|%s' % (id, sensor)))
-            self.scanSetups.append([hostname, sensor, id, timestamp, 0])
-            self.db4o_factory.sendLine(','.join(['removeScannerSetup',
-                hostname, sensor, '%s|%s' % (id, sensor), str(int(timestamp*1000))]))
-
-    def locationUpdate(self, hostname, projects, module, obj):
-        """
-        Perform a location update. Add and remove locations and scansetups accordingly.
-        """
-        if module == 'scanner':
-            for sensor in obj.sensors.values():
-                self.addLocation(sensor.mac, obj.id, obj.description, sensor.lon, sensor.lat)
-                if sensor.start != None:
-                    self.addScanSetup(hostname, sensor.mac, obj.id, sensor.start)
-                if sensor.end != None:
-                    self.removeScanSetup(hostname, sensor.mac, obj.id, sensor.end)
-
-        elif module == 'sensor' and obj.mac != None:
-            if (obj.lat == None or obj.lon == None) and obj.end != None:
-                self.removeScanSetup(hostname, obj.mac, obj.location.id, obj.end)
-            elif (obj.lat != None and obj.lon != None) and obj.start != None:
-                self.addLocation(obj.mac, obj.location.id, obj.location.description, obj.lon, obj.lat)
-                self.addScanSetup(hostname, obj.mac, obj.location.id, obj.start)
-
-    def stateFeed(self, hostname, projects, timestamp, hwType, sensorMac, type, info, cache):
-        """
-        Send new_inquiry status messages to the Db4O server.
-        """
-        if type == 'new_inquiry':
-            for project in [i.id for i in projects if i != None]:
-                self.db4o_factory.sendLine(','.join(['nbi', str(int(timestamp*1000)),hostname, sensorMac]))
-        elif type == 'antenna':
-            for project in [i.id for i in projects if i != None]:
-                self.db4o_factory.sendLine(','.join(['nba', str(int(timestamp*1000)), hostname, sensorMac, 
-                    str(info)]))
-
-    def dataFeedBluetoothRaw(self, hostname, projects, timestamp, sensorMac, mac, rssi, cache):
-        """
-        Send RSSI data to the Db4O server.
-        """
-        deviceclass = str(self.server.getDeviceclass(mac))
-        for project in [i.id for i in projects if i != None]:
-            self.db4o_factory.sendLine(','.join(['nbd', str(int(timestamp*1000)), hostname, sensorMac, mac, str(deviceclass), str(rssi)]))
+    def rawProtoFeed(self, m):
+        self.db4o_factory.sendMsg(m)

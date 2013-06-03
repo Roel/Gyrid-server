@@ -220,3 +220,6 @@ class Plugin(object):
 
     def dataFeedWifiIO(self, hostname, projects, timestamp, sensorMac, hwid, type, move, cache):
         pass
+
+    def rawProtoFeed(self, message):
+        pass
