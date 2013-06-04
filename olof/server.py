@@ -97,7 +97,7 @@ class GyridServerProtocol(Int16StringReceiver):
         self.bytecount += msg.ByteSize()
         print "==>", msg.ByteSize(), self.bytecount
         print msg
-        self.sendString(struct.pack('!H', msg.ByteSize()) + msg.SerializeToString())
+        self.sendString(msg.SerializeToString())
 
     def keepalive(self):
         """
