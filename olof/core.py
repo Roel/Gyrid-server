@@ -196,7 +196,7 @@ class Plugin(object):
         """
         pass
 
-    def dataFeedBluetoothRaw(self, hostname, projects, timestamp, sensorMac, mac, rssi, cache):
+    def dataFeedBluetoothRaw(self, hostname, projects, timestamp, sensorMac, mac, deviceclass, rssi, cache):
         """
         Called when new RSSI data is received.
 
@@ -207,6 +207,7 @@ class Plugin(object):
                                        without colons, f.ex. 001122334455
         @param   mac (str)           The Bluetooth MAC-address of the detected device. Representation without colons,
                                        f.ex. 001122334455
+        @param   deviceclass (int)   The Bluetooth deviceclass of the detected device.
         @param   rssi (int)          The value of the Received Signal Strength Indication of the detection.
         @param   cache (bool)        Whether the data is live or has been cached clientside.
         """

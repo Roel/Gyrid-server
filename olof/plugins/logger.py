@@ -309,7 +309,7 @@ class Plugin(olof.core.Plugin):
             ss = self.getScanSetup(hostname, project, sensorMac)
             ss.logCell(timestamp, mac, deviceclass, move)
 
-    def dataFeedBluetoothRaw(self, hostname, projects, timestamp, sensorMac, mac, rssi, cache):
+    def dataFeedBluetoothRaw(self, hostname, projects, timestamp, sensorMac, mac, deviceclass, rssi, cache):
         """
         Pass the information to the corresponding ScanSetup to be saved to the RSSI-data log.
         """

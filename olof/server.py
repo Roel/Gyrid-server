@@ -407,6 +407,7 @@ class GyridServerProtocol(Int16StringReceiver):
                                 'timestamp': d.timestamp,
                                 'sensorMac': binascii.b2a_hex(d.sensorMac),
                                 'mac': binascii.b2a_hex(d.hwid),
+                                'deviceclass': d.deviceclass,
                                 'rssi': d.rssi,
                                 'cache': m.cached}
                     except:
