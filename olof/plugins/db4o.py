@@ -62,8 +62,7 @@ class Db4OClient(Int16StringReceiver):
         Try to send the line to the Db4O server. When not connected, cache the line.
         """
         if self.transport != None and self.plugin.connected:
-            Int16StringReceiver.sendString(self, struct.pack('!H', msg.ByteSize()) + \
-                msg.SerializeToString())
+            Int16StringReceiver.sendString(self, msg.SerializeToString())
         elif not self.plugin.connected and not self.plugin.cache.closed:
             self.plugin.cache.write(struct.pack('!H', msg.ByteSize()) + \
                 msg.SerializeToString())
