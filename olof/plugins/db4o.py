@@ -16,6 +16,7 @@ from twisted.internet.protocol import ReconnectingClientFactory
 from twisted.protocols.basic import Int16StringReceiver
 
 import os
+import struct
 import time
 
 import olof.configuration
