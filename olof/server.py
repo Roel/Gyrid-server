@@ -143,10 +143,7 @@ class GyridServerProtocol(Int16StringReceiver):
         @param   data (str)   The data to check.
         @return  (hex)        The absolute (positive) hexadecimal CRC32 checksum of the data.
         """
-        r = '%x' % abs(zlib.crc32(data))
-        if len(r) % 2 != 0:
-            r = '0' + r
-        return r
+        return '%08x' % abs(zlib.crc32(data))
 
     def stringReceived(self, data):
         """
