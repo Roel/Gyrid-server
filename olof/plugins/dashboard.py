@@ -698,7 +698,7 @@ class Plugin(olof.core.Plugin):
         elif type == 'antenna':
             sens.last_rotation = int(float(timestamp))
 
-    def dataFeedBluetoothRaw(self, hostname, projects, timestamp, sensorMac, mac, deviceclass, rssi, cache):
+    def dataFeedBluetoothRaw(self, hostname, projects, timestamp, sensorMac, mac, deviceclass, rssi, angle, cache):
         """
         Save detection information in the corresponding Sensor instance.
         """

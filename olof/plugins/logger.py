@@ -144,7 +144,7 @@ class ScanSetup(Logger):
             if 'lag' in self.logs and not self.logs['lag'].closed:
                 self.logs['lag'].close()
 
-    def logRssi(self, rxtime, txtime, mac, rssi):
+    def logRssi(self, rxtime, txtime, mac, rssi, angle):
         """
         Write the given RSSI data to the log.
 
@@ -154,7 +154,7 @@ class ScanSetup(Logger):
         @param   rssi (int)     The value of the Received Signal Strength Indication of the detection.
         """
         self.logs['rssi'].write(','.join([str(i) for i in [
-            self.formatTimestamp(txtime), mac, rssi]]) + '\n')
+            self.formatTimestamp(txtime), mac, rssi, angle]]) + '\n')
         self.logs['rssi'].flush()
 
         if self.enableLagLogging:
@@ -309,11 +309,11 @@ class Plugin(olof.core.Plugin):
             ss = self.getScanSetup(hostname, project, sensorMac)
             ss.logCell(timestamp, mac, deviceclass, move)
 
-    def dataFeedBluetoothRaw(self, hostname, projects, timestamp, sensorMac, mac, deviceclass, rssi, cache):
+    def dataFeedBluetoothRaw(self, hostname, projects, timestamp, sensorMac, mac, deviceclass, rssi, angle, cache):
         """
         Pass the information to the corresponding ScanSetup to be saved to the RSSI-data log.
         """
         t = time.time()
         for project in [i.id for i in projects if i != None]:
             ss = self.getScanSetup(hostname, project, sensorMac)
-            ss.logRssi(t, timestamp, mac, rssi)
+            ss.logRssi(t, timestamp, mac, rssi, angle)

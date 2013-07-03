@@ -196,7 +196,7 @@ class Plugin(object):
         """
         pass
 
-    def dataFeedBluetoothRaw(self, hostname, projects, timestamp, sensorMac, mac, deviceclass, rssi, cache):
+    def dataFeedBluetoothRaw(self, hostname, projects, timestamp, sensorMac, mac, deviceclass, rssi, angle, cache):
         """
         Called when new RSSI data is received.
 

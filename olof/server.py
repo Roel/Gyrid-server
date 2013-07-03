@@ -48,6 +48,9 @@ class GyridServerProtocol(Int16StringReceiver):
     """
     The main Gyrid server protocol. This provides the interaction with the scanners.
     """
+    def __init__(self):
+        protocol = self
+
     def connectionMade(self):
         """
         Called when a new connection is made with a scanner. Initialise the connection.
@@ -69,7 +72,7 @@ class GyridServerProtocol(Int16StringReceiver):
         m = proto.Msg()
         m.type = m.Type_REQUEST_STATE
         m.requestState.bluetooth_enableInquiry = True
-        m.requestState.wifi_enableFrequency = True
+        m.requestState.wifi_enableFrequencyLoop = True
         m.requestState.enableAntenna = True
         self.sendMsg(m)
 
@@ -95,8 +98,6 @@ class GyridServerProtocol(Int16StringReceiver):
     def sendMsg(self, msg):
         self.bytecount += 2
         self.bytecount += msg.ByteSize()
-        print "==>", msg.ByteSize(), self.bytecount
-        print msg
         self.sendString(msg.SerializeToString())
 
     def keepalive(self):
@@ -118,6 +119,12 @@ class GyridServerProtocol(Int16StringReceiver):
 
         @param   reason (str)   The reason why the connection has been lost.
         """
+        if 'keepalive_loop' in self.__dict__:
+            try:
+                self.keepalive_loop.stop()
+            except AssertionError:
+                pass
+
         if self.hostname != None:
             dp = self.factory.server.dataprovider
             try:
@@ -161,8 +168,6 @@ class GyridServerProtocol(Int16StringReceiver):
 
         self.bytecount += 2
         self.bytecount += m.ByteSize()
-        print "<==", m.ByteSize(), self.bytecount
-        print m
         dp = self.factory.server.dataprovider
 
         if m.type == m.Type_HOSTNAME:
@@ -235,9 +240,21 @@ class GyridServerProtocol(Int16StringReceiver):
         elif m.type == m.Type_KEEPALIVE:
             self.last_keepalive = int(time.time())
 
+            if self.hostname != None:
+                for m in dp.patterns_to_push.get(self.hostname, []):
+                    self.sendMsg(m)
+
+        elif m.type == m.Type_SCAN_PATTERN and m.success:
+            m.ClearField('success')
+            with dp.lock:
+                try:
+                    dp.patterns_to_push.get(self.hostname, []).remove(m)
+                except ValueError:
+                    pass
+
         elif m.type == m.Type_REQUEST_KEEPALIVE and m.success:
-            l = task.LoopingCall(self.keepalive)
-            l.start(self.factory.timeout, now=False)
+            self.keepalive_loop = task.LoopingCall(self.keepalive)
+            self.keepalive_loop.start(self.factory.timeout, now=False)
 
         elif m.type == m.Type_REQUEST_STARTDATA and m.success:
             msg = proto.Msg()
@@ -406,6 +423,7 @@ class GyridServerProtocol(Int16StringReceiver):
                                 'mac': binascii.b2a_hex(d.hwid),
                                 'deviceclass': d.deviceclass,
                                 'rssi': d.rssi,
+                                'angle': d.angle,
                                 'cache': m.cached}
                     except:
                         return

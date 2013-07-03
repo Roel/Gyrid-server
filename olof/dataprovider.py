@@ -16,10 +16,12 @@ import copy
 import imp
 import os
 import time
+from threading import Lock
 
 import olof.configuration
 import olof.datatypes
 import olof.storagemanager
+import olof.protocol.network as proto
 from olof.tools.inotifier import INotifier
 
 class DataProvider(object):
@@ -35,16 +37,22 @@ class DataProvider(object):
         @param   server (Olof)   Reference to the main Olof server instance.
         """
         self.server = server
+        self.lock = Lock()
 
         self.storagemgr = olof.storagemanager.StorageManager(self.server, 'data')
         self.locations = self.storagemgr.loadObject('locations', {})
+        self.scan_patterns = self.storagemgr.loadObject('scan_patterns', {})
+        self.patterns_to_push = self.storagemgr.loadObject('patterns_to_push', {})
+
         self.projects = {}
 
         self.dataconfig = olof.configuration.Configuration(self.server, 'data')
+        self.scanconfig = olof.configuration.Configuration(self.server, 'scan')
         self.defineConfiguration()
 
         self.readLocations()
         self.readProjects()
+        self.readPatterns()
 
     def defineConfiguration(self):
         """
@@ -74,14 +82,24 @@ class DataProvider(object):
         o.addCallback(self.readLocations)
         self.dataconfig.addOption(o)
 
+        o = olof.configuration.Option('scan_patterns')
+        o.setDescription('Dictionary mapping hostnames to iterables of scan pattern dictionaries.')
+        o.addValue(olof.configuration.OptionValue({}, default=True))
+        o.addCallback(self.readPatterns)
+        self.scanconfig.addOption(o)
+
         self.dataconfig.readConfig()
+        self.scanconfig.readConfig()
 
     def unload(self):
         """
         Unload this data provider. Saves the current location data to disk.
         """
         self.dataconfig.unload()
+        self.scanconfig.unload()
         self.storagemgr.storeObject(self.locations, 'locations')
+        self.storagemgr.storeObject(self.scan_patterns, 'scan_patterns')
+        self.storagemgr.storeObject(self.patterns_to_push, 'patterns_to_push')
 
     def readLocations(self, value=None):
         """
@@ -99,6 +117,15 @@ class DataProvider(object):
         """
         self.new_projects = value if value != None else self.dataconfig.getValue('projects')
         self.projects = copy.deepcopy(self.new_projects)
+
+    def readPatterns(self, value=None):
+        """
+        Read pattern information from this, this is the 'scan_patterns' option in scan.conf.py
+        Save the new information.
+        """
+        self.new_patterns = value if value != None else self.scanconfig.getValue('scan_patterns')
+        self.parsePatterns(self.new_patterns)
+        self.scan_patterns = copy.deepcopy(self.new_patterns)
 
     def isActive(self, hostname, plugin, projectname=None, timestamp=None):
         """
@@ -164,3 +191,66 @@ class DataProvider(object):
             if scanner not in locations:
                 # Removed scanner
                 pass # Nothing should happen
+
+    def getAllPatterns(self, scanner):
+        r = []
+        for p in self.scan_patterns.get(scanner, []):
+            m = proto.Msg()
+            m.type = m.Type_SCAN_PATTERN
+            s = m.scanPattern
+            s.action = s.Action_ADD
+            for attr in p:
+                s.__setattr__(attr, p[attr])
+            r.append(m)
+        return r
+
+    def parsePatterns(self, patterns):
+        def pushPattern(scanner, pattern):
+            if scanner not in self.patterns_to_push:
+                self.patterns_to_push[scanner] = []
+            with self.lock:
+                self.patterns_to_push[scanner].append(pattern)
+
+        def removeAllPatterns(scanner):
+            m = proto.Msg()
+            m.type = m.Type_SCAN_PATTERN
+            m.scanPattern.action = m.scanPattern.Action_REMOVEALL
+            pushPattern(scanner, m)
+
+        def addPattern(scanner, pattern):
+            m = proto.Msg()
+            m.type = m.Type_SCAN_PATTERN
+            s = m.scanPattern
+            s.action = s.Action_ADD
+            for attr in pattern:
+                s.__setattr__(attr, pattern[attr])
+            pushPattern(scanner, m)
+
+        def removePattern(scanner, pattern):
+            m = proto.Msg()
+            m.type = m.Type_SCAN_PATTERN
+            s = m.scanPattern
+            s.action = s.Action_REMOVE
+            for attr in pattern:
+                s.__setattr__(attr, pattern[attr])
+            pushPattern(scanner, m)
+
+        for scanner in patterns:
+            if scanner in self.scan_patterns:
+                # Existing scanner
+                for p in patterns[scanner]:
+                    if p not in self.scan_patterns[scanner]:
+                        addPattern(scanner, p)
+
+                for p in self.scan_patterns[scanner]:
+                    if p not in patterns[scanner]:
+                        removePattern(scanner, p)
+            else:
+                # New scanner
+                for p in patterns[scanner]:
+                    addPattern(scanner, p)
+
+        for scanner in self.scan_patterns:
+            if scanner not in patterns:
+                # Removed scanner
+                removeAllPatterns(scanner)
