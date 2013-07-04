@@ -686,7 +686,7 @@ class Plugin(olof.core.Plugin):
         Save the Bluetooth sensor information in the corresponding Sensor instance.
         """
         sens = self.getSensor(hostname, hwType, sensorMac)
-        if type in ('new_inquiry', 'frequency'):
+        if type in ('new_inquiry', 'frequency', 'frequency_loop'):
             sens.connected = True
             if sens.last_activity == None or timestamp > sens.last_activity:
                 sens.last_activity = timestamp

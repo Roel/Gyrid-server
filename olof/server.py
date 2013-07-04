@@ -294,6 +294,32 @@ class GyridServerProtocol(Int16StringReceiver):
                 else:
                     self.buffer.append(m)
 
+            elif m.type == m.Type_WIFI_STATE_FREQUENCYLOOP:
+                if self.hostname != None:
+                    m.hostname = self.hostname
+                    try:
+                        args = {'hostname': str(self.hostname),
+                                'timestamp': m.wifi_stateFrequencyLoop.timestamp,
+                                'sensorMac': binascii.b2a_hex(m.wifi_stateFrequencyLoop.sensorMac),
+                                'hwType': 'wifi',
+                                'type': 'frequency_loop',
+                                'info': m.wifi_stateFrequencyLoop.frequency,
+                                'cache': m.cached}
+                    except:
+                        return
+                    else:
+                        ap = dp.getActivePlugins(self.hostname, timestamp=args['timestamp'])
+                        for plugin in ap:
+                            args['projects'] = ap[plugin]
+                            try:
+                                plugin.rawProtoFeed(m)
+                                plugin.stateFeed(**args)
+                            except Exception, e:
+                                plugin.logger.logException(e)
+                                continue
+                else:
+                    self.buffer.append(m)
+
             elif m.type == m.Type_WIFI_STATE_FREQUENCY:
                 if self.hostname != None:
                     m.hostname = self.hostname
