@@ -44,6 +44,10 @@ class DataProvider(object):
         self.scan_patterns = self.storagemgr.loadObject('scan_patterns', {})
         self.patterns_to_push = self.storagemgr.loadObject('patterns_to_push', {})
 
+        self.storagemgr.repeatedStoreObject(self.locations, 'locations')
+        self.storagemgr.repeatedStoreObject(self.scan_patterns, 'scan_patterns')
+        self.storagemgr.repeatedStoreObject(self.patterns_to_push, 'patterns_to_push')
+
         self.projects = {}
 
         self.dataconfig = olof.configuration.Configuration(self.server, 'data')
@@ -97,6 +101,7 @@ class DataProvider(object):
         """
         self.dataconfig.unload()
         self.scanconfig.unload()
+        self.storagemgr.unload()
         self.storagemgr.storeObject(self.locations, 'locations')
         self.storagemgr.storeObject(self.scan_patterns, 'scan_patterns')
         self.storagemgr.storeObject(self.patterns_to_push, 'patterns_to_push')

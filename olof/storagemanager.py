@@ -12,6 +12,8 @@ Module that handles disk storage.
 import cPickle as pickle
 import os
 
+from twisted.internet import task
+
 class StorageManager(object):
     """
     Class that manages saving and loading objects to and from disk.
@@ -25,6 +27,14 @@ class StorageManager(object):
         """
         self.server = server
         self.base_path = self.server.paths['storage'] + '/%s/' % directoryName
+        self.repeated_tasks = set()
+
+    def unload(self, shutdown=False):
+        for task in self.repeated_tasks:
+            try:
+                task.stop()
+            except AssertionError:
+                continue
 
     def __createDir(self):
         """
@@ -32,6 +42,20 @@ class StorageManager(object):
         """
         if not os.path.exists(self.base_path):
             os.makedirs(self.base_path)
+
+    def repeatedStoreObject(self, object, name, interval=300):
+        """
+        Repeatedly store the given object to disk.
+
+        @param   object          Object to save. Dynamically typed objects (i.e. objects of classes defined in plugin
+                                   modules) cannot be saved. If you do need to save them, move those classes to a different
+                                   module; however losing the dynamic reloading of those objects.
+        @param   name (str)      Unique name to identify this object, later used to load the same object from disk.
+        @param   interval (int)  Interval in seconds for saving the object. Defaults to 300 (5 minutes).
+        """
+        t = task.LoopingCall(self.storeObject, object, name)
+        self.repeated_tasks.add(t)
+        t.start(interval, now=True)
 
     def storeObject(self, object, name):
         """

@@ -629,6 +629,7 @@ class Olof(object):
         self.dataprovider = olof.dataprovider.DataProvider(self)
 
         self.mac_dc = self.storagemgr.loadObject('mac_dc', {})
+        self.storagemgr.repeatedStoreObject(self.mac_dc, 'mac_dc')
         self.port = self.configmgr.getValue('tcp_listening_port')
 
     def __defineConfiguration(self):
@@ -668,6 +669,7 @@ class Olof(object):
         self.dataprovider.unload()
         self.configmgr.unload()
         self.pluginmgr.unload(shutdown=True)
+        self.storagemgr.unload()
         self.storagemgr.storeObject(self.mac_dc, 'mac_dc')
         self.logger.logInfo("Stopping Gyrid Server")
 

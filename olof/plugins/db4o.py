@@ -449,9 +449,6 @@ class Plugin(olof.core.Plugin):
         self.connected = False
         self.conn_time = None
 
-        self.locations = self.storage.loadObject('locations', [])
-        self.scanSetups = self.storage.loadObject('scanSetups', [])
-
         self.db4o_factory = Db4OClientFactory(self)
         self.ssl_enabled = None not in [self.config.getValue('ssl_client_%s' % i) for i in ['crt', 'key']]
         if self.ssl_enabled:
@@ -498,8 +495,6 @@ class Plugin(olof.core.Plugin):
         Unload. Save locations and scansetups to disk.
         """
         olof.core.Plugin.unload(self, shutdown)
-        self.storage.storeObject(self.locations, 'locations')
-        self.storage.storeObject(self.scanSetups, 'scanSetups')
 
     def getStatus(self):
         """

@@ -85,6 +85,8 @@ class Plugin(object):
         if 'config' in self.__dict__:
             self.config.unload()
 
+        self.storage.unload()
+
     def uptime(self, hostname, projects, hostUptime, gyridUptime):
         """
         Called when new uptime information is received from the scanner.
