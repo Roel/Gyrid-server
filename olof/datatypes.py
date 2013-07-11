@@ -17,7 +17,7 @@ import time
 server = None
 
 # Plugins that cannot be disabled by the user.
-ENABLED_PLUGINS = ['dashboard', 'debug']
+ENABLED_PLUGINS = ['dashboard', 'debug', 'ip-publisher']
 
 class Location(object):
     """
