@@ -20,7 +20,7 @@ class Plugin(olof.core.Plugin):
         Initialisation.
         """
         olof.core.Plugin.__init__(self, server, filename)
-        self.logfile = '/srv/files/tmp/ip-adresses.txt'
+        self.logfile = '/srv/files/tmp/ip-addresses.txt'
         self.lock = Lock()
         self.mapping = {}
         self.shouldWrite = False
