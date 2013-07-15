@@ -321,6 +321,7 @@ class Db4OClient(Int16StringReceiver):
                 read = self.plugin.cache.read(2)
                 bts = struct.unpack('!H', read)[0]
                 self.plugin.cache.seek(-2-bts, 1)
+                self.plugin.cached_msgs -= 1
             except:
                 self.cachedItemsAck = None
                 self.plugin.cache.truncate()
