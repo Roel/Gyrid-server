@@ -147,15 +147,15 @@ class AckMap(object):
         else:
             try:
                 if len(self.toAdd) > 0:
-                    print "adding extra items to ackmap"
+                    #print "adding extra items to ackmap"
                     self.ackmap.update(self.toAdd)
                     self.toAdd.clear()
-                print "added item %s" % ackItem.checksum
+                #print "added item %s" % ackItem.checksum
                 self.ackmap.add(ackItem)
             finally:
                 self.lock.release()
 
-        print "ackmap size is now %i" % len(self.ackmap)
+        #print "ackmap size is now %i" % len(self.ackmap)
 
     def clearItem(self, checksum):
         """
@@ -164,7 +164,7 @@ class AckMap(object):
 
         @param   checksum   The checksum to check.
         """
-        print "trying to clear item %s" % checksum
+        #print "trying to clear item %s" % checksum
         if not self.lock.acquire(False):
             self.toClear.add(checksum)
         else:
@@ -177,7 +177,7 @@ class AckMap(object):
                            i.checksum in self.toClear:
                            toClear.add(i)
                     self.factory.plugin.cached_msgs -= len(toClear)
-                    print "clearing extra items"
+                    #print "clearing extra items"
                     self.ackmap.difference_update(toClear)
                     self.toClear.clear()
                 else:
@@ -189,20 +189,20 @@ class AckMap(object):
                     if item != None:
                         self.factory.plugin.cached_msgs -= 1
                         self.ackmap.difference_update([item])
-                        print "cleared item %s" % item.checksum
+                        #print "cleared item %s" % item.checksum
             finally:
                 self.lock.release()
 
-        print "ackmap size is now %i" % len(self.ackmap)
+        #print "ackmap size is now %i" % len(self.ackmap)
 
     def clear(self):
         """
         Clear the entire map.
         """
         # No locking here, caller should use locking.
-        print "clearing ackmap"
+        #print "clearing ackmap"
         self.ackmap.clear()
-        print "ackmap size is now %i" % len(self.ackmap)
+        #print "ackmap size is now %i" % len(self.ackmap)
 
     def __check(self):
         """
@@ -271,7 +271,7 @@ class Db4OClient(Int16StringReceiver):
                 self.plugin.cache.write(
                     i.msg.SerializeToString() + \
                     struct.pack('!H', i.msg.ByteSize()))
-                print "written item %s to disk cache" % AckMap.checksum(i.msg.SerializeToString())
+                #print "written item %s to disk cache" % AckMap.checksum(i.msg.SerializeToString())
             self.factory.ackmap.clear()
         finally:
             self.factory.ackmap.lock.release()
@@ -285,7 +285,7 @@ class Db4OClient(Int16StringReceiver):
             self.factory.ackmap.addItem(AckItem(msg))
             Int16StringReceiver.sendString(self, msg.SerializeToString())
         elif not self.plugin.connected and not self.plugin.cache.closed:
-            print "written item %s to disk cache" % AckMap.checksum(msg.SerializeToString())
+            #print "written item %s to disk cache" % AckMap.checksum(msg.SerializeToString())
             self.plugin.cache.write(msg.SerializeToString() + struct.pack('!H', msg.ByteSize()))
             self.plugin.cache.flush()
             self.plugin.cached_msgs += 1
@@ -297,7 +297,7 @@ class Db4OClient(Int16StringReceiver):
         try:
             msg = proto.Msg.FromString(data)
         except:
-            print "Y U SEND THIS SH*T"
+            #print "Y U SEND THIS SH*T"
             return
 
         if msg.type == msg.Type_ACK:
@@ -311,11 +311,11 @@ class Db4OClient(Int16StringReceiver):
     def readNextCachedItems(self, amount=1):
         if self.plugin.cache.closed:
             self.cachedItemsAck = None
-            print "failed to read disk cache as file is closed"
+            #print "failed to read disk cache as file is closed"
             return
 
         for i in range(amount):
-            print "reading cached disk item"
+            #print "reading cached disk item"
             try:
                 self.plugin.cache.seek(-2, 1)
                 read = self.plugin.cache.read(2)
@@ -331,7 +331,7 @@ class Db4OClient(Int16StringReceiver):
             self.plugin.cache.seek(-bts, 1)
             try:
                 msg = proto.Msg.FromString(rawmsg)
-                print "read item %s from disk" % (AckMap.checksum(msg.SerializeToString()))
+                #print "read item %s from disk" % (AckMap.checksum(msg.SerializeToString()))
             except:
                 pass
             else:
@@ -346,7 +346,7 @@ class Db4OClient(Int16StringReceiver):
         """
         Push trough the cached data. Clears the cache afterwards.
         """
-        print "try pushing cache"
+        #print "try pushing cache"
         if not self.plugin.cache.closed:
             self.plugin.cache.flush()
             self.plugin.cache.close()
