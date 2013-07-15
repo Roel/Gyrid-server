@@ -437,10 +437,11 @@ class Plugin(olof.core.Plugin):
 
         Connect to the Db4O server.
         """
-        olof.core.Plugin.__init__(self, server, filename, "Db4o")
+        olof.core.Plugin.__init__(self, server, filename, "Gismosi")
         self.host = self.config.getValue('host')
         self.port = self.config.getValue('port')
         self.cache_file = self.config.getValue('cache_file')
+        self.cache_lock = threading.Lock()
 
         self.server.checkDiskAccess([self.cache_file])
         self.cache = open(self.cache_file, 'ab')
