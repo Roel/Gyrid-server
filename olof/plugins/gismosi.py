@@ -301,7 +301,8 @@ class Db4OClient(Int16StringReceiver):
             return
 
         if msg.type == msg.Type_ACK:
-            self.factory.ackmap.clearItem(binascii.b2a_hex(msg.ack))
+            ack = binascii.b2a_hex(msg.ack)
+            self.factory.ackmap.clearItem(ack)
 
             if self.cachedItemsAck:
                 self.cachedItemsAck.discard(ack)
