@@ -475,7 +475,7 @@ class Plugin(olof.core.Plugin):
 
         if value == False:
             for s in self.scanners.values():
-                for se in s.sensors:
+                for se in s.sensors.values():
                     se.lagData = []
 
     def startListening(self):
