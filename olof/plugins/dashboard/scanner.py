@@ -187,7 +187,7 @@ class Scanner(object):
             s for s in self.sensors.values() if s.connected == True]) < self.sensor_count:
             # Not all sensors connected
             return ScannerStatus.Bad
-        elif len([s for s in self.sensors.values() if (s.last_activity == None or t-s.last_activity >= 80)]) - self.sensor_count > 0:
+        elif len(self.sensors) - len([s for s in self.sensors.values() if (s.last_activity == None or t-s.last_activity >= 80)]) >= self.sensor_count:
             # No recent activity
             return ScannerStatus.Bad
         elif len([i for i in lag[1:] if i >= 5]) > 0:
