@@ -9,6 +9,8 @@
 Plugin that provides e-mailalerts in case things go wrong.
 """
 
+ENABLED = False
+
 from twisted.internet import reactor, task, threads
 
 import datetime
