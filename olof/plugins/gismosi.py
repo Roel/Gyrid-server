@@ -307,7 +307,7 @@ class Db4OClient(Int16StringReceiver):
             if self.cachedItemsAck:
                 self.cachedItemsAck.discard(ack)
                 if len(self.cachedItemsAck) <= 2:
-                    self.readNextCachedItems(5000)
+                    self.readNextCachedItems(500)
 
     def readNextCachedItems(self, amount=1):
         if self.plugin.cache.closed:
@@ -358,7 +358,7 @@ class Db4OClient(Int16StringReceiver):
             self.plugin.cache.seek(0, 2)
 
             self.cachedItemsAck = set()
-            self.readNextCachedItems(5000)
+            self.readNextCachedItems(500)
 
 
     def clearCache(self):
