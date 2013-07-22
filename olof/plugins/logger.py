@@ -324,4 +324,4 @@ class Plugin(olof.core.Plugin):
         """
         for project in [i.id for i in projects if i != None]:
             ss = self.getScanSetup(hostname, project, sensorMac)
-            ss.logCell(timestamp, mac, type, move)
+            ss.logCell(timestamp, hwid, type, move)
