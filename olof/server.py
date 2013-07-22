@@ -430,7 +430,6 @@ class GyridServerProtocol(Int16StringReceiver):
                             for plugin in ap:
                                 args['projects'] = ap[plugin]
                                 try:
-                                    plugin.rawProtoFeed(m)
                                     plugin.dataFeedCell(**args)
                                 except Exception, e:
                                     plugin.logger.logException(e)
@@ -494,7 +493,6 @@ class GyridServerProtocol(Int16StringReceiver):
                             for plugin in ap:
                                 args['projects'] = ap[plugin]
                                 try:
-                                    plugin.rawProtoFeed(m)
                                     plugin.dataFeedWifiIO(**args)
                                 except Exception, e:
                                     plugin.logger.logException(e)
@@ -548,7 +546,6 @@ class GyridServerProtocol(Int16StringReceiver):
                         for plugin in ap:
                             args['projects'] = ap[plugin]
                             try:
-                                plugin.rawProtoFeed(m)
                                 plugin.dataFeedWifiRaw(**args)
                             except Exception, e:
                                 plugin.logger.logException(e)
