@@ -317,3 +317,11 @@ class Plugin(olof.core.Plugin):
         for project in [i.id for i in projects if i != None]:
             ss = self.getScanSetup(hostname, project, sensorMac)
             ss.logRssi(t, timestamp, mac, rssi, angle)
+
+    def dataFeedWiFiIO(self, hostname, projects, timestamp, sensorMac, hwid, type, move, cache):
+        """
+        Pass the information to the corresponding ScanSetup to be saved to the cell-data log.
+        """
+        for project in [i.id for i in projects if i != None]:
+            ss = self.getScanSetup(hostname, project, sensorMac)
+            ss.logCell(timestamp, mac, type, move)
