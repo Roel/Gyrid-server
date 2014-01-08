@@ -14,6 +14,8 @@ from twisted.internet import task
 
 import olof.core
 
+ENABLED = False
+
 class Plugin(olof.core.Plugin):
     def __init__(self, server, filename):
         """
